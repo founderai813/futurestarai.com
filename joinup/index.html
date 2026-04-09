@@ -295,55 +295,35 @@ function App() {
   const F=({label,required,children})=>(<div><label style={S.label}>{label}{required&&<span style={{color:"#f87171"}}> *</span>}</label>{children}</div>);
 
   // HOME
-  const isExpired=(g)=>{
-    const end=g.dateEnd||g.dateStart;
-    if(!end) return false;
-    const endDate=new Date(end); endDate.setHours(23,59,59,999);
-    return endDate < new Date();
-  };
-
-  const ActivityCard=({id,g,i,expired})=>{
-    const jc=Object.keys(g.joiners||{}).length;
-    const maxP=g.maxPeople?parseInt(g.maxPeople):null;
-    const joinerLimit=maxP?maxP-1:null;
-    const isFull=joinerLimit&&jc>=joinerLimit;
-    return (<div key={id} onClick={()=>setTab("view-"+id)} style={{background:"#080d18",border:"1px solid #1e2d45",borderRadius:12,padding:16,marginBottom:10,cursor:"pointer",opacity:expired?0.5:1}}>
-      <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-        <div>
-          <span style={S.badge(COLORS[i%COLORS.length])}># {id}</span>
-          <span style={{fontWeight:800,fontSize:15,marginLeft:10}}>{g.activityName}</span>
-          {expired&&<span style={{marginLeft:8,background:"#52525b22",border:"1px solid #52525b55",borderRadius:6,padding:"2px 8px",fontSize:11,color:"#a1a1aa",fontWeight:700}}>已結束</span>}
-          {!expired&&isFull&&<span style={{marginLeft:8,background:"#dc262622",border:"1px solid #dc262655",borderRadius:6,padding:"2px 8px",fontSize:11,color:"#f87171",fontWeight:700}}>額滿</span>}
-        </div>
-        <span style={{fontSize:12,color:"#6b8aa8"}}>{fmt(g.dateStart)}{g.dateEnd&&g.dateEnd!==g.dateStart?` ～ ${fmt(g.dateEnd)}`:""}</span>
-      </div>
-      <div style={{marginTop:6,fontSize:12,color:"#8aaac8"}}>
-        👤 {g.name} &nbsp;|&nbsp;
-        🙋 <span style={{color:!expired&&isFull?"#f87171":"#8aaac8"}}>{jc}{joinerLimit?`/${joinerLimit}`:""}人</span>
-        {g.location&&<> &nbsp;|&nbsp; 📍 {g.location}</>}
-        {g.cost&&<> &nbsp;|&nbsp; 💰 {g.cost}</>}
-      </div>
-    </div>);
-  };
-
   const HomeTab=()=>{
-    const [showExpired,setShowExpired]=useState(false);
     const ids=Object.keys(groups);
-    const activeIds=ids.filter(id=>!isExpired(groups[id]));
-    const expiredIds=ids.filter(id=>isExpired(groups[id]));
     return (<div style={S.card}>
       <h2 style={S.sT}>🎪 所有活動</h2>
       {!fbReady&&<div style={{background:"#1e0a0a",border:"1px solid #f8717144",borderRadius:8,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#f87171"}}>⚠ Firebase 未設定，資料僅存本機。請完成設定後重新整理。</div>}
       {ids.length===0&&<p style={{color:"#6b8aa8",fontSize:14}}>還沒有活動，去「開團」建立第一個吧！</p>}
-      {activeIds.map((id,i)=><ActivityCard key={id} id={id} g={groups[id]} i={i} expired={false}/>)}
-      {activeIds.length===0&&expiredIds.length>0&&<p style={{color:"#6b8aa8",fontSize:14,marginBottom:12}}>目前沒有進行中的活動</p>}
-      {expiredIds.length>0&&<>
-        <div onClick={()=>setShowExpired(!showExpired)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",padding:"12px 0 8px",borderTop:"1px solid #1e2d45",marginTop:8}}>
-          <span style={{fontSize:12,color:"#6b8aa8",fontWeight:700}}>已結束活動 ({expiredIds.length})</span>
-          <span style={{fontSize:10,color:"#6b8aa8",transition:"transform 0.2s",transform:showExpired?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
-        </div>
-        {showExpired&&expiredIds.map((id,i)=><ActivityCard key={id} id={id} g={groups[id]} i={activeIds.length+i} expired={true}/>)}
-      </>}
+      {ids.map((id,i)=>{
+        const g=groups[id];
+        const jc=Object.keys(g.joiners||{}).length;
+        const maxP=g.maxPeople?parseInt(g.maxPeople):null;
+        const joinerLimit=maxP?maxP-1:null;
+        const isFull=joinerLimit&&jc>=joinerLimit;
+        return (<div key={id} onClick={()=>setTab("view-"+id)} style={{background:"#080d18",border:"1px solid #1e2d45",borderRadius:12,padding:16,marginBottom:10,cursor:"pointer"}}>
+          <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+            <div>
+              <span style={S.badge(COLORS[i%COLORS.length])}># {id}</span>
+              <span style={{fontWeight:800,fontSize:15,marginLeft:10}}>{g.activityName}</span>
+              {isFull&&<span style={{marginLeft:8,background:"#dc262622",border:"1px solid #dc262655",borderRadius:6,padding:"2px 8px",fontSize:11,color:"#f87171",fontWeight:700}}>額滿</span>}
+            </div>
+            <span style={{fontSize:12,color:"#6b8aa8"}}>{fmt(g.dateStart)}{g.dateEnd&&g.dateEnd!==g.dateStart?` ～ ${fmt(g.dateEnd)}`:""}</span>
+          </div>
+          <div style={{marginTop:6,fontSize:12,color:"#8aaac8"}}>
+            👤 {g.name} &nbsp;|&nbsp;
+            🙋 <span style={{color:isFull?"#f87171":"#8aaac8"}}>{jc}{joinerLimit?`/${joinerLimit}`:""}人</span>
+            {g.location&&<> &nbsp;|&nbsp; 📍 {g.location}</>}
+            {g.cost&&<> &nbsp;|&nbsp; 💰 {g.cost}</>}
+          </div>
+        </div>);
+      })}
     </div>);
   };
 
@@ -647,7 +627,7 @@ function App() {
     };
 
     if(step===1) return (<div style={S.card}>
-      <h2 style={S.sT}>🔐 管理者登入</h2>
+      <h2 style={S.sT}>🔐 開團者登入</h2>
       <p style={{fontSize:13,color:"#6b8aa8",marginBottom:16}}>輸入開團編號與管理密碼</p>
       <div style={{marginBottom:14}}><F label="開團編號"><input style={S.input} placeholder="開團編號" value={gid} onChange={e=>setGid(e.target.value)}/></F></div>
       <div style={{marginBottom:16}}><F label="管理密碼"><input type="password" style={S.input} placeholder="開團時設定的密碼" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()}/></F></div>
@@ -751,6 +731,188 @@ function App() {
     </div>);
   };
 
+  // SUPERADMIN — 網頁管理員
+  const SuperAdminTab=()=>{
+    const [step,setStep]=useState(1);
+    const [pw,setPw]=useState("");
+    const [authed,setAuthed]=useState(false);
+    const [subPage,setSubPage]=useState("dashboard"); // dashboard | group-{id} | joiner-{id}-{name}
+    const [editGroup,setEditGroup]=useState(null);
+    const [editJoiner,setEditJoiner]=useState(null);
+    const [editSlots,setEditSlots]=useState({});
+
+    const login=async()=>{
+      if(!pw.trim()){showToast("❗ 請輸入密碼");return;}
+      const adminData=await DB.get("app","admin");
+      if(!adminData?.password){showToast("❌ 尚未設定管理員密碼");return;}
+      if(adminData.password!==pw){showToast("❌ 密碼錯誤");return;}
+      setAuthed(true);setStep(2);
+    };
+
+    const allIds=Object.keys(groups);
+    const totalGroups=allIds.length;
+    const totalJoiners=allIds.reduce((s,id)=>s+Object.keys(groups[id].joiners||{}).length,0);
+    const totalWishes=wishes.length;
+
+    // 刪除整個活動
+    const deleteGroup=async(id)=>{
+      if(!window.confirm(`確定刪除活動「${groups[id]?.activityName}」？`))return;
+      const next={...groups}; delete next[id];
+      await saveGroups(next); showToast("🗑 活動已刪除");
+      setSubPage("dashboard");
+    };
+
+    // 刪除跟團者
+    const deleteJoiner=async(gid,name)=>{
+      if(!window.confirm(`確定刪除「${name}」的跟團資料？`))return;
+      const next={...groups}; delete next[gid].joiners[name];
+      await saveGroups(next); showToast(`🗑 已刪除 ${name}`);
+      setSubPage("group-"+gid);
+    };
+
+    // 開啟編輯跟團者
+    const openEditJoiner=(gid,name)=>{
+      const data=groups[gid].joiners[name];
+      setEditJoiner({gid,name,note:data.note||""});
+      setEditSlots({...(data.slots||{})});
+      setSubPage("joiner-"+gid+"-"+name);
+    };
+
+    // 儲存跟團者
+    const saveJoiner=async()=>{
+      const {gid,name}=editJoiner;
+      const next={...groups};
+      next[gid].joiners[name]={...next[gid].joiners[name],slots:editSlots,note:editJoiner.note};
+      await saveGroups(next); showToast("✅ 已更新"); setSubPage("group-"+gid);
+    };
+
+    // 刪除許願
+    const deleteWish=async(i)=>{
+      await saveWishes(wishes.filter((_,j)=>j!==i)); showToast("🗑 已刪除許願");
+    };
+
+    if(!authed) return (<div style={S.card}>
+      <h2 style={S.sT}>🛡 網頁管理員登入</h2>
+      <p style={{fontSize:13,color:"#6b8aa8",marginBottom:16}}>此區域僅限網站管理員使用</p>
+      <div style={{marginBottom:16}}><F label="管理員密碼"><input type="password" style={S.input} placeholder="輸入管理員密碼" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()}/></F></div>
+      <button style={{...S.btn("primary"),width:"100%"}} onClick={login}>登入 →</button>
+    </div>);
+
+    // 編輯跟團者子頁面
+    if(subPage.startsWith("joiner-")&&editJoiner){
+      const {gid}=editJoiner;
+      const dates=getDates(groups[gid]);
+      return (<div style={S.card}>
+        <h2 style={S.sT}>✏️ 修改跟團者：{editJoiner.name}</h2>
+        <div style={{fontSize:12,color:"#6b8aa8",marginBottom:12}}>活動：{groups[gid]?.activityName}</div>
+        <label style={S.label}>可以的時間</label>
+        <SlotPicker dates={dates} mySlots={editSlots} setMySlots={setEditSlots} organizerSlots={groups[gid]?.organizerSlots||{}} otherJoiners={Object.fromEntries(Object.entries(groups[gid]?.joiners||{}).filter(([n])=>n!==editJoiner.name))}/>
+        <div style={{height:14}}/>
+        <F label="備註"><textarea style={S.textarea} value={editJoiner.note} onChange={e=>setEditJoiner(p=>({...p,note:e.target.value}))}/></F>
+        <div style={{display:"flex",gap:10,marginTop:14}}>
+          <button style={S.btn("ghost")} onClick={()=>setSubPage("group-"+editJoiner.gid)}>← 返回</button>
+          <button style={{...S.btn("success"),flex:1}} onClick={saveJoiner}>💾 儲存</button>
+        </div>
+      </div>);
+    }
+
+    // 單一活動詳情子頁面
+    if(subPage.startsWith("group-")){
+      const gid=subPage.replace("group-","");
+      const g=groups[gid]; if(!g) return null;
+      const joiners=g.joiners||{}, names=Object.keys(joiners);
+      const dates=getDates(g);
+      const maxP=g.maxPeople?parseInt(g.maxPeople):null;
+      const joinerLimit=maxP?maxP-1:null;
+      return (<div style={S.card}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
+          <h2 style={{...S.sT,margin:0}}>⚙️ {g.activityName}</h2>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            <button style={S.btn("ghost")} onClick={()=>setTab("view-"+gid)}>查看交集</button>
+            <button style={{...S.btn("danger"),padding:"8px 14px",fontSize:12}} onClick={()=>deleteGroup(gid)}>🗑 刪除活動</button>
+            <button style={S.btn("ghost")} onClick={()=>setSubPage("dashboard")}>← 返回</button>
+          </div>
+        </div>
+        <div style={{background:"#080d18",border:"1px solid #1e2d45",borderRadius:10,padding:14,marginBottom:16,fontSize:12,color:"#8aaac8",display:"flex",flexWrap:"wrap",gap:"4px 14px"}}>
+          <span>👤 {g.name}</span>
+          {g.dateStart&&<span>📅 {fmt(g.dateStart)}{g.dateEnd&&g.dateEnd!==g.dateStart?` ～ ${fmt(g.dateEnd)}`:""}</span>}
+          {g.location&&<span>📍 {g.location}</span>}
+          {g.cost&&<span>💰 {g.cost}</span>}
+          {joinerLimit&&<span>👥 {names.length}/{joinerLimit}人</span>}
+        </div>
+        <div style={{fontWeight:700,fontSize:14,color:"#e2f0ff",marginBottom:10}}>🙋 跟團者（{names.length}人）</div>
+        {names.length===0&&<p style={{fontSize:13,color:"#374a5e"}}>還沒有人跟團</p>}
+        {names.map((n,i)=>{
+          const j=joiners[n], slotLabels=TIME_SLOTS.filter(slot=>Object.keys(j.slots||{}).some(k=>k.endsWith("-"+slot.key)));
+          return (<div key={n} style={{background:"#080d18",border:"1px solid #1e2d45",borderRadius:10,padding:14,marginBottom:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+              <span style={S.badge(COLORS[i%COLORS.length])}>{n}</span>
+              <div style={{display:"flex",gap:8}}>
+                <button style={{...S.btn("secondary"),padding:"6px 14px",fontSize:12}} onClick={()=>openEditJoiner(gid,n)}>✏️ 修改</button>
+                <button style={{...S.btn("danger"),padding:"6px 14px",fontSize:12}} onClick={()=>deleteJoiner(gid,n)}>🗑 刪除</button>
+              </div>
+            </div>
+            {j.note&&<div style={{fontSize:12,color:"#6b8aa8",marginTop:6}}>備註：{j.note}</div>}
+            <div style={{marginTop:8,display:"flex",flexWrap:"wrap",gap:4}}>{slotLabels.map(s=><span key={s.key} style={S.badge(s.color)}>{s.label} {s.time}</span>)}{slotLabels.length===0&&<span style={{fontSize:12,color:"#374a5e"}}>未選任何時段</span>}</div>
+          </div>);
+        })}
+      </div>);
+    }
+
+    // Dashboard 主頁面
+    return (<div style={S.card}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:8}}>
+        <h2 style={{...S.sT,margin:0}}>🛡 網頁管理員</h2>
+        <button style={S.btn("ghost")} onClick={()=>{setAuthed(false);setPw("");}}>登出</button>
+      </div>
+
+      {/* 數據統計 */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
+        {[["🎪","活動數",totalGroups,"#38bdf8"],["🙋","跟團人次",totalJoiners,"#34d399"],["🌟","許願數",totalWishes,"#a78bfa"]].map(([icon,label,val,color])=>(
+          <div key={label} style={{background:"#080d18",border:`1px solid ${color}33`,borderRadius:12,padding:16,textAlign:"center"}}>
+            <div style={{fontSize:24}}>{icon}</div>
+            <div style={{fontSize:28,fontWeight:900,color,fontFamily:"'Syne',sans-serif"}}>{val}</div>
+            <div style={{fontSize:11,color:"#6b8aa8",marginTop:2}}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* 所有活動列表 */}
+      <div style={{fontWeight:700,fontSize:14,color:"#e2f0ff",marginBottom:10}}>🎪 所有活動</div>
+      {allIds.length===0&&<p style={{fontSize:13,color:"#374a5e",marginBottom:16}}>目前沒有活動</p>}
+      {allIds.map((id,i)=>{
+        const g=groups[id], jc=Object.keys(g.joiners||{}).length;
+        const maxP=g.maxPeople?parseInt(g.maxPeople):null;
+        const joinerLimit=maxP?maxP-1:null;
+        const isFull=joinerLimit&&jc>=joinerLimit;
+        return (<div key={id} style={{background:"#080d18",border:"1px solid #1e2d45",borderRadius:10,padding:14,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+          <div style={{cursor:"pointer",flex:1}} onClick={()=>setSubPage("group-"+id)}>
+            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <span style={S.badge(COLORS[i%COLORS.length])}># {id}</span>
+              <span style={{fontWeight:700,fontSize:14}}>{g.activityName}</span>
+              {isFull&&<span style={{background:"#dc262622",border:"1px solid #dc262655",borderRadius:6,padding:"2px 8px",fontSize:11,color:"#f87171",fontWeight:700}}>額滿</span>}
+            </div>
+            <div style={{fontSize:12,color:"#6b8aa8",marginTop:4}}>
+              👤 {g.name} ｜ 🙋 {jc}{joinerLimit?`/${joinerLimit}`:""}人 ｜ 📅 {fmt(g.dateStart)}
+            </div>
+          </div>
+          <button style={{...S.btn("danger"),padding:"6px 14px",fontSize:12}} onClick={()=>deleteGroup(id)}>🗑</button>
+        </div>);
+      })}
+
+      {/* 許願池管理 */}
+      <hr style={{...S.div,margin:"20px 0"}}/>
+      <div style={{fontWeight:700,fontSize:14,color:"#e2f0ff",marginBottom:10}}>🌟 許願池（{wishes.length}）</div>
+      {wishes.length===0&&<p style={{fontSize:13,color:"#374a5e"}}>許願池是空的</p>}
+      {wishes.map((w,i)=>(
+        <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",background:"#080d18",border:"1px solid #1e2d45",borderRadius:10,padding:14,marginBottom:8}}>
+          <div><div style={{fontSize:13}}>{w.content}</div><div style={{fontSize:11,color:"#374a5e",marginTop:3}}>{new Date(w.time).toLocaleString("zh-TW")}</div></div>
+          <button style={{...S.btn("danger"),padding:"4px 10px",fontSize:12}} onClick={()=>deleteWish(i)}>🗑</button>
+        </div>
+      ))}
+    </div>);
+  };
+
   // WISH
   const WishTab=()=>{
     const [content,setContent]=useState("");
@@ -773,12 +935,12 @@ function App() {
 
   const isView=tab.startsWith("view-");
   const viewGid=isView?tab.replace("view-",""):null;
-  const navItems=[{key:"home",label:"🏠 活動列表"},{key:"organizer",label:"🚀 開團"},{key:"joiner",label:"🙋 跟團"},{key:"admin",label:"🔐 管理者"},{key:"wish",label:"🌟 許願池"}];
+  const navItems=[{key:"home",label:"🏠 活動列表"},{key:"organizer",label:"🚀 開團"},{key:"joiner",label:"🙋 跟團"},{key:"admin",label:"🔐 開團者"},{key:"superadmin",label:"🛡 網頁管理員"},{key:"wish",label:"🌟 許願池"}];
 
   return (
     <div style={S.root}>
       <div style={S.topbar}>
-        <h1 style={S.title}>🎯 JoinUp v3</h1>
+        <h1 style={S.title}>🎯 JoinUp</h1>
         <div style={S.nav}>
           {navItems.map(({key,label})=><button key={key} style={S.navBtn(tab===key)} onClick={()=>setTab(key)}>{label}</button>)}
           {isView&&<button style={S.navBtn(true)}>📊 活動詳情</button>}
@@ -790,6 +952,7 @@ function App() {
         {!loading&&tab==="organizer"&&<OrganizerTab/>}
         {!loading&&tab==="joiner"&&<JoinerTab/>}
         {!loading&&tab==="admin"&&<AdminTab/>}
+        {!loading&&tab==="superadmin"&&<SuperAdminTab/>}
         {!loading&&tab==="wish"&&<WishTab/>}
         {!loading&&isView&&<ViewTab gid={viewGid}/>}
       </div>
