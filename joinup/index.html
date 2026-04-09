@@ -295,35 +295,55 @@ function App() {
   const F=({label,required,children})=>(<div><label style={S.label}>{label}{required&&<span style={{color:"#f87171"}}> *</span>}</label>{children}</div>);
 
   // HOME
+  const isExpired=(g)=>{
+    const end=g.dateEnd||g.dateStart;
+    if(!end) return false;
+    const endDate=new Date(end); endDate.setHours(23,59,59,999);
+    return endDate < new Date();
+  };
+
+  const ActivityCard=({id,g,i,expired})=>{
+    const jc=Object.keys(g.joiners||{}).length;
+    const maxP=g.maxPeople?parseInt(g.maxPeople):null;
+    const joinerLimit=maxP?maxP-1:null;
+    const isFull=joinerLimit&&jc>=joinerLimit;
+    return (<div key={id} onClick={()=>setTab("view-"+id)} style={{background:"#080d18",border:"1px solid #1e2d45",borderRadius:12,padding:16,marginBottom:10,cursor:"pointer",opacity:expired?0.5:1}}>
+      <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+        <div>
+          <span style={S.badge(COLORS[i%COLORS.length])}># {id}</span>
+          <span style={{fontWeight:800,fontSize:15,marginLeft:10}}>{g.activityName}</span>
+          {expired&&<span style={{marginLeft:8,background:"#52525b22",border:"1px solid #52525b55",borderRadius:6,padding:"2px 8px",fontSize:11,color:"#a1a1aa",fontWeight:700}}>已結束</span>}
+          {!expired&&isFull&&<span style={{marginLeft:8,background:"#dc262622",border:"1px solid #dc262655",borderRadius:6,padding:"2px 8px",fontSize:11,color:"#f87171",fontWeight:700}}>額滿</span>}
+        </div>
+        <span style={{fontSize:12,color:"#6b8aa8"}}>{fmt(g.dateStart)}{g.dateEnd&&g.dateEnd!==g.dateStart?` ～ ${fmt(g.dateEnd)}`:""}</span>
+      </div>
+      <div style={{marginTop:6,fontSize:12,color:"#8aaac8"}}>
+        👤 {g.name} &nbsp;|&nbsp;
+        🙋 <span style={{color:!expired&&isFull?"#f87171":"#8aaac8"}}>{jc}{joinerLimit?`/${joinerLimit}`:""}人</span>
+        {g.location&&<> &nbsp;|&nbsp; 📍 {g.location}</>}
+        {g.cost&&<> &nbsp;|&nbsp; 💰 {g.cost}</>}
+      </div>
+    </div>);
+  };
+
   const HomeTab=()=>{
+    const [showExpired,setShowExpired]=useState(false);
     const ids=Object.keys(groups);
+    const activeIds=ids.filter(id=>!isExpired(groups[id]));
+    const expiredIds=ids.filter(id=>isExpired(groups[id]));
     return (<div style={S.card}>
       <h2 style={S.sT}>🎪 所有活動</h2>
       {!fbReady&&<div style={{background:"#1e0a0a",border:"1px solid #f8717144",borderRadius:8,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#f87171"}}>⚠ Firebase 未設定，資料僅存本機。請完成設定後重新整理。</div>}
       {ids.length===0&&<p style={{color:"#6b8aa8",fontSize:14}}>還沒有活動，去「開團」建立第一個吧！</p>}
-      {ids.map((id,i)=>{
-        const g=groups[id];
-        const jc=Object.keys(g.joiners||{}).length;
-        const maxP=g.maxPeople?parseInt(g.maxPeople):null;
-        const joinerLimit=maxP?maxP-1:null;
-        const isFull=joinerLimit&&jc>=joinerLimit;
-        return (<div key={id} onClick={()=>setTab("view-"+id)} style={{background:"#080d18",border:"1px solid #1e2d45",borderRadius:12,padding:16,marginBottom:10,cursor:"pointer"}}>
-          <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-            <div>
-              <span style={S.badge(COLORS[i%COLORS.length])}># {id}</span>
-              <span style={{fontWeight:800,fontSize:15,marginLeft:10}}>{g.activityName}</span>
-              {isFull&&<span style={{marginLeft:8,background:"#dc262622",border:"1px solid #dc262655",borderRadius:6,padding:"2px 8px",fontSize:11,color:"#f87171",fontWeight:700}}>額滿</span>}
-            </div>
-            <span style={{fontSize:12,color:"#6b8aa8"}}>{fmt(g.dateStart)}{g.dateEnd&&g.dateEnd!==g.dateStart?` ～ ${fmt(g.dateEnd)}`:""}</span>
-          </div>
-          <div style={{marginTop:6,fontSize:12,color:"#8aaac8"}}>
-            👤 {g.name} &nbsp;|&nbsp;
-            🙋 <span style={{color:isFull?"#f87171":"#8aaac8"}}>{jc}{joinerLimit?`/${joinerLimit}`:""}人</span>
-            {g.location&&<> &nbsp;|&nbsp; 📍 {g.location}</>}
-            {g.cost&&<> &nbsp;|&nbsp; 💰 {g.cost}</>}
-          </div>
-        </div>);
-      })}
+      {activeIds.map((id,i)=><ActivityCard key={id} id={id} g={groups[id]} i={i} expired={false}/>)}
+      {activeIds.length===0&&expiredIds.length>0&&<p style={{color:"#6b8aa8",fontSize:14,marginBottom:12}}>目前沒有進行中的活動</p>}
+      {expiredIds.length>0&&<>
+        <div onClick={()=>setShowExpired(!showExpired)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",padding:"12px 0 8px",borderTop:"1px solid #1e2d45",marginTop:8}}>
+          <span style={{fontSize:12,color:"#6b8aa8",fontWeight:700}}>已結束活動 ({expiredIds.length})</span>
+          <span style={{fontSize:10,color:"#6b8aa8",transition:"transform 0.2s",transform:showExpired?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
+        </div>
+        {showExpired&&expiredIds.map((id,i)=><ActivityCard key={id} id={id} g={groups[id]} i={activeIds.length+i} expired={true}/>)}
+      </>}
     </div>);
   };
 
