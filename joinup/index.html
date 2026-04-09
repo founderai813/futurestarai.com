@@ -3,16 +3,14 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>JoinUp 揪團神器</title>
+<title>JoinUp 揪團神器 v2</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
 
 <!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // ══════════════════════════════════════════════════════
-  // 👇 把你的 Firebase 設定填在這裡
   const firebaseConfig = {
     apiKey: "AIzaSyA7drKkcTJ8Tr-to422Sh_r_SLz52ASJb0",
     authDomain: "joinup-a4e3d.firebaseapp.com",
@@ -21,7 +19,6 @@
     messagingSenderId: "252645221802",
     appId: "1:252645221802:web:6d789d18a38e55c12d37d3"
   };
-  // ══════════════════════════════════════════════════════
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -29,7 +26,6 @@
   window._fbReady = true;
   window.dispatchEvent(new Event("firebase-ready"));
 
-  // DB helpers
   window.dbGet = async (col, id) => {
     try { const snap = await getDoc(doc(db, col, id)); return snap.exists() ? snap.data() : null; } catch(e) { return null; }
   };
@@ -44,7 +40,6 @@
   };
 </script>
 
-<!-- React + Babel -->
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -74,7 +69,6 @@ const TIME_SLOTS = [
   { key:"evening",   label:"晚上", time:"19:00–21:00", color:"#38bdf8" },
 ];
 
-// ── Storage: Firebase + localStorage fallback ──────────────────────────────
 const ls = {
   get: (k) => { try { const v=localStorage.getItem("ju_"+k); return v?JSON.parse(v):null; } catch{return null;} },
   set: (k,v) => { try { localStorage.setItem("ju_"+k, JSON.stringify(v)); } catch{} },
@@ -82,7 +76,13 @@ const ls = {
 };
 
 const DB = {
-  get: async (col, id) => window._fbReady ? (window.dbGet(col,id)||ls.get(col+"_"+id)) : ls.get(col+"_"+id),
+  get: async (col, id) => {
+    if (window._fbReady) {
+      const fbData = await window.dbGet(col, id);
+      if (fbData) return fbData;
+    }
+    return ls.get(col+"_"+id);
+  },
   set: async (col, id, data) => { ls.set(col+"_"+id, data); if(window._fbReady) await window.dbSet(col, id, data); },
   del: async (col, id) => { ls.del(col+"_"+id); if(window._fbReady) await window.dbDel(col, id); },
 };
@@ -238,7 +238,7 @@ function App() {
     };
     const onReady = () => { setFbReady(true); init(); };
     if (window._fbReady) { setFbReady(true); init(); }
-    else { window.addEventListener("firebase-ready", onReady); init(); } // also load from ls immediately
+    else { window.addEventListener("firebase-ready", onReady); init(); }
     return () => window.removeEventListener("firebase-ready", onReady);
   },[]);
 
@@ -302,13 +302,26 @@ function App() {
       {!fbReady&&<div style={{background:"#1e0a0a",border:"1px solid #f8717144",borderRadius:8,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#f87171"}}>⚠ Firebase 未設定，資料僅存本機。請完成設定後重新整理。</div>}
       {ids.length===0&&<p style={{color:"#6b8aa8",fontSize:14}}>還沒有活動，去「開團」建立第一個吧！</p>}
       {ids.map((id,i)=>{
-        const g=groups[id]; const jc=Object.keys(g.joiners||{}).length;
+        const g=groups[id];
+        const jc=Object.keys(g.joiners||{}).length;
+        const maxP=g.maxPeople?parseInt(g.maxPeople):null;
+        const joinerLimit=maxP?maxP-1:null;
+        const isFull=joinerLimit&&jc>=joinerLimit;
         return (<div key={id} onClick={()=>setTab("view-"+id)} style={{background:"#080d18",border:"1px solid #1e2d45",borderRadius:12,padding:16,marginBottom:10,cursor:"pointer"}}>
           <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-            <div><span style={S.badge(COLORS[i%COLORS.length])}># {id}</span><span style={{fontWeight:800,fontSize:15,marginLeft:10}}>{g.activityName}</span></div>
+            <div>
+              <span style={S.badge(COLORS[i%COLORS.length])}># {id}</span>
+              <span style={{fontWeight:800,fontSize:15,marginLeft:10}}>{g.activityName}</span>
+              {isFull&&<span style={{marginLeft:8,background:"#dc262622",border:"1px solid #dc262655",borderRadius:6,padding:"2px 8px",fontSize:11,color:"#f87171",fontWeight:700}}>額滿</span>}
+            </div>
             <span style={{fontSize:12,color:"#6b8aa8"}}>{fmt(g.dateStart)}{g.dateEnd&&g.dateEnd!==g.dateStart?` ～ ${fmt(g.dateEnd)}`:""}</span>
           </div>
-          <div style={{marginTop:6,fontSize:12,color:"#8aaac8"}}>👤 {g.name} &nbsp;|&nbsp; 🙋 {jc}人跟團{g.location&&<> &nbsp;|&nbsp; 📍 {g.location}</>}{g.cost&&<> &nbsp;|&nbsp; 💰 {g.cost}</>}</div>
+          <div style={{marginTop:6,fontSize:12,color:"#8aaac8"}}>
+            👤 {g.name} &nbsp;|&nbsp;
+            🙋 <span style={{color:isFull?"#f87171":"#8aaac8"}}>{jc}{joinerLimit?`/${joinerLimit}`:""}人</span>
+            {g.location&&<> &nbsp;|&nbsp; 📍 {g.location}</>}
+            {g.cost&&<> &nbsp;|&nbsp; 💰 {g.cost}</>}
+          </div>
         </div>);
       })}
     </div>);
@@ -364,7 +377,7 @@ function App() {
       <div style={S.g3}>
         <F label="預計時數"><input type="number" style={S.input} placeholder="例：3" min={0} value={form.hours} onChange={e=>set("hours",e.target.value)}/></F>
         <F label="活動費用"><input style={S.input} placeholder="例：NT$500" value={form.cost} onChange={e=>set("cost",e.target.value)}/></F>
-        <F label="人數上限"><input type="number" style={S.input} placeholder="例：20" min={1} value={form.maxPeople} onChange={e=>set("maxPeople",e.target.value)}/></F>
+        <F label="人數上限（含主揪）"><input type="number" style={S.input} placeholder="例：20" min={1} value={form.maxPeople} onChange={e=>set("maxPeople",e.target.value)}/><div style={{fontSize:10,color:"#374a5e",marginTop:3}}>跟團者上限 = 此數字 - 1</div></F>
       </div>
       <div style={{marginBottom:14}}><F label="活動地點"><input style={S.input} placeholder="例：台北市信義區" value={form.location} onChange={e=>set("location",e.target.value)}/></F></div>
       <F label="活動內容說明"><textarea style={S.textarea} placeholder="詳細描述活動內容…" value={form.description} onChange={e=>set("description",e.target.value)}/></F>
@@ -379,7 +392,7 @@ function App() {
     </div>);
   };
 
-  // JOINER
+  // JOINER — ✅ 新增人數上限擋截邏輯
   const JoinerTab=()=>{
     const [step,setStep]=useState(1);
     const [gid,setGid]=useState("");
@@ -388,36 +401,90 @@ function App() {
     const [slots,setSlots]=useState({});
     const [note,setNote]=useState("");
     const [done,setDone]=useState(false);
+    const [submitting,setSubmitting]=useState(false);
+
     const findGroup=()=>{
-      // Reload latest from storage first
       const latest=groups[gid.trim().toLowerCase()];
       if(!latest){showToast("❌ 找不到此開團編號");return;}
       setGroup(latest); setStep(2);
     };
+
+    // 計算人數狀態
+    const getCapacityInfo = (g) => {
+      if (!g) return { isFull: false, joinerCount: 0, joinerLimit: null };
+      const joinerCount = Object.keys(g.joiners||{}).length;
+      const maxP = g.maxPeople ? parseInt(g.maxPeople) : null;
+      const joinerLimit = maxP ? maxP - 1 : null;
+      // 如果名字已存在（更新），不算新增
+      const isExisting = name.trim() && !!g.joiners?.[name.trim()];
+      const isFull = joinerLimit !== null && joinerCount >= joinerLimit && !isExisting;
+      return { isFull, joinerCount, joinerLimit, isExisting };
+    };
+
     const submit=async()=>{
       if(!name.trim()){showToast("❗ 請填寫姓名");return;}
+      setSubmitting(true);
       const id=gid.trim().toLowerCase();
-      // Reload latest group before saving to avoid overwriting other joiners
+
+      // 從 Firebase 讀最新資料（雙重確認）
       const latestData = await DB.get("app","groups");
       const latest = latestData?.data || groups;
-      if(!latest[id]) return;
-      const next={...latest,[id]:{...latest[id],joiners:{...(latest[id].joiners||{}),[name.trim()]:{slots,note,joinedAt:Date.now()}}}};
+      const latestGroup = latest[id];
+      if(!latestGroup){ showToast("❌ 活動不存在"); setSubmitting(false); return; }
+
+      // 人數上限最終確認
+      const { isFull, isExisting } = getCapacityInfo({ ...latestGroup, joiners: latestGroup.joiners || {} });
+      // 重新算：用最新資料 + 當前填的名字
+      const latestJoiners = latestGroup.joiners || {};
+      const latestCount = Object.keys(latestJoiners).length;
+      const maxP = latestGroup.maxPeople ? parseInt(latestGroup.maxPeople) : null;
+      const joinerLimit = maxP ? maxP - 1 : null;
+      const latestIsExisting = !!latestJoiners[name.trim()];
+      const latestIsFull = joinerLimit !== null && latestCount >= joinerLimit && !latestIsExisting;
+
+      if (latestIsFull) {
+        showToast("❌ 很抱歉，名額已滿！");
+        setGroup(latestGroup);
+        setSubmitting(false);
+        return;
+      }
+
+      const next={...latest,[id]:{...latestGroup,joiners:{...(latestJoiners),[name.trim()]:{slots,note,joinedAt:Date.now()}}}};
       await saveGroups(next);
       setDone(true); showToast("✅ 跟團成功！");
+      setSubmitting(false);
     };
+
     if(done) return (<div style={S.card}><div style={{textAlign:"center",padding:"20px 0"}}>
       <div style={{fontSize:48}}>🙌</div>
       <h2 style={{...S.sT,textAlign:"center"}}>跟團成功！</h2>
       <p style={{color:"#6b8aa8"}}>已送出可用時間，等開團者確認！</p>
       <button style={{...S.btn("primary"),marginTop:16}} onClick={()=>setTab("view-"+gid.trim().toLowerCase())}>查看時間交集</button>
     </div></div>);
+
     const dates=group?getDates(group):null;
+    const { isFull, joinerCount, joinerLimit, isExisting } = getCapacityInfo(group);
+
     return (<div style={S.card}>
       <h2 style={S.sT}>🙋 跟團</h2>
       {step===1&&<><F label="開團編號"><input style={S.input} placeholder="輸入開團編號" value={gid} onChange={e=>setGid(e.target.value)} onKeyDown={e=>e.key==="Enter"&&findGroup()}/></F><button style={{...S.btn("primary"),marginTop:12}} onClick={findGroup}>查找活動 →</button></>}
       {step===2&&group&&<>
         <div style={{background:"#080d18",border:"1px solid #1e2d45",borderRadius:10,padding:14,marginBottom:16}}>
-          <div style={{fontWeight:800,fontSize:15,marginBottom:5}}>{group.activityName}</div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
+            <div style={{fontWeight:800,fontSize:15,marginBottom:5}}>{group.activityName}</div>
+            {/* ── 人數顯示 ── */}
+            {joinerLimit !== null && (
+              <div style={{
+                background: isFull ? "#dc262622" : "#38bdf822",
+                border: `1px solid ${isFull ? "#dc262655" : "#38bdf855"}`,
+                borderRadius: 8, padding: "4px 12px", fontSize: 13, fontWeight: 700,
+                color: isFull ? "#f87171" : "#38bdf8"
+              }}>
+                🙋 {joinerCount} / {joinerLimit} 人
+                {isFull && <span style={{marginLeft:6}}>額滿</span>}
+              </div>
+            )}
+          </div>
           <div style={{fontSize:12,color:"#8aaac8",display:"flex",flexWrap:"wrap",gap:"4px 14px"}}>
             <span>👤 {group.name}</span>
             {group.dateStart&&<span>📅 {fmt(group.dateStart)}{group.dateEnd&&group.dateEnd!==group.dateStart?` ～ ${fmt(group.dateEnd)}`:""}</span>}
@@ -426,15 +493,40 @@ function App() {
           </div>
           {group.description&&<p style={{margin:"8px 0 0",fontSize:12,color:"#5a7a9a"}}>{group.description}</p>}
         </div>
-        <div style={{marginBottom:14}}><F label="你的名字" required><input style={S.input} placeholder="你的名字" value={name} onChange={e=>setName(e.target.value)}/></F></div>
-        <label style={S.label}>選擇可以的時間 <span style={{fontWeight:400,fontSize:10,color:"#374a5e"}}>(點擊格子切換)</span></label>
-        <SlotPicker dates={dates} mySlots={slots} setMySlots={setSlots} organizerSlots={group.organizerSlots||{}} otherJoiners={Object.fromEntries(Object.entries(group.joiners||{}).filter(([n])=>n!==name.trim()))}/>
-        <div style={{height:14}}/>
-        <F label="備註"><textarea style={S.textarea} placeholder="有什麼想說的…" value={note} onChange={e=>setNote(e.target.value)}/></F>
-        <div style={{display:"flex",gap:10,marginTop:14}}>
-          <button style={S.btn("ghost")} onClick={()=>setStep(1)}>← 返回</button>
-          <button style={{...S.btn("success"),flex:1}} onClick={submit}>🙌 送出跟團！</button>
-        </div>
+
+        {/* ── 額滿擋截 Banner ── */}
+        {isFull && !isExisting ? (
+          <div style={{
+            background:"#1a0a0a",
+            border:"2px solid #dc2626",
+            borderRadius:12,
+            padding:"24px 20px",
+            textAlign:"center",
+            marginBottom:16
+          }}>
+            <div style={{fontSize:36,marginBottom:8}}>🚫</div>
+            <div style={{fontSize:18,fontWeight:800,color:"#f87171",marginBottom:6}}>名額已滿</div>
+            <div style={{fontSize:13,color:"#9a4a4a"}}>此活動的跟團名額已額滿（{joinerCount}/{joinerLimit} 人）</div>
+            <div style={{fontSize:12,color:"#6b4a4a",marginTop:4}}>請聯絡開團者確認是否有空缺</div>
+            <button style={{...S.btn("ghost"),marginTop:16}} onClick={()=>setStep(1)}>← 返回查找其他活動</button>
+          </div>
+        ) : (
+          <>
+            <div style={{marginBottom:14}}><F label="你的名字" required><input style={S.input} placeholder="你的名字" value={name} onChange={e=>setName(e.target.value)}/></F>
+              {isExisting && <div style={{fontSize:11,color:"#fbbf24",marginTop:4}}>⚠ 此名字已有填寫記錄，送出後會覆蓋</div>}
+            </div>
+            <label style={S.label}>選擇可以的時間 <span style={{fontWeight:400,fontSize:10,color:"#374a5e"}}>(點擊格子切換)</span></label>
+            <SlotPicker dates={dates} mySlots={slots} setMySlots={setSlots} organizerSlots={group.organizerSlots||{}} otherJoiners={Object.fromEntries(Object.entries(group.joiners||{}).filter(([n])=>n!==name.trim()))}/>
+            <div style={{height:14}}/>
+            <F label="備註"><textarea style={S.textarea} placeholder="有什麼想說的…" value={note} onChange={e=>setNote(e.target.value)}/></F>
+            <div style={{display:"flex",gap:10,marginTop:14}}>
+              <button style={S.btn("ghost")} onClick={()=>setStep(1)}>← 返回</button>
+              <button style={{...S.btn("success"),flex:1,opacity:submitting?0.6:1}} onClick={submit} disabled={submitting}>
+                {submitting ? "送出中…" : "🙌 送出跟團！"}
+              </button>
+            </div>
+          </>
+        )}
       </>}
     </div>);
   };
@@ -443,7 +535,6 @@ function App() {
   const ViewTab=({gid})=>{
     const [localGroup,setLocalGroup]=useState(null);
     useEffect(()=>{
-      // Listen to real-time updates
       if(window._fbReady && window.dbListen) {
         const unsub=window.dbListen("app","groups",(data)=>{ if(data?.data?.[gid]) setLocalGroup(data.data[gid]); });
         return unsub;
@@ -477,7 +568,7 @@ function App() {
         {group.hours&&<span>⏱ {group.hours}h</span>}
         {group.location&&<span>📍 {group.location}</span>}
         {group.cost&&<span>💰 {group.cost}</span>}
-        {group.maxPeople&&<span>👥 上限{group.maxPeople}人</span>}
+        {group.maxPeople&&<span>👥 上限{group.maxPeople}人（含主揪）</span>}
       </div>
       {group.description&&<p style={{fontSize:12,color:"#6b8aa8",marginBottom:12}}>{group.description}</p>}
       <hr style={S.div}/>
@@ -498,11 +589,14 @@ function App() {
     </div>);
   };
 
-  // ADMIN
+  // ADMIN — ✅ 新增「修改主揪時段」獨立子頁面
   const AdminTab=()=>{
     const [step,setStep]=useState(1);
     const [gid,setGid]=useState(""), [pw,setPw]=useState(""), [authedId,setAuthedId]=useState(null);
     const [editGroup,setEditGroup]=useState(null), [editJoiner,setEditJoiner]=useState(null), [editSlots,setEditSlots]=useState({});
+    const [editingOrgSlots,setEditingOrgSlots]=useState(false); // ✅ 新增：是否在編輯主揪時段
+    const [orgSlotsDraft,setOrgSlotsDraft]=useState({});        // ✅ 新增：主揪時段草稿
+
     const login=()=>{
       const id=gid.trim().toLowerCase(), g=groups[id];
       if(!g){showToast("❌ 找不到此開團編號");return;}
@@ -511,12 +605,27 @@ function App() {
     };
     const group=authedId?groups[authedId]:null;
     const dates=group?getDates(group):null;
+
     const saveGroupInfo=async()=>{ const next={...groups,[authedId]:{...groups[authedId],...editGroup}}; await saveGroups(next); showToast("✅ 已更新活動資訊"); };
     const deleteGroup=async()=>{ if(!window.confirm(`確定刪除整個活動「${group?.activityName}」？`)) return; const next={...groups}; delete next[authedId]; await saveGroups(next); setStep(1);setAuthedId(null);setGid("");setPw(""); showToast("🗑 活動已刪除"); };
     const deleteJoiner=async(name)=>{ const next={...groups}; delete next[authedId].joiners[name]; await saveGroups(next); showToast(`🗑 已刪除 ${name}`); };
     const openEditJoiner=(name)=>{ const data=groups[authedId].joiners[name]; setEditJoiner({name,note:data.note||""}); setEditSlots({...(data.slots||{})}); };
     const saveJoiner=async()=>{ const next={...groups}; next[authedId].joiners[editJoiner.name]={...next[authedId].joiners[editJoiner.name],slots:editSlots,note:editJoiner.note}; await saveGroups(next); setEditJoiner(null); showToast("✅ 已更新跟團者資料"); };
     const set=(k,v)=>setEditGroup(p=>({...p,[k]:v}));
+
+    // ✅ 開始編輯主揪時段
+    const openEditOrgSlots=()=>{
+      setOrgSlotsDraft({...(groups[authedId]?.organizerSlots||{})});
+      setEditingOrgSlots(true);
+    };
+    // ✅ 儲存主揪時段
+    const saveOrgSlots=async()=>{
+      const next={...groups,[authedId]:{...groups[authedId],organizerSlots:orgSlotsDraft}};
+      await saveGroups(next);
+      setEditingOrgSlots(false);
+      showToast("✅ 已更新主揪可用時段");
+    };
+
     if(step===1) return (<div style={S.card}>
       <h2 style={S.sT}>🔐 管理者登入</h2>
       <p style={{fontSize:13,color:"#6b8aa8",marginBottom:16}}>輸入開團編號與管理密碼</p>
@@ -524,6 +633,31 @@ function App() {
       <div style={{marginBottom:16}}><F label="管理密碼"><input type="password" style={S.input} placeholder="開團時設定的密碼" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()}/></F></div>
       <button style={{...S.btn("primary"),width:"100%"}} onClick={login}>登入管理 →</button>
     </div>);
+
+    // ✅ 主揪時段編輯獨立子頁面
+    if(editingOrgSlots) return (<div style={S.card}>
+      <h2 style={S.sT}>📅 修改主揪可用時段</h2>
+      <div style={{fontSize:13,color:"#6b8aa8",marginBottom:16}}>
+        以 <span style={{color:"#38bdf8",fontWeight:700}}>{group?.name}</span> 的身份編輯有空的時間
+      </div>
+      {dates ? (
+        <SlotPicker
+          dates={dates}
+          mySlots={orgSlotsDraft}
+          setMySlots={setOrgSlotsDraft}
+          otherJoiners={groups[authedId]?.joiners||{}}
+        />
+      ) : (
+        <div style={{background:"#1e0a0a",border:"1px solid #f8717144",borderRadius:8,padding:"12px 14px",fontSize:13,color:"#f87171"}}>
+          ⚠ 此活動未設定日期範圍，請先在「活動資訊」中填寫日期。
+        </div>
+      )}
+      <div style={{display:"flex",gap:10,marginTop:16}}>
+        <button style={S.btn("ghost")} onClick={()=>setEditingOrgSlots(false)}>← 返回管理</button>
+        <button style={{...S.btn("success"),flex:1}} onClick={saveOrgSlots}>💾 儲存時段</button>
+      </div>
+    </div>);
+
     if(editJoiner) return (<div style={S.card}>
       <h2 style={S.sT}>✏️ 修改跟團者：{editJoiner.name}</h2>
       <label style={S.label}>可以的時間</label>
@@ -535,7 +669,11 @@ function App() {
         <button style={{...S.btn("success"),flex:1}} onClick={saveJoiner}>💾 儲存修改</button>
       </div>
     </div>);
+
     const joiners=group?.joiners||{}, names=Object.keys(joiners);
+    const maxP=group?.maxPeople?parseInt(group.maxPeople):null;
+    const joinerLimit=maxP?maxP-1:null;
+
     return (<div style={S.card}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
         <h2 style={{...S.sT,margin:0}}>⚙️ 管理：{group?.activityName}</h2>
@@ -545,16 +683,36 @@ function App() {
           <button style={S.btn("ghost")} onClick={()=>{setStep(1);setAuthedId(null);setGid("");setPw("");}}>登出</button>
         </div>
       </div>
+
+      {/* ✅ 主揪時段編輯入口 */}
+      <div style={{background:"#080d18",border:"1px solid #38bdf833",borderRadius:10,padding:14,marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
+        <div>
+          <div style={{fontWeight:700,fontSize:14,color:"#38bdf8",marginBottom:3}}>📅 主揪可用時段</div>
+          <div style={{fontSize:12,color:"#6b8aa8"}}>
+            {Object.keys(groups[authedId]?.organizerSlots||{}).length > 0
+              ? `已設定 ${Object.keys(groups[authedId].organizerSlots).length} 個時段`
+              : "尚未設定時段"}
+          </div>
+        </div>
+        <button style={S.btn("primary")} onClick={openEditOrgSlots}>✏️ 修改主揪時段</button>
+      </div>
+
       <div style={{background:"#080d18",border:"1px solid #1e2d45",borderRadius:10,padding:16,marginBottom:16}}>
         <div style={{fontWeight:700,fontSize:14,color:"#e2f0ff",marginBottom:12}}>✏️ 活動資訊</div>
         <div style={S.g2}><F label="活動名稱"><input style={S.input} value={editGroup?.activityName||""} onChange={e=>set("activityName",e.target.value)}/></F><F label="開團者姓名"><input style={S.input} value={editGroup?.name||""} onChange={e=>set("name",e.target.value)}/></F></div>
         <div style={S.g2}><F label="開始日期"><input type="date" style={S.input} value={editGroup?.dateStart||""} onChange={e=>set("dateStart",e.target.value)}/></F><F label="結束日期"><input type="date" style={S.input} value={editGroup?.dateEnd||""} onChange={e=>set("dateEnd",e.target.value)}/></F></div>
-        <div style={S.g3}><F label="時數"><input type="number" style={S.input} value={editGroup?.hours||""} onChange={e=>set("hours",e.target.value)}/></F><F label="費用"><input style={S.input} value={editGroup?.cost||""} onChange={e=>set("cost",e.target.value)}/></F><F label="人數上限"><input type="number" style={S.input} value={editGroup?.maxPeople||""} onChange={e=>set("maxPeople",e.target.value)}/></F></div>
+        <div style={S.g3}><F label="時數"><input type="number" style={S.input} value={editGroup?.hours||""} onChange={e=>set("hours",e.target.value)}/></F><F label="費用"><input style={S.input} value={editGroup?.cost||""} onChange={e=>set("cost",e.target.value)}/></F>
+          <F label="人數上限（含主揪）"><input type="number" style={S.input} value={editGroup?.maxPeople||""} onChange={e=>set("maxPeople",e.target.value)}/><div style={{fontSize:10,color:"#374a5e",marginTop:3}}>跟團上限 = {editGroup?.maxPeople?(parseInt(editGroup.maxPeople)-1)+"人":"未設定"}</div></F>
+        </div>
         <div style={{marginBottom:14}}><F label="地點"><input style={S.input} value={editGroup?.location||""} onChange={e=>set("location",e.target.value)}/></F></div>
         <F label="說明"><textarea style={S.textarea} value={editGroup?.description||""} onChange={e=>set("description",e.target.value)}/></F>
         <button style={{...S.btn("success"),marginTop:12}} onClick={saveGroupInfo}>💾 儲存活動資訊</button>
       </div>
-      <div style={{fontWeight:700,fontSize:14,color:"#e2f0ff",marginBottom:10}}>🙋 跟團者（{names.length}人）</div>
+
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
+        <div style={{fontWeight:700,fontSize:14,color:"#e2f0ff"}}>🙋 跟團者（{names.length}{joinerLimit?`/${joinerLimit}`:""}人）</div>
+        {joinerLimit&&<span style={{fontSize:12,color:names.length>=joinerLimit?"#f87171":"#34d399"}}>{names.length>=joinerLimit?"⛔ 額滿":`還剩 ${joinerLimit-names.length} 個名額`}</span>}
+      </div>
       {names.length===0&&<p style={{fontSize:13,color:"#374a5e"}}>還沒有人跟團</p>}
       {names.map((n,i)=>{
         const j=joiners[n], slotLabels=TIME_SLOTS.filter(slot=>Object.keys(j.slots||{}).some(k=>k.endsWith("-"+slot.key)));
