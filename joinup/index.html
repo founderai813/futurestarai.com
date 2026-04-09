@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>JoinUp 揪團神器 v2</title>
+<title>JoinUp 揪團神器</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
 
 <!-- Firebase -->
@@ -758,7 +758,7 @@ function App() {
   return (
     <div style={S.root}>
       <div style={S.topbar}>
-        <h1 style={S.title}>🎯 JoinUp</h1>
+        <h1 style={S.title}>🎯 JoinUp v3</h1>
         <div style={S.nav}>
           {navItems.map(({key,label})=><button key={key} style={S.navBtn(tab===key)} onClick={()=>setTab(key)}>{label}</button>)}
           {isView&&<button style={S.navBtn(true)}>📊 活動詳情</button>}
