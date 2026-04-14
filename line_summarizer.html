@@ -175,10 +175,10 @@
   <div class="card">
     <div class="card-label">時間範圍</div>
     <div class="time-pills">
-      <div class="pill active" data-range="24h">近 24 小時</div>
+      <div class="pill" data-range="24h">近 24 小時</div>
       <div class="pill" data-range="3d">近 3 天</div>
       <div class="pill" data-range="7d">近 7 天</div>
-      <div class="pill" data-range="all">全部</div>
+      <div class="pill active" data-range="all">全部</div>
       <div class="pill" data-range="custom">自訂範圍</div>
     </div>
     <div class="custom-range" id="customRange">
@@ -197,10 +197,10 @@
       <div class="chip active" data-val="keywords">🔑 關鍵字</div>
       <div class="chip active" data-val="speakers">👥 重要發言者</div>
       <div class="chip active" data-val="topics">🗂️ 話題分類</div>
-      <div class="chip" data-val="actions">✅ 待辦事項</div>
-      <div class="chip" data-val="decisions">🔨 決定事項</div>
-      <div class="chip" data-val="followup">🔔 需跟進事項</div>
-      <div class="chip" data-val="mood">🌡️ 情緒氛圍</div>
+      <div class="chip active" data-val="actions">✅ 待辦事項</div>
+      <div class="chip active" data-val="decisions">🔨 決定事項</div>
+      <div class="chip active" data-val="followup">🔔 需跟進事項</div>
+      <div class="chip active" data-val="mood">🌡️ 情緒氛圍</div>
     </div>
   </div>
 
@@ -221,7 +221,7 @@
   const WORKER_URL = 'https://line-summarizer.founderai813.workers.dev';
 
   let groups = []; // { id, name, rawText, filteredText }
-  let currentRange = '24h';
+  let currentRange = 'all';
   let progressTimer = null;
   let currentFilteredGroups = [];
   let expandedKeyword = null;
