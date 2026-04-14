@@ -134,6 +134,28 @@
 
   .hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
   a { color: var(--accent); }
+
+  /* 主題搜尋 */
+  .search-section { margin-top: 1.5rem; }
+  .search-box { display: flex; gap: 8px; align-items: center; }
+  .search-input {
+    flex: 1; font-family: inherit; font-size: 14px;
+    padding: 10px 14px; border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); background: var(--surface2);
+    color: var(--text); outline: none; transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--accent-mid); background: var(--surface); }
+  .search-input::placeholder { color: var(--muted); }
+  .search-btn {
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent); color: white; border: none;
+    border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
+    padding: 10px 18px; cursor: pointer; font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .search-btn:hover { opacity: 0.85; }
+  .search-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .search-result { margin-top: 12px; }
   .file-trigger { display: none; }
 </style>
 </head>
@@ -548,6 +570,83 @@
     document.querySelectorAll('.tag').forEach(function(t) { t.classList.remove('expanded'); });
   }
 
+  async function searchTopic() {
+    var input = document.getElementById('searchInput');
+    var keyword = input.value.trim();
+    if (!keyword) return;
+    if (!currentFilteredGroups || currentFilteredGroups.length === 0) {
+      document.getElementById('searchResult').innerHTML = '<div style="color:var(--muted);font-size:13px;">請先完成分析再搜尋</div>';
+      return;
+    }
+
+    var btn = document.getElementById('searchBtn');
+    var resultEl = document.getElementById('searchResult');
+    btn.disabled = true;
+    btn.textContent = '搜尋中...';
+    resultEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0;">AI 正在搜尋「' + escapeHtml(keyword) + '」...</div>';
+
+    try {
+      var res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'keyword', keyword: keyword, groups: currentFilteredGroups })
+      });
+      var data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      var d = data.result;
+      var html = '<div class="keyword-panel" style="margin-top:0;">' +
+        '<div class="keyword-panel-header">' +
+          '<span>🔍 「' + escapeHtml(keyword) + '」搜尋結果</span>' +
+        '</div>' +
+        '<div class="keyword-panel-body">';
+
+      if (d.discussion_summary) {
+        html += '<div class="kp-section"><div class="kp-label">📝 討論摘要</div><div class="kp-text">' + d.discussion_summary + '</div></div>';
+      }
+      if (d.quotes && d.quotes.length) {
+        html += '<div class="kp-section"><div class="kp-label">💬 相關對話片段</div>';
+        d.quotes.forEach(function(q) {
+          var ci = q.indexOf('：');
+          if (ci > -1) {
+            html += '<div class="kp-quote"><span class="kp-quote-name">' + q.slice(0, ci) + '</span>' + q.slice(ci + 1) + '</div>';
+          } else {
+            html += '<div class="kp-quote">' + q + '</div>';
+          }
+        });
+        html += '</div>';
+      }
+      if (d.speakers && d.speakers.length) {
+        html += '<div class="kp-section"><div class="kp-label">👤 相關發言者</div>';
+        d.speakers.forEach(function(s) { html += '<div class="kp-item">' + s + '</div>'; });
+        html += '</div>';
+      }
+      if (d.conclusions && d.conclusions.length) {
+        html += '<div class="kp-section"><div class="kp-label">📌 相關結論</div>';
+        d.conclusions.forEach(function(c) { html += '<div class="kp-item">' + c + '</div>'; });
+        html += '</div>';
+      }
+      if (d.sources && d.sources.length) {
+        html += '<div class="kp-section"><div class="kp-label">🏷️ 來源群組</div><div>';
+        d.sources.forEach(function(s) { html += '<span class="source-badge">' + s + '</span>'; });
+        html += '</div></div>';
+      }
+
+      if (!d.discussion_summary && !d.quotes && !d.speakers) {
+        html += '<div style="color:var(--muted);font-size:14px;">找不到與「' + escapeHtml(keyword) + '」相關的討論</div>';
+      }
+
+      html += '</div></div>';
+      resultEl.innerHTML = html;
+
+    } catch (e) {
+      resultEl.innerHTML = '<div style="color:var(--red);font-size:13px;">搜尋失敗：' + e.message + '</div>';
+    }
+
+    btn.disabled = false;
+    btn.textContent = '搜尋';
+  }
+
   function renderResult(data, selected) {
     var labelMap = {
       summary: '重點摘要', keywords: '關鍵字', speakers: '重要發言者',
@@ -616,6 +715,14 @@
           '<button class="copy-btn" onclick="copyResult(this)">複製全部</button>' +
         '</div>' +
         '<div class="result-body">' + (bodyHtml || '<div style="color:var(--muted);font-size:14px;">此時間範圍內沒有可分析的內容</div>') + '</div>' +
+      '</div>' +
+      '<div class="search-section card" id="searchSection">' +
+        '<div class="card-label">🔍 主題搜尋</div>' +
+        '<div class="search-box">' +
+          '<input class="search-input" id="searchInput" placeholder="輸入想查詢的主題，例如：token用量、記憶系統、爬蟲..." onkeydown="if(event.key===\'Enter\') searchTopic()" />' +
+          '<button class="search-btn" id="searchBtn" onclick="searchTopic()">搜尋</button>' +
+        '</div>' +
+        '<div class="search-result" id="searchResult"></div>' +
       '</div>';
 
     window._lastResultData = { data: data, selected: selected, labelMap: labelMap, rangeLabel: rangeLabel };
