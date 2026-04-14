@@ -26,7 +26,6 @@
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
   .card-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
 
-  /* Groups */
   .group-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
   .group-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); }
   .group-icon { font-size: 20px; flex-shrink: 0; }
@@ -45,7 +44,6 @@
   }
   .add-group-btn:hover { border-color: var(--accent-mid); color: var(--accent); background: var(--accent-light); }
 
-  /* Time pills */
   .time-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
   .pill { font-size: 13px; padding: 5px 14px; border-radius: 999px; border: 1px solid var(--border2); background: var(--surface2); color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; }
   .pill:hover { border-color: var(--accent-mid); color: var(--text); }
@@ -55,13 +53,11 @@
   .custom-range label { font-size: 13px; color: var(--muted); }
   .custom-range input[type="date"] { font-family: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--surface2); color: var(--text); outline: none; }
 
-  /* Chips */
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip { font-size: 13px; padding: 5px 14px; border-radius: 999px; border: 1px solid var(--border2); background: var(--surface2); color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; }
   .chip:hover { border-color: var(--accent-mid); color: var(--text); }
   .chip.active { background: var(--accent-light); border-color: var(--accent-mid); color: var(--accent); font-weight: 500; }
 
-  /* Button */
   .btn { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 500; padding: 11px 24px; cursor: pointer; transition: opacity 0.15s, transform 0.1s; font-family: inherit; }
   .btn:hover { opacity: 0.88; }
   .btn:active { transform: scale(0.98); }
@@ -69,14 +65,12 @@
   .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.35); border-top-color: white; border-radius: 50%; animation: spin 0.65s linear infinite; flex-shrink: 0; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Progress */
   .progress-bar { width: 100%; height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; margin: 1rem 0 0.5rem; }
   .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; width: 0%; transition: width 0.3s ease; }
   .progress-label { font-size: 13px; color: var(--muted); }
 
   .error { background: #fff1f0; border: 1px solid #ffa39e; color: var(--red); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 14px; margin-top: 1rem; }
 
-  /* Result */
   .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 1.5rem; }
   .result-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .result-title { font-size: 14px; font-weight: 600; }
@@ -92,7 +86,6 @@
   .summary-text { font-size: 15px; line-height: 1.8; }
   .mood-text { font-size: 14px; line-height: 1.7; padding: 8px 12px; background: var(--surface2); border-radius: var(--radius-sm); }
 
-  /* Keywords - clickable */
   .tags { display: flex; flex-wrap: wrap; gap: 6px; }
   .tag {
     font-size: 13px; padding: 4px 14px; border-radius: 999px;
@@ -105,7 +98,6 @@
   .tag.expanded { background: var(--accent); color: white; border-color: var(--accent); }
   .tag-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
 
-  /* Keyword detail panel */
   .keyword-panel {
     margin-top: 12px; background: var(--surface2); border-radius: var(--radius-sm);
     border: 1px solid var(--border2); overflow: hidden;
@@ -142,8 +134,6 @@
 
   .hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
   a { color: var(--accent); }
-
-  /* Hidden file input helper */
   .file-trigger { display: none; }
 </style>
 </head>
@@ -160,7 +150,6 @@
     <p>支援多群組上傳，AI 分析重點、說話者、關鍵字深度展開</p>
   </div>
 
-  <!-- 群組上傳 -->
   <div class="card">
     <div class="card-label">上傳對話群組</div>
     <div class="group-list" id="groupList"></div>
@@ -171,7 +160,6 @@
     <div class="hint" style="margin-top: 10px;">LINE → 聊天室右上角 → 傳送聊天記錄 → 儲存為文字檔</div>
   </div>
 
-  <!-- 時間篩選 -->
   <div class="card">
     <div class="card-label">時間範圍</div>
     <div class="time-pills">
@@ -189,7 +177,6 @@
     </div>
   </div>
 
-  <!-- 分析項目 -->
   <div class="card">
     <div class="card-label">分析項目（可多選）</div>
     <div class="chips">
@@ -218,21 +205,20 @@
 </div>
 
 <script>
-  const WORKER_URL = 'https://line-summarizer.founderai813.workers.dev';
+  var WORKER_URL = 'https://line-summarizer.founderai813.workers.dev';
+  var groups = [];
+  var currentRange = 'all';
+  var progressTimer = null;
+  var currentFilteredGroups = [];
+  var expandedKeyword = null;
 
-  let groups = []; // { id, name, rawText, filteredText }
-  let currentRange = 'all';
-  let progressTimer = null;
-  let currentFilteredGroups = [];
-  let expandedKeyword = null;
+  document.querySelectorAll('.chip').forEach(function(c) {
+    c.addEventListener('click', function() { c.classList.toggle('active'); });
+  });
 
-  // Chips
-  document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
-
-  // Time pills
-  document.querySelectorAll('.pill').forEach(p => {
-    p.addEventListener('click', () => {
-      document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.pill').forEach(function(p) {
+    p.addEventListener('click', function() {
+      document.querySelectorAll('.pill').forEach(function(x) { x.classList.remove('active'); });
       p.classList.add('active');
       currentRange = p.dataset.range;
       document.getElementById('customRange').classList.toggle('show', currentRange === 'custom');
@@ -245,17 +231,17 @@
   }
 
   function handleFileSelect(input) {
-    const file = input.files[0];
+    var file = input.files[0];
     if (!file) return;
     if (!file.name.endsWith('.txt')) { showError('請上傳 .txt 格式'); return; }
-    const reader = new FileReader();
-    reader.onload = e => {
-      const id = Date.now();
-      const text = e.target.result;
-      const lines = text.split('\n').length;
-      const dates = extractDates(text);
-      const groupName = file.name.replace('.txt', '').replace(/^\[LINE\]\s*/i, '');
-      groups.push({ id, name: groupName, rawText: text, lines, dateRange: dates });
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var id = Date.now();
+      var text = e.target.result;
+      var lineCount = text.split('\n').length;
+      var dates = extractDates(text);
+      var groupName = file.name.replace('.txt', '').replace(/^\[LINE\]\s*/i, '');
+      groups.push({ id: id, name: groupName, rawText: text, lines: lineCount, dateRange: dates });
       renderGroups();
       document.getElementById('errorMsg').style.display = 'none';
     };
@@ -263,115 +249,126 @@
   }
 
   function renderGroups() {
-    const list = document.getElementById('groupList');
+    var list = document.getElementById('groupList');
     if (groups.length === 0) { list.innerHTML = ''; return; }
-    list.innerHTML = groups.map((g, i) => `
-      <div class="group-item" id="group-${g.id}">
-        <div class="group-icon">💬</div>
-        <div class="group-info">
-          <input class="group-name-input" value="${escapeHtml(g.name)}" placeholder="群組名稱"
-            onchange="updateGroupName(${g.id}, this.value)" />
-          <div class="group-meta">${g.lines.toLocaleString()} 行
-            ${g.dateRange.length > 0 ? `・${g.dateRange[0]} 至 ${g.dateRange[g.dateRange.length-1]}` : ''}
-          </div>
-        </div>
-        <button class="group-remove" onclick="removeGroup(${g.id})">✕</button>
-      </div>
-    `).join('');
+    list.innerHTML = groups.map(function(g) {
+      var dateStr = g.dateRange.length > 0
+        ? '・' + g.dateRange[0] + ' 至 ' + g.dateRange[g.dateRange.length - 1]
+        : '';
+      return '<div class="group-item" id="group-' + g.id + '">' +
+        '<div class="group-icon">💬</div>' +
+        '<div class="group-info">' +
+          '<input class="group-name-input" value="' + escapeHtml(g.name) + '" placeholder="群組名稱" onchange="updateGroupName(' + g.id + ', this.value)" />' +
+          '<div class="group-meta">' + g.lines.toLocaleString() + ' 行' + dateStr + '</div>' +
+        '</div>' +
+        '<button class="group-remove" onclick="removeGroup(' + g.id + ')">✕</button>' +
+      '</div>';
+    }).join('');
   }
 
   function updateGroupName(id, name) {
-    const g = groups.find(x => x.id === id);
+    var g = groups.find(function(x) { return x.id === id; });
     if (g) g.name = name;
   }
 
   function removeGroup(id) {
-    groups = groups.filter(x => x.id !== id);
+    groups = groups.filter(function(x) { return x.id !== id; });
     renderGroups();
   }
 
+  // ★ 核心修正：只抓獨立日期行，不抓訊息內文裡的日期
+  // 你的 LINE 格式：日期行是單獨一行，例如 "2026/03/22（日）"，行長度很短
+  // 重要：補零讓排序正確（避免 '2026/3/25' 排在 '2026/04/14' 後面）
   function extractDates(text) {
-    const matches = [...new Set((text.match(/\d{4}\/\d{1,2}\/\d{1,2}/g) || []))];
-    return matches.sort();
+    var dates = [];
+    var lines = text.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var trimmed = lines[i].trim();
+      if (trimmed.length > 0 && trimmed.length < 30) {
+        var firstChar = trimmed.charAt(0);
+        if (firstChar >= '0' && firstChar <= '9') {
+          var m = trimmed.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+          if (m) {
+            // 補零確保字串排序正確 e.g. 2026/03/25
+            var y = m[1];
+            var mo = m[2].length === 1 ? '0' + m[2] : m[2];
+            var dy = m[3].length === 1 ? '0' + m[3] : m[3];
+            dates.push(y + '/' + mo + '/' + dy);
+          }
+        }
+      }
+    }
+    var seen = {};
+    var unique = [];
+    for (var j = 0; j < dates.length; j++) {
+      if (!seen[dates[j]]) {
+        seen[dates[j]] = true;
+        unique.push(dates[j]);
+      }
+    }
+    unique.sort();
+    return unique;
+  }
+
+  function isDateLine(line) {
+    var trimmed = line.trim();
+    if (trimmed.length === 0 || trimmed.length >= 30) return false;
+    return /^\d{4}\/\d{1,2}\/\d{1,2}/.test(trimmed);
+  }
+
+  function parseDateFromLine(line) {
+    var m = line.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+    if (m) return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+    return null;
+  }
+
+  function filterByDateRange(text, startDate, endDate) {
+    var lines = text.split('\n');
+    var filtered = [];
+    var include = false;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (isDateLine(line)) {
+        var d = parseDateFromLine(line);
+        if (d) {
+          include = (d >= startDate && d <= endDate);
+          if (include) filtered.push(line);
+          continue;
+        }
+      }
+      if (include) filtered.push(line);
+    }
+    return filtered.join('\n');
   }
 
   function filterByRange(text, range) {
     if (range === 'all') return text;
 
     if (range === 'custom') {
-      const sv = document.getElementById('startDate').value;
-      const ev = document.getElementById('endDate').value;
+      var sv = document.getElementById('startDate').value;
+      var ev = document.getElementById('endDate').value;
       if (!sv || !ev) return text;
-      const startDate = new Date(sv);
-      const endDate = new Date(ev);
-      endDate.setHours(23, 59, 59);
-      return filterByDateRange(text, startDate, endDate);
+      var sd = new Date(sv);
+      var ed = new Date(ev);
+      ed.setHours(23, 59, 59);
+      return filterByDateRange(text, sd, ed);
     }
 
-    // 用檔案內最後一個日期當基準，避免舊對話被篩掉
-    const allDates = extractDates(text);
-    const lastDateStr = allDates.length > 0 ? allDates[allDates.length - 1] : null;
-    const refDate = lastDateStr
-      ? new Date(lastDateStr.replace(/\//g, '-') + 'T23:59:59')
-      : new Date();
+    // 用檔案內最後一個獨立日期行當基準
+    var allDates = extractDates(text);
+    if (allDates.length === 0) return text;
 
-    let startDate = new Date(refDate);
-    if (range === '24h') startDate = new Date(refDate.getTime() - 24 * 60 * 60 * 1000);
-    else if (range === '3d') startDate = new Date(refDate.getTime() - 3 * 24 * 60 * 60 * 1000);
-    else if (range === '7d') startDate = new Date(refDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+    var lastStr = allDates[allDates.length - 1]; // e.g. "2026/4/14"
+    var parts = lastStr.split('/');
+    var refDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 23, 59, 59);
 
+    var ms = 0;
+    if (range === '24h') ms = 24 * 60 * 60 * 1000;
+    else if (range === '3d') ms = 3 * 24 * 60 * 60 * 1000;
+    else if (range === '7d') ms = 7 * 24 * 60 * 60 * 1000;
+
+    var startDate = new Date(refDate.getTime() - ms);
     return filterByDateRange(text, startDate, refDate);
-  }
-
-  function isDateLine(line) {
-    // 格式一：獨立日期行 2026/03/22(六) 長度短
-    const trimmed = line.trim();
-    return /^\d{4}\/\d{1,2}\/\d{1,2}/.test(trimmed) && trimmed.length < 30;
-  }
-
-  function parseDateFromLine(line) {
-    const m = line.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
-    if (m) return new Date(+m[1], +m[2]-1, +m[3]);
-    return null;
-  }
-
-  function filterByDateRange(text, startDate, endDate) {
-    const lines = text.split('\n');
-    let filtered = [], include = false;
-
-    // 偵測格式：是否每行都有日期（inline 格式）
-    const inlineFormat = lines.slice(0, 20).some(l =>
-      /^\d{4}\/\d{1,2}\/\d{1,2}[（(]/.test(l.trim()) && l.length > 30
-    );
-
-    if (inlineFormat) {
-      // Inline 格式：每行開頭有日期
-      for (const line of lines) {
-        const m = line.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
-        if (m) {
-          const d = new Date(+m[1], +m[2]-1, +m[3]);
-          if (d >= startDate && d <= endDate) filtered.push(line);
-        } else {
-          // 沒有日期的行（例如標題行）也保留
-          if (filtered.length > 0) filtered.push(line);
-        }
-      }
-    } else {
-      // 標準格式：日期是獨立一行
-      for (const line of lines) {
-        if (isDateLine(line)) {
-          const d = parseDateFromLine(line);
-          if (d) {
-            include = d >= startDate && d <= endDate;
-            if (include) filtered.push(line);
-            continue;
-          }
-        }
-        if (include) filtered.push(line);
-      }
-    }
-
-    return filtered.join('\n');
   }
 
   function getRangeLabel() {
@@ -379,24 +376,27 @@
     if (currentRange === '3d') return '近 3 天';
     if (currentRange === '7d') return '近 7 天';
     if (currentRange === 'all') return '全部對話';
-    const s = document.getElementById('startDate').value;
-    const e = document.getElementById('endDate').value;
-    return s && e ? `${s} 至 ${e}` : '自訂範圍';
+    var s = document.getElementById('startDate').value;
+    var e = document.getElementById('endDate').value;
+    return (s && e) ? (s + ' 至 ' + e) : '自訂範圍';
   }
 
   function startProgress() {
-    const fill = document.getElementById('progressFill');
-    const label = document.getElementById('progressLabel');
-    const msgs = ['篩選時間範圍...', 'AI 分析對話內容...', '整理重點與說話者...', '即將完成...'];
-    let pct = 0, step = 0;
+    var fill = document.getElementById('progressFill');
+    var label = document.getElementById('progressLabel');
+    var msgs = ['篩選時間範圍...', 'AI 分析對話內容...', '整理重點與說話者...', '即將完成...'];
+    var pct = 0, step = 0;
     fill.style.width = '0%';
     document.getElementById('progressArea').style.display = 'block';
-    progressTimer = setInterval(() => {
+    progressTimer = setInterval(function() {
       if (pct < 85) {
         pct += Math.random() * 10;
         if (pct > 85) pct = 85;
         fill.style.width = pct + '%';
-        if (step < msgs.length - 1 && pct > (step + 1) * 22) label.textContent = msgs[++step];
+        if (step < msgs.length - 1 && pct > (step + 1) * 22) {
+          step++;
+          label.textContent = msgs[step];
+        }
       }
     }, 500);
   }
@@ -404,7 +404,7 @@
   function stopProgress() {
     clearInterval(progressTimer);
     document.getElementById('progressFill').style.width = '100%';
-    setTimeout(() => {
+    setTimeout(function() {
       document.getElementById('progressArea').style.display = 'none';
       document.getElementById('progressFill').style.width = '0%';
     }, 400);
@@ -412,23 +412,21 @@
 
   async function analyze() {
     if (groups.length === 0) return showError('請先上傳至少一個群組的對話檔案');
-    const selected = [...document.querySelectorAll('.chip.active')].map(c => c.dataset.val);
+    var selected = Array.from(document.querySelectorAll('.chip.active')).map(function(c) { return c.dataset.val; });
     if (!selected.length) return showError('請至少選擇一個分析項目');
     if (currentRange === 'custom') {
-      const s = document.getElementById('startDate').value;
-      const e = document.getElementById('endDate').value;
+      var s = document.getElementById('startDate').value;
+      var e = document.getElementById('endDate').value;
       if (!s || !e) return showError('請選擇自訂的開始和結束日期');
     }
 
-    // 篩選每個群組
-    currentFilteredGroups = groups.map(g => ({
-      name: g.name,
-      text: filterByRange(g.rawText, currentRange)
-    })).filter(g => g.text.trim().length > 0);
+    currentFilteredGroups = groups.map(function(g) {
+      return { name: g.name, text: filterByRange(g.rawText, currentRange) };
+    }).filter(function(g) { return g.text.trim().length > 0; });
 
     if (currentFilteredGroups.length === 0) return showError('所選時間範圍內沒有對話紀錄，請調整時間範圍');
 
-    const btn = document.getElementById('analyzeBtn');
+    var btn = document.getElementById('analyzeBtn');
     btn.disabled = true;
     document.getElementById('btnContent').innerHTML = '<span class="spinner"></span> 分析中...';
     document.getElementById('errorMsg').style.display = 'none';
@@ -437,20 +435,19 @@
     startProgress();
 
     try {
-      const res = await fetch(WORKER_URL, {
+      var res = await fetch(WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'analyze', groups: currentFilteredGroups, selected })
+        body: JSON.stringify({ mode: 'analyze', groups: currentFilteredGroups, selected: selected })
       });
-      const data = await res.json();
+      var data = await res.json();
       if (data.error) throw new Error(data.error);
       stopProgress();
-      // 防呆：有時候 result 在 data.result，有時候直接在 data
-      const resultData = data.result || data;
+      var resultData = data.result || data;
       renderResult(resultData, selected);
-    } catch (e) {
+    } catch (err) {
       stopProgress();
-      showError('分析失敗：' + (e.message || e));
+      showError('分析失敗：' + (err.message || err));
     }
 
     btn.disabled = false;
@@ -459,86 +456,86 @@
 
   async function analyzeKeyword(keyword, tagEl) {
     if (expandedKeyword === keyword) {
-      // 收起
       expandedKeyword = null;
-      document.getElementById('keyword-panel')?.remove();
-      document.querySelectorAll('.tag').forEach(t => t.classList.remove('expanded'));
+      var op = document.getElementById('keyword-panel');
+      if (op) op.remove();
+      document.querySelectorAll('.tag').forEach(function(t) { t.classList.remove('expanded'); });
       return;
     }
 
     expandedKeyword = keyword;
-    document.querySelectorAll('.tag').forEach(t => t.classList.remove('expanded', 'loading'));
+    document.querySelectorAll('.tag').forEach(function(t) { t.classList.remove('expanded', 'loading'); });
     tagEl.classList.add('expanded', 'loading');
 
-    // 移除舊的 panel
-    document.getElementById('keyword-panel')?.remove();
+    var op2 = document.getElementById('keyword-panel');
+    if (op2) op2.remove();
 
-    // 建立 loading panel
-    const keywordSection = document.getElementById('keywords-section');
-    const panel = document.createElement('div');
+    var keywordSection = document.getElementById('keywords-section');
+    var panel = document.createElement('div');
     panel.id = 'keyword-panel';
     panel.className = 'keyword-panel';
-    panel.innerHTML = `
-      <div class="keyword-panel-header">
-        <span>🔍 「${keyword}」深度分析</span>
-        <button class="keyword-panel-close" onclick="closeKeywordPanel()">✕</button>
-      </div>
-      <div class="keyword-panel-body">
-        <div class="kp-loading"><span class="spinner" style="border-color:rgba(0,0,0,0.2);border-top-color:var(--accent);display:inline-block;margin-right:8px;"></span>AI 正在分析關鍵字...</div>
-      </div>`;
+    panel.innerHTML =
+      '<div class="keyword-panel-header">' +
+        '<span>🔍 「' + escapeHtml(keyword) + '」深度分析</span>' +
+        '<button class="keyword-panel-close" onclick="closeKeywordPanel()">✕</button>' +
+      '</div>' +
+      '<div class="keyword-panel-body">' +
+        '<div class="kp-loading">AI 正在分析關鍵字...</div>' +
+      '</div>';
     keywordSection.appendChild(panel);
 
     try {
-      const res = await fetch(WORKER_URL, {
+      var res = await fetch(WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'keyword', keyword, groups: currentFilteredGroups })
+        body: JSON.stringify({ mode: 'keyword', keyword: keyword, groups: currentFilteredGroups })
       });
-      const data = await res.json();
+      var data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      const d = data.result;
-      let html = '<div class="keyword-panel-body">';
+      var d = data.result;
+      var html = '<div class="keyword-panel-body">';
 
       if (d.discussion_summary) {
-        html += `<div class="kp-section"><div class="kp-label">📝 討論摘要</div><div class="kp-text">${d.discussion_summary}</div></div>`;
+        html += '<div class="kp-section"><div class="kp-label">📝 討論摘要</div><div class="kp-text">' + d.discussion_summary + '</div></div>';
       }
-      if (d.quotes?.length) {
-        html += `<div class="kp-section"><div class="kp-label">💬 相關對話片段</div>`;
-        html += d.quotes.map(q => {
-          const colonIdx = q.indexOf('：');
-          if (colonIdx > -1) {
-            return `<div class="kp-quote"><span class="kp-quote-name">${q.slice(0, colonIdx)}</span>${q.slice(colonIdx + 1)}</div>`;
+      if (d.quotes && d.quotes.length) {
+        html += '<div class="kp-section"><div class="kp-label">💬 相關對話片段</div>';
+        d.quotes.forEach(function(q) {
+          var ci = q.indexOf('：');
+          if (ci > -1) {
+            html += '<div class="kp-quote"><span class="kp-quote-name">' + q.slice(0, ci) + '</span>' + q.slice(ci + 1) + '</div>';
+          } else {
+            html += '<div class="kp-quote">' + q + '</div>';
           }
-          return `<div class="kp-quote">${q}</div>`;
-        }).join('');
+        });
         html += '</div>';
       }
-      if (d.speakers?.length) {
-        html += `<div class="kp-section"><div class="kp-label">👤 提到此關鍵字的人</div>`;
-        html += d.speakers.map(s => `<div class="kp-item">${s}</div>`).join('');
+      if (d.speakers && d.speakers.length) {
+        html += '<div class="kp-section"><div class="kp-label">👤 提到此關鍵字的人</div>';
+        d.speakers.forEach(function(s) { html += '<div class="kp-item">' + s + '</div>'; });
         html += '</div>';
       }
-      if (d.conclusions?.length) {
-        html += `<div class="kp-section"><div class="kp-label">📌 相關結論或決定</div>`;
-        html += d.conclusions.map(c => `<div class="kp-item">${c}</div>`).join('');
+      if (d.conclusions && d.conclusions.length) {
+        html += '<div class="kp-section"><div class="kp-label">📌 相關結論或決定</div>';
+        d.conclusions.forEach(function(c) { html += '<div class="kp-item">' + c + '</div>'; });
         html += '</div>';
       }
-      if (d.sources?.length) {
-        html += `<div class="kp-section"><div class="kp-label">🏷️ 來源群組</div><div>`;
-        html += d.sources.map(s => `<span class="source-badge">${s}</span>`).join('');
+      if (d.sources && d.sources.length) {
+        html += '<div class="kp-section"><div class="kp-label">🏷️ 來源群組</div><div>';
+        d.sources.forEach(function(s) { html += '<span class="source-badge">' + s + '</span>'; });
         html += '</div></div>';
       }
-
       html += '</div>';
-      panel.querySelector('.keyword-panel-body').outerHTML = html;
-      panel.innerHTML = `
-        <div class="keyword-panel-header">
-          <span>🔍 「${keyword}」深度分析</span>
-          <button class="keyword-panel-close" onclick="closeKeywordPanel()">✕</button>
-        </div>${html}`;
-    } catch (e) {
-      panel.querySelector('.keyword-panel-body').innerHTML = `<div style="padding:14px;color:var(--red);font-size:14px;">分析失敗：${e.message}</div>`;
+
+      panel.innerHTML =
+        '<div class="keyword-panel-header">' +
+          '<span>🔍 「' + escapeHtml(keyword) + '」深度分析</span>' +
+          '<button class="keyword-panel-close" onclick="closeKeywordPanel()">✕</button>' +
+        '</div>' + html;
+    } catch (err) {
+      panel.querySelector('.keyword-panel-body').innerHTML =
+        '<div style="padding:14px;color:var(--red);font-size:14px;">分析失敗：' + err.message + '</div>';
     }
 
     tagEl.classList.remove('loading');
@@ -546,112 +543,110 @@
 
   function closeKeywordPanel() {
     expandedKeyword = null;
-    document.getElementById('keyword-panel')?.remove();
-    document.querySelectorAll('.tag').forEach(t => t.classList.remove('expanded'));
+    var panel = document.getElementById('keyword-panel');
+    if (panel) panel.remove();
+    document.querySelectorAll('.tag').forEach(function(t) { t.classList.remove('expanded'); });
   }
 
   function renderResult(data, selected) {
-    const labelMap = {
+    var labelMap = {
       summary: '重點摘要', keywords: '關鍵字', speakers: '重要發言者',
       topics: '話題分類', actions: '待辦事項', decisions: '決定事項',
       followup: '需跟進事項', mood: '情緒氛圍'
     };
 
-    const rangeLabel = getRangeLabel();
-    const groupNames = currentFilteredGroups.map(g => g.name).join('、');
-    let bodyHtml = '';
+    var rangeLabel = getRangeLabel();
+    var groupNames = currentFilteredGroups.map(function(g) { return g.name; }).join('、');
+    var bodyHtml = '';
 
-    // 格式化摘要：把句號後換行，讓排版更好看
     function formatSummary(text) {
       if (!text) return '';
       return text
         .replace(/。/g, '。<br>')
         .replace(/！/g, '！<br>')
         .replace(/？/g, '？<br>')
-        .replace(/<br>\s*<br>/g, '<br>');
+        .replace(/(<br>){2,}/g, '<br>');
     }
 
-    if (selected.includes('summary') && data.summary)
-      bodyHtml += `<div class="section"><div class="section-title">${labelMap.summary}</div><div class="summary-text">${formatSummary(data.summary)}</div></div>`;
+    if (selected.indexOf('summary') > -1 && data.summary)
+      bodyHtml += '<div class="section"><div class="section-title">' + labelMap.summary + '</div><div class="summary-text">' + formatSummary(data.summary) + '</div></div>';
 
-    if (selected.includes('mood') && data.mood)
-      bodyHtml += `<div class="section"><div class="section-title">${labelMap.mood}</div><div class="mood-text">🌡️ ${data.mood}</div></div>`;
+    if (selected.indexOf('mood') > -1 && data.mood)
+      bodyHtml += '<div class="section"><div class="section-title">' + labelMap.mood + '</div><div class="mood-text">🌡️ ' + data.mood + '</div></div>';
 
-    if (selected.includes('keywords') && data.keywords?.length) {
-      const tagsHtml = data.keywords.map(k =>
-        `<span class="tag" onclick="analyzeKeyword('${escapeHtml(k)}', this)">${k} <span style="font-size:10px;opacity:0.7">▾</span></span>`
-      ).join('');
-      bodyHtml += `<div class="section" id="keywords-section"><div class="section-title">${labelMap.keywords}</div><div class="tags">${tagsHtml}</div><div class="tag-hint">點擊關鍵字查看深度分析</div></div>`;
-    }
-
-    if (selected.includes('speakers') && data.speakers?.length) {
-      const items = data.speakers.map(s => {
-        const ci = s.indexOf('：');
-        if (ci > -1) return `<div class="speaker-item"><span class="speaker-name">👤 ${s.slice(0, ci)}</span>${s.slice(ci + 1)}</div>`;
-        return `<div class="speaker-item">${s}</div>`;
+    if (selected.indexOf('keywords') > -1 && data.keywords && data.keywords.length) {
+      var tagsHtml = data.keywords.map(function(k) {
+        return '<span class="tag" onclick="analyzeKeyword(\'' + escapeHtml(k) + '\', this)">' + escapeHtml(k) + ' <span style="font-size:10px;opacity:0.7">▾</span></span>';
       }).join('');
-      bodyHtml += `<div class="section"><div class="section-title">${labelMap.speakers}</div>${items}</div>`;
+      bodyHtml += '<div class="section" id="keywords-section"><div class="section-title">' + labelMap.keywords + '</div><div class="tags">' + tagsHtml + '</div><div class="tag-hint">點擊關鍵字查看深度分析</div></div>';
     }
 
-    if (selected.includes('topics') && data.topics?.length)
-      bodyHtml += `<div class="section"><div class="section-title">${labelMap.topics}</div>${data.topics.map(t => `<div class="item"><div class="dot dot-blue"></div><div>${t}</div></div>`).join('')}</div>`;
+    if (selected.indexOf('speakers') > -1 && data.speakers && data.speakers.length) {
+      var speakerHtml = data.speakers.map(function(s) {
+        var ci = s.indexOf('：');
+        if (ci > -1) return '<div class="speaker-item"><span class="speaker-name">👤 ' + s.slice(0, ci) + '</span>' + s.slice(ci + 1) + '</div>';
+        return '<div class="speaker-item">' + s + '</div>';
+      }).join('');
+      bodyHtml += '<div class="section"><div class="section-title">' + labelMap.speakers + '</div>' + speakerHtml + '</div>';
+    }
 
-    if (selected.includes('actions') && data.actions?.length)
-      bodyHtml += `<div class="section"><div class="section-title">${labelMap.actions}</div>${data.actions.map(a => `<div class="item"><div class="dot dot-purple"></div><div>${a}</div></div>`).join('')}</div>`;
+    if (selected.indexOf('topics') > -1 && data.topics && data.topics.length)
+      bodyHtml += '<div class="section"><div class="section-title">' + labelMap.topics + '</div>' +
+        data.topics.map(function(t) { return '<div class="item"><div class="dot dot-blue"></div><div>' + t + '</div></div>'; }).join('') + '</div>';
 
-    if (selected.includes('decisions') && data.decisions?.length)
-      bodyHtml += `<div class="section"><div class="section-title">${labelMap.decisions}</div>${data.decisions.map(d => `<div class="item"><div class="dot dot-green"></div><div>${d}</div></div>`).join('')}</div>`;
+    if (selected.indexOf('actions') > -1 && data.actions && data.actions.length)
+      bodyHtml += '<div class="section"><div class="section-title">' + labelMap.actions + '</div>' +
+        data.actions.map(function(a) { return '<div class="item"><div class="dot dot-purple"></div><div>' + a + '</div></div>'; }).join('') + '</div>';
 
-    if (selected.includes('followup') && data.followup?.length)
-      bodyHtml += `<div class="section"><div class="section-title">${labelMap.followup}</div>${data.followup.map(f => `<div class="item"><div class="dot dot-amber"></div><div>${f}</div></div>`).join('')}</div>`;
+    if (selected.indexOf('decisions') > -1 && data.decisions && data.decisions.length)
+      bodyHtml += '<div class="section"><div class="section-title">' + labelMap.decisions + '</div>' +
+        data.decisions.map(function(d) { return '<div class="item"><div class="dot dot-green"></div><div>' + d + '</div></div>'; }).join('') + '</div>';
 
-    // 顯示原始資料（診斷用）
-    const rawKeys = Object.keys(data).join('、');
-    const rawPreview = JSON.stringify(data).slice(0, 300);
+    if (selected.indexOf('followup') > -1 && data.followup && data.followup.length)
+      bodyHtml += '<div class="section"><div class="section-title">' + labelMap.followup + '</div>' +
+        data.followup.map(function(f) { return '<div class="item"><div class="dot dot-amber"></div><div>' + f + '</div></div>'; }).join('') + '</div>';
 
-    document.getElementById('resultArea').innerHTML = `
-      <div class="result-card">
-        <div class="result-header">
-          <div>
-            <div class="result-title">分析結果</div>
-            <div class="result-range">📅 ${rangeLabel}・💬 ${groupNames}</div>
-          </div>
-          <button class="copy-btn" onclick="copyResult(this)">複製全部</button>
-        </div>
-        <div class="result-body">${bodyHtml || '<div style="color:var(--muted);font-size:14px;">此時間範圍內沒有可分析的內容</div>'}</div>
-        <div style="padding: 12px 1.25rem; border-top: 1px solid var(--border); background: var(--surface2);">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">🔍 診斷資訊（AI 回傳欄位：${rawKeys}）</div>
-          <div style="font-size:11px;color:var(--muted);word-break:break-all;">${rawPreview}...</div>
-        </div>
-      </div>`;
+    document.getElementById('resultArea').innerHTML =
+      '<div class="result-card">' +
+        '<div class="result-header">' +
+          '<div>' +
+            '<div class="result-title">分析結果</div>' +
+            '<div class="result-range">📅 ' + rangeLabel + '・💬 ' + groupNames + '</div>' +
+          '</div>' +
+          '<button class="copy-btn" onclick="copyResult(this)">複製全部</button>' +
+        '</div>' +
+        '<div class="result-body">' + (bodyHtml || '<div style="color:var(--muted);font-size:14px;">此時間範圍內沒有可分析的內容</div>') + '</div>' +
+      '</div>';
 
-    window._lastResultData = { data, selected, labelMap, rangeLabel };
+    window._lastResultData = { data: data, selected: selected, labelMap: labelMap, rangeLabel: rangeLabel };
   }
 
   function copyResult(btn) {
-    const { data, selected, labelMap, rangeLabel } = window._lastResultData || {};
+    var rd = window._lastResultData || {};
+    var data = rd.data, selected = rd.selected, labelMap = rd.labelMap, rangeLabel = rd.rangeLabel;
     if (!data) return;
-    let lines = [`【分析範圍：${rangeLabel}】`];
-    if (selected.includes('summary') && data.summary) lines.push(`\n【${labelMap.summary}】\n${data.summary}`);
-    if (selected.includes('mood') && data.mood) lines.push(`\n【${labelMap.mood}】\n${data.mood}`);
-    if (selected.includes('keywords') && data.keywords?.length) lines.push(`\n【${labelMap.keywords}】\n${data.keywords.join('、')}`);
-    if (selected.includes('speakers') && data.speakers?.length) lines.push(`\n【${labelMap.speakers}】\n${data.speakers.map(s => '• ' + s).join('\n')}`);
-    if (selected.includes('topics') && data.topics?.length) lines.push(`\n【${labelMap.topics}】\n${data.topics.map(t => '• ' + t).join('\n')}`);
-    if (selected.includes('actions') && data.actions?.length) lines.push(`\n【${labelMap.actions}】\n${data.actions.map(a => '• ' + a).join('\n')}`);
-    if (selected.includes('decisions') && data.decisions?.length) lines.push(`\n【${labelMap.decisions}】\n${data.decisions.map(d => '• ' + d).join('\n')}`);
-    if (selected.includes('followup') && data.followup?.length) lines.push(`\n【${labelMap.followup}】\n${data.followup.map(f => '• ' + f).join('\n')}`);
-    navigator.clipboard.writeText(lines.join('')).then(() => {
+    var lines = ['【分析範圍：' + rangeLabel + '】'];
+    if (selected.indexOf('summary') > -1 && data.summary) lines.push('\n【' + labelMap.summary + '】\n' + data.summary);
+    if (selected.indexOf('mood') > -1 && data.mood) lines.push('\n【' + labelMap.mood + '】\n' + data.mood);
+    if (selected.indexOf('keywords') > -1 && data.keywords && data.keywords.length) lines.push('\n【' + labelMap.keywords + '】\n' + data.keywords.join('、'));
+    if (selected.indexOf('speakers') > -1 && data.speakers && data.speakers.length) lines.push('\n【' + labelMap.speakers + '】\n' + data.speakers.map(function(s) { return '• ' + s; }).join('\n'));
+    if (selected.indexOf('topics') > -1 && data.topics && data.topics.length) lines.push('\n【' + labelMap.topics + '】\n' + data.topics.map(function(t) { return '• ' + t; }).join('\n'));
+    if (selected.indexOf('actions') > -1 && data.actions && data.actions.length) lines.push('\n【' + labelMap.actions + '】\n' + data.actions.map(function(a) { return '• ' + a; }).join('\n'));
+    if (selected.indexOf('decisions') > -1 && data.decisions && data.decisions.length) lines.push('\n【' + labelMap.decisions + '】\n' + data.decisions.map(function(d) { return '• ' + d; }).join('\n'));
+    if (selected.indexOf('followup') > -1 && data.followup && data.followup.length) lines.push('\n【' + labelMap.followup + '】\n' + data.followup.map(function(f) { return '• ' + f; }).join('\n'));
+    navigator.clipboard.writeText(lines.join('')).then(function() {
       btn.textContent = '已複製 ✓';
-      setTimeout(() => btn.textContent = '複製全部', 2000);
+      setTimeout(function() { btn.textContent = '複製全部'; }, 2000);
     });
   }
 
   function escapeHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
   function showError(msg) {
-    const el = document.getElementById('errorMsg');
+    var el = document.getElementById('errorMsg');
     el.textContent = msg;
     el.style.display = 'block';
   }
