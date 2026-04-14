@@ -526,8 +526,18 @@
     const groupNames = currentFilteredGroups.map(g => g.name).join('、');
     let bodyHtml = '';
 
+    // 格式化摘要：把句號後換行，讓排版更好看
+    function formatSummary(text) {
+      if (!text) return '';
+      return text
+        .replace(/。/g, '。<br>')
+        .replace(/！/g, '！<br>')
+        .replace(/？/g, '？<br>')
+        .replace(/<br>\s*<br>/g, '<br>');
+    }
+
     if (selected.includes('summary') && data.summary)
-      bodyHtml += `<div class="section"><div class="section-title">${labelMap.summary}</div><div class="summary-text">${data.summary}</div></div>`;
+      bodyHtml += `<div class="section"><div class="section-title">${labelMap.summary}</div><div class="summary-text">${formatSummary(data.summary)}</div></div>`;
 
     if (selected.includes('mood') && data.mood)
       bodyHtml += `<div class="section"><div class="section-title">${labelMap.mood}</div><div class="mood-text">🌡️ ${data.mood}</div></div>`;
@@ -560,6 +570,10 @@
     if (selected.includes('followup') && data.followup?.length)
       bodyHtml += `<div class="section"><div class="section-title">${labelMap.followup}</div>${data.followup.map(f => `<div class="item"><div class="dot dot-amber"></div><div>${f}</div></div>`).join('')}</div>`;
 
+    // 顯示原始資料（診斷用）
+    const rawKeys = Object.keys(data).join('、');
+    const rawPreview = JSON.stringify(data).slice(0, 300);
+
     document.getElementById('resultArea').innerHTML = `
       <div class="result-card">
         <div class="result-header">
@@ -570,6 +584,10 @@
           <button class="copy-btn" onclick="copyResult(this)">複製全部</button>
         </div>
         <div class="result-body">${bodyHtml || '<div style="color:var(--muted);font-size:14px;">此時間範圍內沒有可分析的內容</div>'}</div>
+        <div style="padding: 12px 1.25rem; border-top: 1px solid var(--border); background: var(--surface2);">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">🔍 診斷資訊（AI 回傳欄位：${rawKeys}）</div>
+          <div style="font-size:11px;color:var(--muted);word-break:break-all;">${rawPreview}...</div>
+        </div>
       </div>`;
 
     window._lastResultData = { data, selected, labelMap, rangeLabel };
