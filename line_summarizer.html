@@ -6,164 +6,67 @@
 <title>LINE 對話重點整理</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg: #f7f6f2;
-    --surface: #ffffff;
-    --surface2: #f2f1ed;
-    --border: rgba(0,0,0,0.1);
-    --border2: rgba(0,0,0,0.18);
-    --text: #1a1a1a;
-    --muted: #6b6b6b;
-    --accent: #5b4de8;
-    --accent-light: #eeedfe;
-    --accent-mid: #7f77dd;
-    --green: #1D9E75;
-    --amber: #BA7517;
-    --red: #cf1322;
-    --line-green: #06C755;
-    --radius: 12px;
-    --radius-sm: 8px;
+    --bg: #f7f6f2; --surface: #fff; --surface2: #f2f1ed;
+    --border: rgba(0,0,0,0.1); --border2: rgba(0,0,0,0.18);
+    --text: #1a1a1a; --muted: #6b6b6b;
+    --accent: #5b4de8; --accent-light: #eeedfe; --accent-mid: #7f77dd;
+    --green: #1D9E75; --amber: #BA7517; --red: #cf1322;
+    --line-green: #06C755; --radius: 12px; --radius-sm: 8px;
   }
-
-  body {
-    font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 2rem 1rem;
-  }
-
+  body { font-family: 'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1rem; }
   .wrapper { max-width: 720px; margin: 0 auto; }
 
   .header { margin-bottom: 2rem; }
-  .header h1 {
-    font-size: 22px; font-weight: 600; letter-spacing: -0.02em;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .line-badge {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 32px; height: 32px; background: var(--line-green);
-    border-radius: 8px; flex-shrink: 0;
-  }
+  .header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; }
+  .line-badge { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--line-green); border-radius: 8px; flex-shrink: 0; }
   .line-badge svg { width: 18px; height: 18px; fill: white; }
   .header p { font-size: 14px; color: var(--muted); margin-top: 6px; }
 
-  .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem;
-  }
-  .card-label {
-    font-size: 12px; font-weight: 600; color: var(--muted);
-    text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px;
-  }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+  .card-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
 
-  /* Tabs */
-  .tabs {
-    display: flex; border: 1px solid var(--border2);
-    border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px;
-  }
-  .tab {
-    flex: 1; padding: 9px 0; text-align: center; font-size: 14px;
-    font-weight: 500; cursor: pointer; background: var(--surface2);
-    color: var(--muted); border: none; font-family: inherit; transition: all 0.15s;
-  }
-  .tab:not(:last-child) { border-right: 1px solid var(--border2); }
-  .tab.active { background: var(--accent-light); color: var(--accent); }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
+  /* Groups */
+  .group-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .group-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); }
+  .group-icon { font-size: 20px; flex-shrink: 0; }
+  .group-info { flex: 1; min-width: 0; }
+  .group-name-input { width: 100%; font-family: inherit; font-size: 14px; font-weight: 500; border: none; background: transparent; color: var(--text); outline: none; }
+  .group-name-input::placeholder { color: var(--muted); }
+  .group-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .group-remove { cursor: pointer; font-size: 16px; color: var(--muted); background: none; border: none; flex-shrink: 0; padding: 4px; }
+  .group-remove:hover { color: var(--red); }
 
-  /* Upload */
-  .upload-area {
-    border: 2px dashed var(--border2); border-radius: var(--radius-sm);
-    padding: 2.5rem 1rem; text-align: center; cursor: pointer;
-    transition: all 0.15s; background: var(--surface2); position: relative;
+  .add-group-btn {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    padding: 10px 14px; border: 2px dashed var(--border2); border-radius: var(--radius-sm);
+    background: transparent; color: var(--muted); font-size: 14px; font-family: inherit;
+    cursor: pointer; transition: all 0.15s;
   }
-  .upload-area:hover, .upload-area.dragover {
-    border-color: var(--accent-mid); background: var(--accent-light);
-  }
-  .upload-area input[type="file"] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer;
-    width: 100%; height: 100%;
-  }
-  .upload-icon { font-size: 32px; margin-bottom: 10px; }
-  .upload-label { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
-  .upload-hint { font-size: 13px; color: var(--muted); }
+  .add-group-btn:hover { border-color: var(--accent-mid); color: var(--accent); background: var(--accent-light); }
 
-  .file-selected {
-    display: none; align-items: center; gap: 10px; padding: 10px 12px;
-    background: var(--accent-light); border: 1px solid var(--accent-mid);
-    border-radius: var(--radius-sm); margin-top: 10px;
-    font-size: 14px; color: var(--accent);
-  }
-  .file-selected.show { display: flex; }
-  .file-remove {
-    margin-left: auto; cursor: pointer; font-size: 16px;
-    color: var(--muted); background: none; border: none; font-family: inherit;
-  }
-
-  textarea {
-    width: 100%; font-family: inherit; font-size: 14px; padding: 10px 12px;
-    border: 1px solid var(--border2); border-radius: var(--radius-sm);
-    background: var(--surface2); color: var(--text); outline: none;
-    transition: border-color 0.15s; min-height: 180px; resize: vertical; line-height: 1.65;
-  }
-  textarea:focus { border-color: var(--accent-mid); background: var(--surface); }
-
-  /* Time filter */
-  .time-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-  .pill {
-    font-size: 13px; padding: 5px 14px; border-radius: 999px;
-    border: 1px solid var(--border2); background: var(--surface2);
-    color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none;
-  }
+  /* Time pills */
+  .time-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .pill { font-size: 13px; padding: 5px 14px; border-radius: 999px; border: 1px solid var(--border2); background: var(--surface2); color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; }
   .pill:hover { border-color: var(--accent-mid); color: var(--text); }
   .pill.active { background: var(--accent-light); border-color: var(--accent-mid); color: var(--accent); font-weight: 500; }
-
-  .custom-range {
-    display: none; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px;
-  }
+  .custom-range { display: none; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
   .custom-range.show { display: flex; }
   .custom-range label { font-size: 13px; color: var(--muted); }
-  .custom-range input[type="date"] {
-    font-family: inherit; font-size: 13px; padding: 6px 10px;
-    border: 1px solid var(--border2); border-radius: var(--radius-sm);
-    background: var(--surface2); color: var(--text); outline: none;
-  }
-  .custom-range input[type="date"]:focus { border-color: var(--accent-mid); }
-
-  .detected-range {
-    font-size: 12px; color: var(--green); margin-top: 8px; display: none;
-  }
-  .detected-range.show { display: block; }
+  .custom-range input[type="date"] { font-family: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--surface2); color: var(--text); outline: none; }
 
   /* Chips */
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-  .chip {
-    font-size: 13px; padding: 5px 14px; border-radius: 999px;
-    border: 1px solid var(--border2); background: var(--surface2);
-    color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none;
-  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-size: 13px; padding: 5px 14px; border-radius: 999px; border: 1px solid var(--border2); background: var(--surface2); color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; }
   .chip:hover { border-color: var(--accent-mid); color: var(--text); }
   .chip.active { background: var(--accent-light); border-color: var(--accent-mid); color: var(--accent); font-weight: 500; }
 
-  /* Buttons */
-  .btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: var(--accent); color: #fff; border: none;
-    border-radius: var(--radius-sm); font-size: 15px; font-weight: 500;
-    padding: 11px 24px; cursor: pointer; transition: opacity 0.15s, transform 0.1s;
-    font-family: inherit;
-  }
+  /* Button */
+  .btn { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 500; padding: 11px 24px; cursor: pointer; transition: opacity 0.15s, transform 0.1s; font-family: inherit; }
   .btn:hover { opacity: 0.88; }
   .btn:active { transform: scale(0.98); }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-  .spinner {
-    width: 16px; height: 16px;
-    border: 2px solid rgba(255,255,255,0.35); border-top-color: white;
-    border-radius: 50%; animation: spin 0.65s linear infinite; flex-shrink: 0;
-  }
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.35); border-top-color: white; border-radius: 50%; animation: spin 0.65s linear infinite; flex-shrink: 0; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* Progress */
@@ -171,23 +74,14 @@
   .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; width: 0%; transition: width 0.3s ease; }
   .progress-label { font-size: 13px; color: var(--muted); }
 
-  /* Error */
-  .error {
-    background: #fff1f0; border: 1px solid #ffa39e; color: var(--red);
-    border-radius: var(--radius-sm); padding: 10px 14px; font-size: 14px; margin-top: 1rem;
-  }
+  .error { background: #fff1f0; border: 1px solid #ffa39e; color: var(--red); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 14px; margin-top: 1rem; }
 
   /* Result */
   .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 1.5rem; }
   .result-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .result-header-left { display: flex; flex-direction: column; gap: 3px; }
-  .result-header-left span { font-size: 14px; font-weight: 600; }
-  .result-range { font-size: 12px; color: var(--muted); }
-  .copy-btn {
-    font-size: 12px; padding: 4px 12px; border: 1px solid var(--border2);
-    border-radius: 999px; background: transparent; cursor: pointer;
-    color: var(--muted); font-family: inherit; transition: all 0.15s; white-space: nowrap;
-  }
+  .result-title { font-size: 14px; font-weight: 600; }
+  .result-range { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .copy-btn { font-size: 12px; padding: 4px 12px; border: 1px solid var(--border2); border-radius: 999px; background: transparent; cursor: pointer; color: var(--muted); font-family: inherit; transition: all 0.15s; white-space: nowrap; }
   .copy-btn:hover { background: var(--surface2); color: var(--text); }
   .result-body { padding: 1.25rem; }
 
@@ -195,11 +89,44 @@
   .section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
   .section-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
 
-  .summary-text { font-size: 15px; line-height: 1.8; color: var(--text); }
-  .mood-text { font-size: 14px; line-height: 1.7; color: var(--text); padding: 8px 12px; background: var(--surface2); border-radius: var(--radius-sm); }
+  .summary-text { font-size: 15px; line-height: 1.8; }
+  .mood-text { font-size: 14px; line-height: 1.7; padding: 8px 12px; background: var(--surface2); border-radius: var(--radius-sm); }
 
+  /* Keywords - clickable */
   .tags { display: flex; flex-wrap: wrap; gap: 6px; }
-  .tag { font-size: 13px; padding: 3px 12px; border-radius: 999px; background: var(--accent-light); color: var(--accent); font-weight: 500; }
+  .tag {
+    font-size: 13px; padding: 4px 14px; border-radius: 999px;
+    background: var(--accent-light); color: var(--accent); font-weight: 500;
+    cursor: pointer; transition: all 0.15s; border: 1px solid transparent;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .tag:hover { background: var(--accent); color: white; }
+  .tag.loading { opacity: 0.6; cursor: wait; }
+  .tag.expanded { background: var(--accent); color: white; border-color: var(--accent); }
+  .tag-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* Keyword detail panel */
+  .keyword-panel {
+    margin-top: 12px; background: var(--surface2); border-radius: var(--radius-sm);
+    border: 1px solid var(--border2); overflow: hidden;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .keyword-panel-header { padding: 10px 14px; background: var(--accent); color: white; display: flex; align-items: center; justify-content: space-between; }
+  .keyword-panel-header span { font-size: 14px; font-weight: 600; }
+  .keyword-panel-close { background: none; border: none; color: white; cursor: pointer; font-size: 18px; line-height: 1; padding: 0 4px; }
+  .keyword-panel-body { padding: 14px; }
+  .kp-section { margin-bottom: 14px; }
+  .kp-section:last-child { margin-bottom: 0; }
+  .kp-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+  .kp-text { font-size: 14px; line-height: 1.75; }
+  .kp-quote { font-size: 13px; line-height: 1.65; padding: 7px 12px; background: var(--surface); border-left: 3px solid var(--accent-mid); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin-bottom: 6px; }
+  .kp-quote:last-child { margin-bottom: 0; }
+  .kp-quote-name { font-weight: 600; color: var(--accent); margin-right: 6px; }
+  .kp-item { font-size: 14px; line-height: 1.65; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .kp-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .source-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--accent-light); color: var(--accent); font-weight: 500; margin: 2px 3px 2px 0; }
+  .kp-loading { text-align: center; padding: 20px; color: var(--muted); font-size: 14px; }
 
   .item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; font-size: 14px; line-height: 1.65; border-bottom: 1px solid var(--border); }
   .item:last-child { border-bottom: none; padding-bottom: 0; }
@@ -207,9 +134,7 @@
   .dot-purple { background: var(--accent-mid); }
   .dot-green { background: var(--green); }
   .dot-amber { background: var(--amber); }
-  .dot-red { background: var(--red); }
   .dot-blue { background: #378ADD; }
-  .dot-teal { background: #1D9E75; }
 
   .speaker-item { padding: 8px 12px; background: var(--surface2); border-radius: var(--radius-sm); margin-bottom: 6px; font-size: 14px; line-height: 1.6; }
   .speaker-item:last-child { margin-bottom: 0; }
@@ -217,6 +142,9 @@
 
   .hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
   a { color: var(--accent); }
+
+  /* Hidden file input helper */
+  .file-trigger { display: none; }
 </style>
 </head>
 <body>
@@ -229,43 +157,18 @@
       </div>
       LINE 對話重點整理
     </h1>
-    <p>上傳或貼上對話，AI 自動分析重點、說話者、話題與氛圍</p>
+    <p>支援多群組上傳，AI 分析重點、說話者、關鍵字深度展開</p>
   </div>
 
-  <!-- 輸入方式 -->
+  <!-- 群組上傳 -->
   <div class="card">
-    <div class="card-label">輸入對話</div>
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('paste')">✏️ 貼上文字</button>
-      <button class="tab" onclick="switchTab('upload')">📁 上傳檔案</button>
-    </div>
-
-    <div class="tab-panel active" id="panel-paste">
-      <textarea id="chatInput" placeholder="從 LINE 複製對話貼入，格式如下：
-
-2024/04/07(日)
-10:32  小明  明天的會議幾點開始？
-10:33  小華  下午3點，記得帶企劃書
-
-或是舊格式：
-[2024/04/07 10:32] 小明：明天的會議幾點開始？"></textarea>
-    </div>
-
-    <div class="tab-panel" id="panel-upload">
-      <div class="upload-area" id="uploadArea">
-        <input type="file" id="fileInput" accept=".txt" onchange="handleFile(this.files[0])" />
-        <div class="upload-icon">📄</div>
-        <div class="upload-label">點擊或拖曳上傳 LINE 匯出檔案</div>
-        <div class="upload-hint">LINE → 聊天室右上角 → 傳送聊天記錄 → 儲存為文字檔</div>
-      </div>
-      <div class="file-selected" id="fileSelected">
-        <span>📄</span>
-        <span id="fileName"></span>
-        <span id="fileStats" style="font-size:12px; color: var(--muted); margin-left: 4px;"></span>
-        <button class="file-remove" onclick="removeFile()">✕</button>
-      </div>
-      <div class="detected-range" id="detectedRange"></div>
-    </div>
+    <div class="card-label">上傳對話群組</div>
+    <div class="group-list" id="groupList"></div>
+    <button class="add-group-btn" onclick="triggerFileInput()">
+      ＋ 新增群組（上傳 .txt 檔案）
+    </button>
+    <input type="file" class="file-trigger" id="fileTrigger" accept=".txt" onchange="handleFileSelect(this)" />
+    <div class="hint" style="margin-top: 10px;">LINE → 聊天室右上角 → 傳送聊天記錄 → 儲存為文字檔</div>
   </div>
 
   <!-- 時間篩選 -->
@@ -312,21 +215,19 @@
 
   <div id="errorMsg" class="error" style="display:none"></div>
   <div id="resultArea"></div>
-
 </div>
 
 <script>
   const WORKER_URL = 'https://line-summarizer.founderai813.workers.dev';
 
-  let currentTab = 'paste';
-  let uploadedText = '';
+  let groups = []; // { id, name, rawText, filteredText }
   let currentRange = '24h';
   let progressTimer = null;
+  let currentFilteredGroups = [];
+  let expandedKeyword = null;
 
   // Chips
-  document.querySelectorAll('.chip').forEach(c => {
-    c.addEventListener('click', () => c.classList.toggle('active'));
-  });
+  document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
 
   // Time pills
   document.querySelectorAll('.pill').forEach(p => {
@@ -338,129 +239,109 @@
     });
   });
 
-  // Upload
-  const uploadArea = document.getElementById('uploadArea');
-  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-  uploadArea.addEventListener('drop', e => {
-    e.preventDefault();
-    uploadArea.classList.remove('dragover');
-    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-  });
-
-  function switchTab(tab) {
-    currentTab = tab;
-    document.querySelectorAll('.tab').forEach((t, i) => {
-      t.classList.toggle('active', (i === 0 && tab === 'paste') || (i === 1 && tab === 'upload'));
-    });
-    document.getElementById('panel-paste').classList.toggle('active', tab === 'paste');
-    document.getElementById('panel-upload').classList.toggle('active', tab === 'upload');
+  function triggerFileInput() {
+    document.getElementById('fileTrigger').value = '';
+    document.getElementById('fileTrigger').click();
   }
 
-  function handleFile(file) {
+  function handleFileSelect(input) {
+    const file = input.files[0];
     if (!file) return;
-    if (!file.name.endsWith('.txt')) { showError('請上傳 .txt 格式的 LINE 聊天記錄'); return; }
+    if (!file.name.endsWith('.txt')) { showError('請上傳 .txt 格式'); return; }
     const reader = new FileReader();
     reader.onload = e => {
-      uploadedText = e.target.result;
-      document.getElementById('fileName').textContent = file.name;
-      const lines = uploadedText.split('\n').length;
-      document.getElementById('fileStats').textContent = `（${lines.toLocaleString()} 行）`;
-      document.getElementById('fileSelected').classList.add('show');
+      const id = Date.now();
+      const text = e.target.result;
+      const lines = text.split('\n').length;
+      const dates = extractDates(text);
+      const groupName = file.name.replace('.txt', '').replace(/^\[LINE\]\s*/i, '');
+      groups.push({ id, name: groupName, rawText: text, lines, dateRange: dates });
+      renderGroups();
       document.getElementById('errorMsg').style.display = 'none';
-
-      // 偵測日期範圍
-      const dates = extractDates(uploadedText);
-      if (dates.length > 0) {
-        const first = dates[0];
-        const last = dates[dates.length - 1];
-        const rangeEl = document.getElementById('detectedRange');
-        rangeEl.textContent = `✓ 偵測到對話範圍：${first} 至 ${last}（共 ${dates.length} 天）`;
-        rangeEl.classList.add('show');
-      }
     };
-    reader.onerror = () => showError('讀取檔案失敗，請重試');
     reader.readAsText(file, 'UTF-8');
   }
 
-  function removeFile() {
-    uploadedText = '';
-    document.getElementById('fileInput').value = '';
-    document.getElementById('fileSelected').classList.remove('show');
-    document.getElementById('detectedRange').classList.remove('show');
+  function renderGroups() {
+    const list = document.getElementById('groupList');
+    if (groups.length === 0) { list.innerHTML = ''; return; }
+    list.innerHTML = groups.map((g, i) => `
+      <div class="group-item" id="group-${g.id}">
+        <div class="group-icon">💬</div>
+        <div class="group-info">
+          <input class="group-name-input" value="${escapeHtml(g.name)}" placeholder="群組名稱"
+            onchange="updateGroupName(${g.id}, this.value)" />
+          <div class="group-meta">${g.lines.toLocaleString()} 行
+            ${g.dateRange.length > 0 ? `・${g.dateRange[0]} 至 ${g.dateRange[g.dateRange.length-1]}` : ''}
+          </div>
+        </div>
+        <button class="group-remove" onclick="removeGroup(${g.id})">✕</button>
+      </div>
+    `).join('');
   }
 
-  // 解析 LINE 日期格式
+  function updateGroupName(id, name) {
+    const g = groups.find(x => x.id === id);
+    if (g) g.name = name;
+  }
+
+  function removeGroup(id) {
+    groups = groups.filter(x => x.id !== id);
+    renderGroups();
+  }
+
   function extractDates(text) {
-    const datePattern = /(\d{4}\/\d{1,2}\/\d{1,2})/g;
-    const matches = [...new Set(text.match(datePattern) || [])];
+    const matches = [...new Set((text.match(/\d{4}\/\d{1,2}\/\d{1,2}/g) || []))];
     return matches.sort();
   }
 
-  // 根據時間範圍篩選對話
   function filterByRange(text, range) {
     if (range === 'all') return text;
-
     const now = new Date();
-    let cutoff = new Date();
+    let startDate, endDate = new Date(now);
+    endDate.setHours(23, 59, 59);
 
-    if (range === '24h') cutoff.setHours(now.getHours() - 24);
-    else if (range === '3d') cutoff.setDate(now.getDate() - 3);
-    else if (range === '7d') cutoff.setDate(now.getDate() - 7);
+    if (range === '24h') { startDate = new Date(now); startDate.setHours(now.getHours() - 24); }
+    else if (range === '3d') { startDate = new Date(now); startDate.setDate(now.getDate() - 3); }
+    else if (range === '7d') { startDate = new Date(now); startDate.setDate(now.getDate() - 7); }
     else if (range === 'custom') {
-      const startVal = document.getElementById('startDate').value;
-      const endVal = document.getElementById('endDate').value;
-      if (!startVal || !endVal) return text;
-
-      const startDate = new Date(startVal);
-      const endDate = new Date(endVal);
+      const sv = document.getElementById('startDate').value;
+      const ev = document.getElementById('endDate').value;
+      if (!sv || !ev) return text;
+      startDate = new Date(sv);
+      endDate = new Date(ev);
       endDate.setHours(23, 59, 59);
-
-      return filterByDateRange(text, startDate, endDate);
     }
 
-    return filterByDateRange(text, cutoff, now);
-  }
-
-  function filterByDateRange(text, startDate, endDate) {
     const lines = text.split('\n');
-    let filtered = [];
-    let currentDate = null;
-    let includeSection = false;
-
+    let filtered = [], include = false;
     for (const line of lines) {
-      // 偵測日期行（LINE 格式：2024/04/07(日) 或 2024/4/7）
-      const dateMatch = line.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
-      if (dateMatch) {
-        currentDate = new Date(parseInt(dateMatch[1]), parseInt(dateMatch[2]) - 1, parseInt(dateMatch[3]));
-        includeSection = currentDate >= startDate && currentDate <= endDate;
-        if (includeSection) filtered.push(line);
+      const m = line.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+      if (m) {
+        const d = new Date(+m[1], +m[2]-1, +m[3]);
+        include = d >= startDate && d <= endDate;
+        if (include) filtered.push(line);
         continue;
       }
-
-      if (includeSection) filtered.push(line);
+      if (include) filtered.push(line);
     }
-
     return filtered.join('\n');
   }
 
-  function getRangeLabel(range) {
-    if (range === '24h') return '近 24 小時';
-    if (range === '3d') return '近 3 天';
-    if (range === '7d') return '近 7 天';
-    if (range === 'all') return '全部對話';
-    if (range === 'custom') {
-      const s = document.getElementById('startDate').value;
-      const e = document.getElementById('endDate').value;
-      return s && e ? `${s} 至 ${e}` : '自訂範圍';
-    }
-    return '';
+  function getRangeLabel() {
+    if (currentRange === '24h') return '近 24 小時';
+    if (currentRange === '3d') return '近 3 天';
+    if (currentRange === '7d') return '近 7 天';
+    if (currentRange === 'all') return '全部對話';
+    const s = document.getElementById('startDate').value;
+    const e = document.getElementById('endDate').value;
+    return s && e ? `${s} 至 ${e}` : '自訂範圍';
   }
 
   function startProgress() {
     const fill = document.getElementById('progressFill');
     const label = document.getElementById('progressLabel');
-    const msgs = ['篩選時間範圍內的對話...', 'AI 分析對話內容...', '整理重點與說話者...', '即將完成...'];
+    const msgs = ['篩選時間範圍...', 'AI 分析對話內容...', '整理重點與說話者...', '即將完成...'];
     let pct = 0, step = 0;
     fill.style.width = '0%';
     document.getElementById('progressArea').style.display = 'block';
@@ -484,10 +365,8 @@
   }
 
   async function analyze() {
+    if (groups.length === 0) return showError('請先上傳至少一個群組的對話檔案');
     const selected = [...document.querySelectorAll('.chip.active')].map(c => c.dataset.val);
-    let rawText = currentTab === 'paste' ? document.getElementById('chatInput').value.trim() : uploadedText.trim();
-
-    if (!rawText) return showError(currentTab === 'paste' ? '請貼入 LINE 對話紀錄' : '請先上傳 LINE 聊天記錄檔案');
     if (!selected.length) return showError('請至少選擇一個分析項目');
     if (currentRange === 'custom') {
       const s = document.getElementById('startDate').value;
@@ -495,31 +374,32 @@
       if (!s || !e) return showError('請選擇自訂的開始和結束日期');
     }
 
-    // 篩選時間範圍
-    const filteredText = filterByRange(rawText, currentRange);
-    if (!filteredText.trim()) return showError('所選時間範圍內沒有對話紀錄，請調整時間範圍');
+    // 篩選每個群組
+    currentFilteredGroups = groups.map(g => ({
+      name: g.name,
+      text: filterByRange(g.rawText, currentRange)
+    })).filter(g => g.text.trim().length > 0);
 
-    const rangeLabel = getRangeLabel(currentRange);
+    if (currentFilteredGroups.length === 0) return showError('所選時間範圍內沒有對話紀錄，請調整時間範圍');
 
     const btn = document.getElementById('analyzeBtn');
     btn.disabled = true;
     document.getElementById('btnContent').innerHTML = '<span class="spinner"></span> 分析中...';
     document.getElementById('errorMsg').style.display = 'none';
     document.getElementById('resultArea').innerHTML = '';
+    expandedKeyword = null;
     startProgress();
 
     try {
       const res = await fetch(WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: filteredText, selected })
+        body: JSON.stringify({ mode: 'analyze', groups: currentFilteredGroups, selected })
       });
-
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-
       stopProgress();
-      renderResult(data.result, selected, rangeLabel);
+      renderResult(data.result, selected);
     } catch (e) {
       stopProgress();
       showError('分析失敗：' + (e.message || e));
@@ -529,13 +409,108 @@
     document.getElementById('btnContent').textContent = '✦ 重新分析';
   }
 
-  function renderResult(data, selected, rangeLabel) {
+  async function analyzeKeyword(keyword, tagEl) {
+    if (expandedKeyword === keyword) {
+      // 收起
+      expandedKeyword = null;
+      document.getElementById('keyword-panel')?.remove();
+      document.querySelectorAll('.tag').forEach(t => t.classList.remove('expanded'));
+      return;
+    }
+
+    expandedKeyword = keyword;
+    document.querySelectorAll('.tag').forEach(t => t.classList.remove('expanded', 'loading'));
+    tagEl.classList.add('expanded', 'loading');
+
+    // 移除舊的 panel
+    document.getElementById('keyword-panel')?.remove();
+
+    // 建立 loading panel
+    const keywordSection = document.getElementById('keywords-section');
+    const panel = document.createElement('div');
+    panel.id = 'keyword-panel';
+    panel.className = 'keyword-panel';
+    panel.innerHTML = `
+      <div class="keyword-panel-header">
+        <span>🔍 「${keyword}」深度分析</span>
+        <button class="keyword-panel-close" onclick="closeKeywordPanel()">✕</button>
+      </div>
+      <div class="keyword-panel-body">
+        <div class="kp-loading"><span class="spinner" style="border-color:rgba(0,0,0,0.2);border-top-color:var(--accent);display:inline-block;margin-right:8px;"></span>AI 正在分析關鍵字...</div>
+      </div>`;
+    keywordSection.appendChild(panel);
+
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'keyword', keyword, groups: currentFilteredGroups })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      const d = data.result;
+      let html = '<div class="keyword-panel-body">';
+
+      if (d.discussion_summary) {
+        html += `<div class="kp-section"><div class="kp-label">📝 討論摘要</div><div class="kp-text">${d.discussion_summary}</div></div>`;
+      }
+      if (d.quotes?.length) {
+        html += `<div class="kp-section"><div class="kp-label">💬 相關對話片段</div>`;
+        html += d.quotes.map(q => {
+          const colonIdx = q.indexOf('：');
+          if (colonIdx > -1) {
+            return `<div class="kp-quote"><span class="kp-quote-name">${q.slice(0, colonIdx)}</span>${q.slice(colonIdx + 1)}</div>`;
+          }
+          return `<div class="kp-quote">${q}</div>`;
+        }).join('');
+        html += '</div>';
+      }
+      if (d.speakers?.length) {
+        html += `<div class="kp-section"><div class="kp-label">👤 提到此關鍵字的人</div>`;
+        html += d.speakers.map(s => `<div class="kp-item">${s}</div>`).join('');
+        html += '</div>';
+      }
+      if (d.conclusions?.length) {
+        html += `<div class="kp-section"><div class="kp-label">📌 相關結論或決定</div>`;
+        html += d.conclusions.map(c => `<div class="kp-item">${c}</div>`).join('');
+        html += '</div>';
+      }
+      if (d.sources?.length) {
+        html += `<div class="kp-section"><div class="kp-label">🏷️ 來源群組</div><div>`;
+        html += d.sources.map(s => `<span class="source-badge">${s}</span>`).join('');
+        html += '</div></div>';
+      }
+
+      html += '</div>';
+      panel.querySelector('.keyword-panel-body').outerHTML = html;
+      panel.innerHTML = `
+        <div class="keyword-panel-header">
+          <span>🔍 「${keyword}」深度分析</span>
+          <button class="keyword-panel-close" onclick="closeKeywordPanel()">✕</button>
+        </div>${html}`;
+    } catch (e) {
+      panel.querySelector('.keyword-panel-body').innerHTML = `<div style="padding:14px;color:var(--red);font-size:14px;">分析失敗：${e.message}</div>`;
+    }
+
+    tagEl.classList.remove('loading');
+  }
+
+  function closeKeywordPanel() {
+    expandedKeyword = null;
+    document.getElementById('keyword-panel')?.remove();
+    document.querySelectorAll('.tag').forEach(t => t.classList.remove('expanded'));
+  }
+
+  function renderResult(data, selected) {
     const labelMap = {
       summary: '重點摘要', keywords: '關鍵字', speakers: '重要發言者',
       topics: '話題分類', actions: '待辦事項', decisions: '決定事項',
       followup: '需跟進事項', mood: '情緒氛圍'
     };
 
+    const rangeLabel = getRangeLabel();
+    const groupNames = currentFilteredGroups.map(g => g.name).join('、');
     let bodyHtml = '';
 
     if (selected.includes('summary') && data.summary)
@@ -544,17 +519,17 @@
     if (selected.includes('mood') && data.mood)
       bodyHtml += `<div class="section"><div class="section-title">${labelMap.mood}</div><div class="mood-text">🌡️ ${data.mood}</div></div>`;
 
-    if (selected.includes('keywords') && data.keywords?.length)
-      bodyHtml += `<div class="section"><div class="section-title">${labelMap.keywords}</div><div class="tags">${data.keywords.map(t => `<span class="tag">${t}</span>`).join('')}</div></div>`;
+    if (selected.includes('keywords') && data.keywords?.length) {
+      const tagsHtml = data.keywords.map(k =>
+        `<span class="tag" onclick="analyzeKeyword('${escapeHtml(k)}', this)">${k} <span style="font-size:10px;opacity:0.7">▾</span></span>`
+      ).join('');
+      bodyHtml += `<div class="section" id="keywords-section"><div class="section-title">${labelMap.keywords}</div><div class="tags">${tagsHtml}</div><div class="tag-hint">點擊關鍵字查看深度分析</div></div>`;
+    }
 
     if (selected.includes('speakers') && data.speakers?.length) {
       const items = data.speakers.map(s => {
-        const colonIdx = s.indexOf('：');
-        if (colonIdx > -1) {
-          const name = s.slice(0, colonIdx);
-          const content = s.slice(colonIdx + 1);
-          return `<div class="speaker-item"><span class="speaker-name">👤 ${name}</span>${content}</div>`;
-        }
+        const ci = s.indexOf('：');
+        if (ci > -1) return `<div class="speaker-item"><span class="speaker-name">👤 ${s.slice(0, ci)}</span>${s.slice(ci + 1)}</div>`;
         return `<div class="speaker-item">${s}</div>`;
       }).join('');
       bodyHtml += `<div class="section"><div class="section-title">${labelMap.speakers}</div>${items}</div>`;
@@ -572,22 +547,24 @@
     if (selected.includes('followup') && data.followup?.length)
       bodyHtml += `<div class="section"><div class="section-title">${labelMap.followup}</div>${data.followup.map(f => `<div class="item"><div class="dot dot-amber"></div><div>${f}</div></div>`).join('')}</div>`;
 
-    const fullText = buildPlainText(data, selected, labelMap, rangeLabel);
-
     document.getElementById('resultArea').innerHTML = `
       <div class="result-card">
         <div class="result-header">
-          <div class="result-header-left">
-            <span>分析結果</span>
-            <span class="result-range">📅 ${rangeLabel}</span>
+          <div>
+            <div class="result-title">分析結果</div>
+            <div class="result-range">📅 ${rangeLabel}・💬 ${groupNames}</div>
           </div>
-          <button class="copy-btn" onclick="copyResult(this, \`${escapeBacktick(fullText)}\`)">複製全部</button>
+          <button class="copy-btn" onclick="copyResult(this)">複製全部</button>
         </div>
         <div class="result-body">${bodyHtml || '<div style="color:var(--muted);font-size:14px;">此時間範圍內沒有可分析的內容</div>'}</div>
       </div>`;
+
+    window._lastResultData = { data, selected, labelMap, rangeLabel };
   }
 
-  function buildPlainText(data, selected, labelMap, rangeLabel) {
+  function copyResult(btn) {
+    const { data, selected, labelMap, rangeLabel } = window._lastResultData || {};
+    if (!data) return;
     let lines = [`【分析範圍：${rangeLabel}】`];
     if (selected.includes('summary') && data.summary) lines.push(`\n【${labelMap.summary}】\n${data.summary}`);
     if (selected.includes('mood') && data.mood) lines.push(`\n【${labelMap.mood}】\n${data.mood}`);
@@ -597,18 +574,14 @@
     if (selected.includes('actions') && data.actions?.length) lines.push(`\n【${labelMap.actions}】\n${data.actions.map(a => '• ' + a).join('\n')}`);
     if (selected.includes('decisions') && data.decisions?.length) lines.push(`\n【${labelMap.decisions}】\n${data.decisions.map(d => '• ' + d).join('\n')}`);
     if (selected.includes('followup') && data.followup?.length) lines.push(`\n【${labelMap.followup}】\n${data.followup.map(f => '• ' + f).join('\n')}`);
-    return lines.join('');
-  }
-
-  function escapeBacktick(str) {
-    return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
-  }
-
-  function copyResult(btn, text) {
-    navigator.clipboard.writeText(text).then(() => {
+    navigator.clipboard.writeText(lines.join('')).then(() => {
       btn.textContent = '已複製 ✓';
       setTimeout(() => btn.textContent = '複製全部', 2000);
     });
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
   function showError(msg) {
