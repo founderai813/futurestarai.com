@@ -323,16 +323,30 @@
     return filterByDateRange(text, startDate, refDate);
   }
 
+  function isDateLine(line) {
+    // LINE 日期行格式：2026/03/22(六) 或 2026/3/22 或 2026年3月22日
+    // 特徵：整行幾乎只有日期，不包含時間和說話者
+    const trimmed = line.trim();
+    return /^\d{4}\/\d{1,2}\/\d{1,2}/.test(trimmed) && trimmed.length < 30;
+  }
+
+  function parseDateFromLine(line) {
+    const m = line.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+    if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+    return null;
+  }
+
   function filterByDateRange(text, startDate, endDate) {
     const lines = text.split('\n');
     let filtered = [], include = false;
     for (const line of lines) {
-      const m = line.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
-      if (m) {
-        const d = new Date(+m[1], +m[2]-1, +m[3]);
-        include = d >= startDate && d <= endDate;
-        if (include) filtered.push(line);
-        continue;
+      if (isDateLine(line)) {
+        const d = parseDateFromLine(line);
+        if (d) {
+          include = d >= startDate && d <= endDate;
+          if (include) filtered.push(line);
+          continue;
+        }
       }
       if (include) filtered.push(line);
     }
