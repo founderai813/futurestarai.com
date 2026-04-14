@@ -297,22 +297,33 @@
 
   function filterByRange(text, range) {
     if (range === 'all') return text;
-    const now = new Date();
-    let startDate, endDate = new Date(now);
-    endDate.setHours(23, 59, 59);
 
-    if (range === '24h') { startDate = new Date(now); startDate.setHours(now.getHours() - 24); }
-    else if (range === '3d') { startDate = new Date(now); startDate.setDate(now.getDate() - 3); }
-    else if (range === '7d') { startDate = new Date(now); startDate.setDate(now.getDate() - 7); }
-    else if (range === 'custom') {
+    if (range === 'custom') {
       const sv = document.getElementById('startDate').value;
       const ev = document.getElementById('endDate').value;
       if (!sv || !ev) return text;
-      startDate = new Date(sv);
-      endDate = new Date(ev);
+      const startDate = new Date(sv);
+      const endDate = new Date(ev);
       endDate.setHours(23, 59, 59);
+      return filterByDateRange(text, startDate, endDate);
     }
 
+    // 用檔案內最後一個日期當基準，避免舊對話被篩掉
+    const allDates = extractDates(text);
+    const lastDateStr = allDates.length > 0 ? allDates[allDates.length - 1] : null;
+    const refDate = lastDateStr
+      ? new Date(lastDateStr.replace(/\//g, '-') + 'T23:59:59')
+      : new Date();
+
+    let startDate = new Date(refDate);
+    if (range === '24h') startDate = new Date(refDate.getTime() - 24 * 60 * 60 * 1000);
+    else if (range === '3d') startDate = new Date(refDate.getTime() - 3 * 24 * 60 * 60 * 1000);
+    else if (range === '7d') startDate = new Date(refDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    return filterByDateRange(text, startDate, refDate);
+  }
+
+  function filterByDateRange(text, startDate, endDate) {
     const lines = text.split('\n');
     let filtered = [], include = false;
     for (const line of lines) {
@@ -399,7 +410,9 @@
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       stopProgress();
-      renderResult(data.result, selected);
+      // 防呆：有時候 result 在 data.result，有時候直接在 data
+      const resultData = data.result || data;
+      renderResult(resultData, selected);
     } catch (e) {
       stopProgress();
       showError('分析失敗：' + (e.message || e));
