@@ -281,6 +281,91 @@
     padding: 1.5rem 0;
   }
 
+  /* History / exclude */
+  .history-panel {
+    margin-top: 1rem;
+    padding: .9rem 1rem;
+    background: #0f0f12;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .history-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    flex-wrap: wrap;
+  }
+  .switch {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    cursor: pointer;
+    user-select: none;
+    font-size: .9rem;
+    color: var(--text);
+  }
+  .switch input { position: absolute; opacity: 0; pointer-events: none; }
+  .switch .track {
+    width: 38px; height: 22px;
+    background: #2a2a2e;
+    border-radius: 999px;
+    position: relative;
+    transition: background .15s;
+  }
+  .switch .track::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    background: #e8e8ea;
+    border-radius: 50%;
+    transition: transform .18s;
+  }
+  .switch input:checked + .track {
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-1));
+  }
+  .switch input:checked + .track::after { transform: translateX(16px); }
+
+  .history-meta {
+    color: var(--muted);
+    font-size: .85rem;
+  }
+  .history-meta b { color: var(--text); }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin-top: .75rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    background: #222228;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: .3rem .55rem;
+    border-radius: 999px;
+    font-size: .82rem;
+  }
+  .chip button {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: .9rem;
+    line-height: 1;
+    padding: 0;
+  }
+  .chip button:hover { color: var(--lose, #f87171); }
+  .chips .empty-note {
+    color: var(--muted);
+    font-size: .85rem;
+    padding: .2rem 0;
+  }
+
   .toast {
     position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
     background: #18181b; border: 1px solid var(--border);
@@ -335,6 +420,21 @@
     </div>
   </div>
 
+  <div class="history-panel" id="historyPanel">
+    <div class="history-top">
+      <label class="switch">
+        <input type="checkbox" id="excludeToggle" />
+        <span class="track"></span>
+        <span>排除已抽過的人（僅不重複模式）</span>
+      </label>
+      <div class="history-meta">
+        可抽 <b id="availCount">0</b> 人 · 已抽過 <b id="drawnCount">0</b> 人
+        <button class="ghost" id="resetHistoryBtn" type="button" style="margin-left:.5rem;">重置紀錄</button>
+      </div>
+    </div>
+    <div class="chips" id="chips" style="display:none;"></div>
+  </div>
+
   <div class="draw-bar">
     <button class="primary" id="drawBtn">🎲 開始抽籤</button>
   </div>
@@ -358,6 +458,19 @@
   const $ = (id) => document.getElementById(id);
 
   const STORAGE_KEY = 'futurestarai.draw.v1';
+  const HISTORY_KEY = 'futurestarai.draw.history.v1';
+  const EXCLUDE_KEY = 'futurestarai.draw.exclude.v1';
+
+  // ---- History ----
+  let drawnHistory = new Set();
+  try {
+    const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    if (Array.isArray(saved)) drawnHistory = new Set(saved);
+  } catch(e){}
+
+  function saveHistory(){
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify([...drawnHistory])); } catch(e){}
+  }
 
   function toast(msg, ms=1500){
     const t = $('toast'); t.textContent = msg; t.classList.add('show');
@@ -372,10 +485,61 @@
   }
 
   function updateCount(){
-    const n = parseNames($('names').value).length;
-    const txt = n + ' 人';
-    $('countText').textContent = txt;
-    $('countPill').textContent = txt;
+    const names = parseNames($('names').value);
+    const total = names.length;
+    $('countText').textContent = total + ' 人';
+    $('countPill').textContent = total + ' 人';
+    renderHistory(names);
+  }
+
+  function isExcluding(){
+    return $('excludeToggle').checked && mode === 'unique';
+  }
+
+  function availablePool(names){
+    if ($('excludeToggle').checked){
+      return names.filter(n => !drawnHistory.has(n));
+    }
+    return names;
+  }
+
+  function renderHistory(namesOpt){
+    const names = namesOpt || parseNames($('names').value);
+    const drawnInList = names.filter(n => drawnHistory.has(n));
+    const avail = $('excludeToggle').checked ? (names.length - drawnInList.length) : names.length;
+    $('availCount').textContent = avail;
+    $('drawnCount').textContent = drawnInList.length;
+
+    const chips = $('chips');
+    if (!$('excludeToggle').checked){
+      chips.style.display = 'none';
+      return;
+    }
+    chips.style.display = '';
+    chips.innerHTML = '';
+    if (drawnInList.length === 0){
+      const e = document.createElement('div');
+      e.className = 'empty-note';
+      e.textContent = '還沒有抽過的紀錄';
+      chips.appendChild(e);
+      return;
+    }
+    drawnInList.forEach(name => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = name;
+      const x = document.createElement('button');
+      x.type = 'button';
+      x.textContent = '×';
+      x.title = '從紀錄中移除';
+      x.addEventListener('click', () => {
+        drawnHistory.delete(name);
+        saveHistory();
+        renderHistory();
+      });
+      chip.appendChild(x);
+      chips.appendChild(chip);
+    });
   }
 
   function shuffle(arr){
@@ -417,6 +581,7 @@
       } else {
         nLabel.textContent = '抽幾個';
       }
+      renderHistory();
     });
   });
 
@@ -486,15 +651,28 @@
 
     try {
       if (mode === 'unique'){
-        if (n > list.length){
-          toast('不重複模式下，抽的數量不能超過名單人數');
-          n = list.length;
+        const pool = availablePool(list);
+        if (pool.length === 0){
+          toast('所有人都抽過了，請先重置紀錄或關閉排除');
+          return;
+        }
+        if (n > pool.length){
+          toast(`可抽的人只剩 ${pool.length} 位`);
+          n = pool.length;
           nInput.value = n;
         }
-        title.textContent = `抽中 ${n} 位`;
+        const excluding = $('excludeToggle').checked;
+        title.textContent = excluding
+          ? `抽中 ${n} 位（已排除 ${list.length - pool.length} 位抽過的人）`
+          : `抽中 ${n} 位`;
         area.className = 'results';
-        const result = pickUnique(list, n);
-        await spinReveal(list, result, area);
+        const result = pickUnique(pool, n);
+        await spinReveal(pool, result, area);
+        if (excluding){
+          result.forEach(name => drawnHistory.add(name));
+          saveHistory();
+          renderHistory(list);
+        }
       } else if (mode === 'repeat'){
         title.textContent = `抽中 ${n} 位（可重複）`;
         area.className = 'results';
@@ -570,10 +748,23 @@
   $('drawBtn').addEventListener('click', doDraw);
   $('copyBtn').addEventListener('click', copyResult);
 
+  $('excludeToggle').addEventListener('change', () => {
+    try { localStorage.setItem(EXCLUDE_KEY, $('excludeToggle').checked ? '1' : '0'); } catch(e){}
+    renderHistory();
+  });
+  $('resetHistoryBtn').addEventListener('click', () => {
+    if (drawnHistory.size === 0){ toast('目前沒有紀錄'); return; }
+    drawnHistory.clear();
+    saveHistory();
+    renderHistory();
+    toast('已重置抽籤紀錄');
+  });
+
   // Restore
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved){ $('names').value = saved; }
+    $('excludeToggle').checked = localStorage.getItem(EXCLUDE_KEY) === '1';
   } catch(e){}
   updateCount();
 })();
