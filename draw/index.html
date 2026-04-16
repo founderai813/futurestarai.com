@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>抽籤 · FuturestarAI</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0a;
+    --panel: #141414;
+    --panel-2: #1c1c1f;
+    --border: #2a2a2e;
+    --text: #e8e8ea;
+    --muted: #888;
+    --accent-1: #00d2ff;
+    --accent-2: #7b2ff7;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Noto Sans TC', Roboto, sans-serif;
+    background: radial-gradient(1200px 600px at 20% -10%, rgba(123,47,247,.18), transparent 60%),
+                radial-gradient(1000px 600px at 100% 110%, rgba(0,210,255,.12), transparent 60%),
+                var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  header {
+    width: 100%;
+    max-width: 920px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .brand {
+    font-size: 1rem;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .brand b {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .pill {
+    background: #18181b;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: .35rem .7rem;
+    border-radius: 999px;
+    font-size: .85rem;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -.02em;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+    margin: .25rem 0 .5rem;
+  }
+  .sub {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 1.75rem;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 920px;
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+  .card + .card { margin-top: 1rem; }
+
+  label {
+    display: block;
+    font-size: .9rem;
+    color: var(--muted);
+    margin-bottom: .5rem;
+  }
+
+  textarea, input[type="text"], input[type="number"] {
+    width: 100%;
+    background: #0f0f12;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    padding: .75rem .9rem;
+    font-size: 1rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  textarea { resize: vertical; min-height: 160px; line-height: 1.5; }
+  textarea:focus, input:focus {
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 3px rgba(0,210,255,.18);
+  }
+
+  .count {
+    text-align: right;
+    color: var(--muted);
+    font-size: .8rem;
+    margin-top: .3rem;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  @media (min-width: 640px) {
+    .row { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .mode-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .5rem;
+    background: #0f0f12;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: .35rem;
+  }
+  .mode-tab {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    padding: .6rem .5rem;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .mode-tab:hover { color: var(--text); }
+  .mode-tab.active {
+    background: linear-gradient(135deg, rgba(123,47,247,.3), rgba(0,210,255,.2));
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px rgba(0,210,255,.25);
+  }
+
+  button.primary {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding: .95rem 1.2rem;
+    border-radius: 12px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-1));
+    transition: transform .12s ease, box-shadow .15s ease, opacity .15s;
+    width: 100%;
+  }
+  button.primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(123,47,247,.25);
+  }
+  button.primary:disabled { opacity: .5; cursor: not-allowed; }
+
+  button.ghost {
+    appearance: none;
+    background: #232327;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: .6rem .9rem;
+    font-family: inherit;
+    font-size: .9rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  button.ghost:hover { background: #2b2b30; }
+
+  .draw-bar {
+    margin-top: 1.25rem;
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+  }
+  .draw-bar button.primary { flex: 1; min-width: 200px; }
+
+  /* Result */
+  .result-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .result-title h2 { font-size: 1.2rem; }
+
+  .results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: .6rem;
+  }
+  .result {
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem .75rem;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.05rem;
+    word-break: break-word;
+    min-height: 3.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: border-color .25s, background .25s, transform .2s;
+  }
+  .result.spinning {
+    color: var(--muted);
+    border-color: var(--border);
+  }
+  .result.revealed {
+    border-color: rgba(0,210,255,.5);
+    background: linear-gradient(180deg, rgba(123,47,247,.12), rgba(0,210,255,.08));
+    animation: pop .35s ease;
+  }
+  .result .badge {
+    position: absolute;
+    top: -8px; left: -8px;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-1));
+    color: #fff; font-size: .75rem; font-weight: 800;
+    padding: 2px 8px; border-radius: 999px;
+  }
+  @keyframes pop {
+    0% { transform: scale(.9); }
+    60% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+
+  .group {
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: .75rem;
+  }
+  .group h3 {
+    font-size: 1rem;
+    margin-bottom: .6rem;
+    color: var(--accent-1);
+  }
+  .group ul { list-style: none; display: flex; flex-wrap: wrap; gap: .4rem; }
+  .group li {
+    background: #222228;
+    border: 1px solid var(--border);
+    padding: .35rem .65rem;
+    border-radius: 8px;
+    font-size: .9rem;
+  }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 1.5rem 0;
+  }
+
+  .toast {
+    position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
+    background: #18181b; border: 1px solid var(--border);
+    color: var(--text); padding: .65rem 1rem; border-radius: 999px;
+    font-size: .9rem; opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  .hidden { display: none !important; }
+
+  footer {
+    margin-top: 2rem;
+    color: #555;
+    font-size: .85rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="/"><b>FuturestarAI</b></a>
+  <span class="pill" id="countPill">0 人</span>
+</header>
+
+<h1>抽籤 🎲</h1>
+<p class="sub">貼上名單、選模式，按下去就見真章</p>
+
+<!-- Input card -->
+<section class="card">
+  <label for="names">名單（每行一個）</label>
+  <textarea id="names" placeholder="小明&#10;小華&#10;阿志&#10;..." spellcheck="false"></textarea>
+  <div class="count" id="countText">0 人</div>
+
+  <div class="row">
+    <div>
+      <label>模式</label>
+      <div class="mode-tabs" role="tablist">
+        <button class="mode-tab active" data-mode="unique">抽 N 個（不重複）</button>
+        <button class="mode-tab" data-mode="repeat">抽 N 個（可重複）</button>
+        <button class="mode-tab" data-mode="groups">分成 N 組</button>
+      </div>
+    </div>
+    <div>
+      <label id="nLabel" for="nInput">抽幾個</label>
+      <input id="nInput" type="number" min="1" value="1" />
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:.5rem;">
+      <button class="ghost" id="clearBtn" type="button">清空名單</button>
+      <button class="ghost" id="sampleBtn" type="button">範例</button>
+    </div>
+  </div>
+
+  <div class="draw-bar">
+    <button class="primary" id="drawBtn">🎲 開始抽籤</button>
+  </div>
+</section>
+
+<!-- Result card -->
+<section class="card" id="resultCard" style="display:none;">
+  <div class="result-title">
+    <h2 id="resultTitle">結果</h2>
+    <button class="ghost" id="copyBtn" type="button">複製結果</button>
+  </div>
+  <div id="resultArea"></div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<footer>&copy; 2026 FuturestarAI · 抽籤結果僅存於你的瀏覽器</footer>
+
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+
+  const STORAGE_KEY = 'futurestarai.draw.v1';
+
+  function toast(msg, ms=1500){
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('show'), ms);
+  }
+
+  function parseNames(text){
+    return text
+      .split(/\r?\n/)
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+
+  function updateCount(){
+    const n = parseNames($('names').value).length;
+    const txt = n + ' 人';
+    $('countText').textContent = txt;
+    $('countPill').textContent = txt;
+  }
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function pickUnique(arr, n){
+    return shuffle(arr).slice(0, n);
+  }
+  function pickRepeat(arr, n){
+    const out = [];
+    for (let i=0;i<n;i++) out.push(arr[Math.floor(Math.random()*arr.length)]);
+    return out;
+  }
+  function splitGroups(arr, k){
+    const shuffled = shuffle(arr);
+    const groups = Array.from({length: k}, () => []);
+    shuffled.forEach((v, i) => groups[i % k].push(v));
+    return groups;
+  }
+
+  // ---- Mode ----
+  let mode = 'unique';
+  const nLabel = $('nLabel');
+  const nInput = $('nInput');
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      mode = tab.dataset.mode;
+      if (mode === 'groups'){
+        nLabel.textContent = '分幾組';
+        if (+nInput.value < 2) nInput.value = 2;
+      } else {
+        nLabel.textContent = '抽幾個';
+      }
+    });
+  });
+
+  // ---- Animation ----
+  function spinReveal(pool, finals, container){
+    container.innerHTML = '';
+    const cells = finals.map(() => {
+      const d = document.createElement('div');
+      d.className = 'result spinning';
+      d.textContent = '?';
+      container.appendChild(d);
+      return d;
+    });
+
+    if (!pool.length){ return Promise.resolve(); }
+
+    const totalMs = 1200;
+    const tickMs = 60;
+    const start = performance.now();
+
+    return new Promise(resolve => {
+      const id = setInterval(() => {
+        const elapsed = performance.now() - start;
+        cells.forEach((cell, i) => {
+          if (cell.classList.contains('revealed')) return;
+          cell.textContent = pool[Math.floor(Math.random() * pool.length)];
+        });
+        if (elapsed >= totalMs){
+          clearInterval(id);
+          // Reveal one by one
+          let i = 0;
+          const revealNext = () => {
+            if (i >= cells.length){ resolve(); return; }
+            const cell = cells[i];
+            cell.classList.remove('spinning');
+            cell.classList.add('revealed');
+            cell.textContent = finals[i];
+            if (finals.length > 1){
+              const b = document.createElement('div');
+              b.className = 'badge';
+              b.textContent = '#' + (i+1);
+              cell.appendChild(b);
+            }
+            i++;
+            setTimeout(revealNext, 180);
+          };
+          revealNext();
+        }
+      }, tickMs);
+    });
+  }
+
+  // ---- Draw ----
+  async function doDraw(){
+    const list = parseNames($('names').value);
+    if (list.length === 0){ toast('請先輸入名單'); return; }
+
+    let n = parseInt(nInput.value, 10);
+    if (isNaN(n) || n < 1) n = 1;
+
+    const card = $('resultCard');
+    const area = $('resultArea');
+    const title = $('resultTitle');
+    card.style.display = '';
+
+    $('drawBtn').disabled = true;
+
+    try {
+      if (mode === 'unique'){
+        if (n > list.length){
+          toast('不重複模式下，抽的數量不能超過名單人數');
+          n = list.length;
+          nInput.value = n;
+        }
+        title.textContent = `抽中 ${n} 位`;
+        area.className = 'results';
+        const result = pickUnique(list, n);
+        await spinReveal(list, result, area);
+      } else if (mode === 'repeat'){
+        title.textContent = `抽中 ${n} 位（可重複）`;
+        area.className = 'results';
+        const result = pickRepeat(list, n);
+        await spinReveal(list, result, area);
+      } else {
+        if (n < 2) n = 2;
+        if (n > list.length) n = list.length;
+        nInput.value = n;
+        title.textContent = `分成 ${n} 組`;
+        area.className = 'groups-wrap';
+        const groups = splitGroups(list, n);
+        area.innerHTML = '';
+        for (let i=0;i<groups.length;i++){
+          const div = document.createElement('div');
+          div.className = 'group';
+          const h = document.createElement('h3'); h.textContent = '第 ' + (i+1) + ' 組（' + groups[i].length + ' 人）';
+          const ul = document.createElement('ul');
+          groups[i].forEach(name => {
+            const li = document.createElement('li'); li.textContent = name; ul.appendChild(li);
+          });
+          div.appendChild(h); div.appendChild(ul); area.appendChild(div);
+          await new Promise(r => setTimeout(r, 220));
+        }
+      }
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } finally {
+      $('drawBtn').disabled = false;
+    }
+  }
+
+  // ---- Copy ----
+  async function copyResult(){
+    const area = $('resultArea');
+    let text = '';
+    if (area.classList.contains('results')){
+      const items = [...area.querySelectorAll('.result')];
+      text = items.map((el, i) => (items.length > 1 ? `${i+1}. ` : '') + (el.childNodes[0]?.nodeValue || el.textContent).trim()).join('\n');
+    } else {
+      const groups = [...area.querySelectorAll('.group')];
+      text = groups.map(g => {
+        const h = g.querySelector('h3')?.textContent || '';
+        const names = [...g.querySelectorAll('li')].map(li => li.textContent).join('、');
+        return h + '\n' + names;
+      }).join('\n\n');
+    }
+    if (!text){ toast('沒有結果可複製'); return; }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('已複製結果');
+    } catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+      toast('已複製結果');
+    }
+  }
+
+  // ---- Bindings ----
+  $('names').addEventListener('input', () => {
+    updateCount();
+    try { localStorage.setItem(STORAGE_KEY, $('names').value); } catch(e){}
+  });
+  $('clearBtn').addEventListener('click', () => {
+    $('names').value = ''; updateCount();
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+    $('resultCard').style.display = 'none';
+  });
+  $('sampleBtn').addEventListener('click', () => {
+    $('names').value = ['小明','小華','阿志','美玲','家豪','怡君','俊傑','淑芬','建宏','雅婷'].join('\n');
+    updateCount();
+  });
+  $('drawBtn').addEventListener('click', doDraw);
+  $('copyBtn').addEventListener('click', copyResult);
+
+  // Restore
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved){ $('names').value = saved; }
+  } catch(e){}
+  updateCount();
+})();
+</script>
+
+</body>
+</html>
