@@ -448,6 +448,104 @@
     font-size: .8rem;
     color: var(--accent-1);
   }
+
+  /* Top tabs */
+  .top-tabs {
+    width: 100%;
+    max-width: 920px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .4rem;
+    background: #0f0f12;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: .35rem;
+    margin-bottom: 1.25rem;
+  }
+  .top-tab {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    padding: .7rem .5rem;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .top-tab:hover { color: var(--text); }
+  .top-tab.active {
+    background: linear-gradient(135deg, rgba(123,47,247,.3), rgba(0,210,255,.2));
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px rgba(0,210,255,.25);
+  }
+  .tab-content { display: none; width: 100%; max-width: 920px; }
+  .tab-content.active { display: block; }
+
+  /* Pair mode */
+  .pair-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 640px) {
+    .pair-grid { grid-template-columns: 1fr; }
+  }
+  .pair-grid textarea {
+    min-height: 140px;
+  }
+  .pair-modes {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+  }
+  .pair-mode-btn {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: #18181b;
+    color: var(--muted);
+    padding: .6rem .9rem;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .pair-mode-btn:hover { color: var(--text); border-color: var(--accent-1); }
+  .pair-mode-btn.active {
+    background: linear-gradient(135deg, rgba(123,47,247,.2), rgba(0,210,255,.12));
+    color: var(--text);
+    border-color: var(--accent-2);
+  }
+  .pair-result-list {
+    list-style: none;
+  }
+  .pair-result-list li {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem .8rem;
+    margin-bottom: .4rem;
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: .95rem;
+    animation: pop .3s ease;
+  }
+  .pair-result-list .arrow {
+    color: var(--accent-1);
+    font-weight: 700;
+  }
+  .pair-result-list .idx {
+    color: var(--muted);
+    font-size: .8rem;
+    min-width: 2em;
+    text-align: right;
+  }
 </style>
 </head>
 <body>
@@ -459,6 +557,15 @@
 
 <h1>抽籤 🎲</h1>
 <p class="sub">貼上名單、選模式，按下去就見真章</p>
+
+<nav class="top-tabs">
+  <button class="top-tab active" data-tab="normal">🎯 一般抽籤</button>
+  <button class="top-tab" data-tab="pair">💝 配對抽籤</button>
+  <button class="top-tab" data-tab="remote">📡 遠端同步</button>
+</nav>
+
+<!-- ===== Tab: Normal ===== -->
+<div class="tab-content active" data-tab="normal">
 
 <!-- Input card -->
 <section class="card">
@@ -522,6 +629,55 @@
   </div>
   <div id="resultArea"></div>
 </section>
+
+</div><!-- /tab normal -->
+
+<!-- ===== Tab: Pair ===== -->
+<div class="tab-content" data-tab="pair">
+<section class="card">
+  <h2 style="margin-bottom:1rem;">💝 配對抽籤</h2>
+
+  <div class="pair-grid">
+    <div>
+      <label for="pairA">A 組名單（每行一個）</label>
+      <textarea id="pairA" placeholder="小明&#10;小華&#10;阿志" spellcheck="false"></textarea>
+      <div class="count" id="pairACount">0 人</div>
+    </div>
+    <div>
+      <label for="pairB">B 組名單（每行一個）</label>
+      <textarea id="pairB" placeholder="Alice&#10;Bob&#10;Carol&#10;&#10;留空 = 秘密聖誕老人（A 內部配對）" spellcheck="false"></textarea>
+      <div class="count" id="pairBCount">0 人</div>
+    </div>
+  </div>
+
+  <div class="pair-modes">
+    <button class="pair-mode-btn active" data-mode="oneToOne">🔗 一對一配對</button>
+    <button class="pair-mode-btn" data-mode="aGetsB">🎁 A 每人分配一個 B（B 不足可重複）</button>
+    <button class="pair-mode-btn" data-mode="santa">🎅 秘密聖誕老人（A 內部互配）</button>
+  </div>
+
+  <div class="draw-bar">
+    <button class="primary" id="pairDrawBtn">💝 開始配對</button>
+  </div>
+</section>
+
+<section class="card" id="pairResultCard" style="display:none;">
+  <div class="result-title">
+    <h2 id="pairResultTitle">配對結果</h2>
+    <button class="ghost" id="pairCopyBtn" type="button">複製結果</button>
+  </div>
+  <ol class="pair-result-list" id="pairResultArea"></ol>
+</section>
+</div><!-- /tab pair -->
+
+<!-- ===== Tab: Remote (placeholder for Step 3) ===== -->
+<div class="tab-content" data-tab="remote">
+<section class="card" style="text-align:center; padding:3rem 1.5rem;">
+  <p style="font-size:3rem;margin-bottom:1rem;">📡</p>
+  <h2 style="margin-bottom:.5rem;">遠端同步抽籤</h2>
+  <p style="color:var(--muted);">即將推出 — 房主抽、觀眾同步看結果。</p>
+</section>
+</div><!-- /tab remote -->
 
 <div class="toast" id="toast"></div>
 
@@ -994,6 +1150,137 @@
     renderHistory();
     toast('已重置抽籤紀錄');
   });
+
+  // ---- Top tabs ----
+  document.querySelectorAll('.top-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.top-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      const target = document.querySelector(`.tab-content[data-tab="${tab.dataset.tab}"]`);
+      if (target) target.classList.add('active');
+    });
+  });
+
+  // ---- Pair mode ----
+  const PAIR_A_KEY = 'futurestarai.draw.pairA.v1';
+  const PAIR_B_KEY = 'futurestarai.draw.pairB.v1';
+  let pairMode = 'oneToOne';
+
+  function parsePairList(text){
+    return text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  }
+
+  function updatePairCount(){
+    $('pairACount').textContent = parsePairList($('pairA').value).length + ' 人';
+    $('pairBCount').textContent = parsePairList($('pairB').value).length + ' 人';
+  }
+
+  document.querySelectorAll('.pair-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.pair-mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      pairMode = btn.dataset.mode;
+    });
+  });
+
+  function derangement(arr){
+    if (arr.length < 2) return arr.slice();
+    let result;
+    do {
+      result = shuffle(arr);
+    } while (result.some((v, i) => v === arr[i]));
+    return result;
+  }
+
+  function doPairDraw(){
+    const a = parsePairList($('pairA').value);
+    const b = parsePairList($('pairB').value);
+    const title = $('pairResultTitle');
+    const area = $('pairResultArea');
+    const card = $('pairResultCard');
+
+    let pairs = [];
+
+    if (pairMode === 'santa'){
+      if (a.length < 2){ toast('秘密聖誕老人至少需要 2 人'); return; }
+      const shuffled = derangement(a);
+      pairs = a.map((from, i) => [from, shuffled[i]]);
+      title.textContent = `🎅 秘密聖誕老人（${a.length} 組）`;
+    } else if (pairMode === 'oneToOne'){
+      if (a.length === 0){ toast('A 組不可為空'); return; }
+      if (b.length === 0){ toast('一對一模式需要 B 組名單'); return; }
+      const n = Math.min(a.length, b.length);
+      const shuffledB = shuffle(b);
+      pairs = a.slice(0, n).map((name, i) => [name, shuffledB[i]]);
+      if (a.length !== b.length){
+        title.textContent = `🔗 一對一配對（${n} 組，人數不同取較少）`;
+      } else {
+        title.textContent = `🔗 一對一配對（${n} 組）`;
+      }
+    } else {
+      if (a.length === 0){ toast('A 組不可為空'); return; }
+      if (b.length === 0){ toast('需要 B 組名單'); return; }
+      pairs = a.map(name => [name, b[Math.floor(Math.random() * b.length)]]);
+      title.textContent = `🎁 A 每人分配一個 B（${a.length} 組）`;
+    }
+
+    area.innerHTML = '';
+    card.style.display = '';
+    pairs.forEach((p, i) => {
+      const li = document.createElement('li');
+      li.style.animationDelay = (i * 0.08) + 's';
+      li.innerHTML = '<span class="idx">' + (i+1) + '</span>' +
+        '<span>' + escHtml(p[0]) + '</span>' +
+        '<span class="arrow">→</span>' +
+        '<span>' + escHtml(p[1]) + '</span>';
+      area.appendChild(li);
+    });
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function escHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function copyPairResult(){
+    const items = [...$('pairResultArea').querySelectorAll('li')];
+    const text = items.map((li, i) => {
+      const spans = li.querySelectorAll('span');
+      return `${i+1}. ${spans[1]?.textContent || ''} → ${spans[3]?.textContent || ''}`;
+    }).join('\n');
+    if (!text){ toast('沒有結果可複製'); return; }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('已複製配對結果');
+    } catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+      toast('已複製配對結果');
+    }
+  }
+
+  $('pairDrawBtn').addEventListener('click', doPairDraw);
+  $('pairCopyBtn').addEventListener('click', copyPairResult);
+
+  $('pairA').addEventListener('input', () => {
+    updatePairCount();
+    try { localStorage.setItem(PAIR_A_KEY, $('pairA').value); } catch(e){}
+  });
+  $('pairB').addEventListener('input', () => {
+    updatePairCount();
+    try { localStorage.setItem(PAIR_B_KEY, $('pairB').value); } catch(e){}
+  });
+
+  // Restore pair data
+  try {
+    const savedA = localStorage.getItem(PAIR_A_KEY);
+    const savedB = localStorage.getItem(PAIR_B_KEY);
+    if (savedA) $('pairA').value = savedA;
+    if (savedB) $('pairB').value = savedB;
+  } catch(e){}
+  updatePairCount();
 
   // ---- Init ----
   loadLists();
