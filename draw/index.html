@@ -599,6 +599,60 @@
   .copy-btn:hover { background: rgba(0,210,255,.08); }
   .hidden { display: none !important; }
   .controls { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
+
+  /* QR Modal */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+  }
+  .modal-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 1.5rem;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+  }
+  .modal-box h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+  .modal-box canvas {
+    background: #fff;
+    border-radius: 8px;
+    max-width: 100%;
+  }
+  .modal-box .qr-text {
+    font-size: .75rem;
+    color: var(--muted);
+    margin-top: .75rem;
+    word-break: break-all;
+    max-height: 100px;
+    overflow-y: auto;
+    text-align: left;
+    background: #0f0f12;
+    border-radius: 8px;
+    padding: .5rem;
+  }
+  .modal-box .modal-btns {
+    display: flex;
+    gap: .5rem;
+    margin-top: 1rem;
+    justify-content: center;
+  }
 </style>
 </head>
 <body>
@@ -678,7 +732,10 @@
 <section class="card" id="resultCard" style="display:none;">
   <div class="result-title">
     <h2 id="resultTitle">結果</h2>
-    <button class="ghost" id="copyBtn" type="button">複製結果</button>
+    <div style="display:flex;gap:.5rem;">
+      <button class="ghost" id="copyBtn" type="button">複製結果</button>
+      <button class="ghost" id="qrBtn" type="button">QR 分享</button>
+    </div>
   </div>
   <div id="resultArea"></div>
 </section>
@@ -717,7 +774,10 @@
 <section class="card" id="pairResultCard" style="display:none;">
   <div class="result-title">
     <h2 id="pairResultTitle">配對結果</h2>
-    <button class="ghost" id="pairCopyBtn" type="button">複製結果</button>
+    <div style="display:flex;gap:.5rem;">
+      <button class="ghost" id="pairCopyBtn" type="button">複製結果</button>
+      <button class="ghost" id="pairQrBtn" type="button">QR 分享</button>
+    </div>
   </div>
   <ol class="pair-result-list" id="pairResultArea"></ol>
 </section>
@@ -802,9 +862,21 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="modal-overlay" id="qrModal">
+  <div class="modal-box">
+    <h3>📱 掃描 QR Code 分享結果</h3>
+    <canvas id="qrCanvas"></canvas>
+    <div class="qr-text" id="qrText"></div>
+    <div class="modal-btns">
+      <button class="ghost" id="qrCloseBtn" type="button">關閉</button>
+    </div>
+  </div>
+</div>
+
 <footer>&copy; 2026 <a href="/" style="color:inherit;">FuturestarAI</a> · <a href="/partyup/" style="color:inherit;">PartyUp</a> · 抽籤結果僅存於你的瀏覽器</footer>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 (function(){
   const $ = (id) => document.getElementById(id);
@@ -1567,6 +1639,57 @@
     $('remoteLobby').classList.remove('hidden');
     $('viewerWaiting').classList.remove('hidden');
     $('viewerResult').classList.add('hidden');
+  });
+
+  // ---- QR Share ----
+  function getResultText(){
+    const area = $('resultArea');
+    if (area.classList.contains('results')){
+      const items = [...area.querySelectorAll('.result')];
+      return items.map((el, i) => (items.length > 1 ? `${i+1}. ` : '') + (el.childNodes[0]?.nodeValue || el.textContent).trim()).join('\n');
+    }
+    const groups = [...area.querySelectorAll('.group')];
+    if (groups.length){
+      return groups.map(g => {
+        const h = g.querySelector('h3')?.textContent || '';
+        const names = [...g.querySelectorAll('li')].map(li => li.textContent).join(', ');
+        return h + '\n' + names;
+      }).join('\n\n');
+    }
+    return '';
+  }
+
+  function getPairResultText(){
+    const items = [...$('pairResultArea').querySelectorAll('li')];
+    return items.map((li, i) => {
+      const spans = li.querySelectorAll('span');
+      return `${i+1}. ${spans[1]?.textContent || ''} → ${spans[3]?.textContent || ''}`;
+    }).join('\n');
+  }
+
+  function showQr(text){
+    if (!text){ toast('沒有結果可分享'); return; }
+    const canvas = $('qrCanvas');
+    $('qrText').textContent = text;
+    try {
+      QRCode.toCanvas(canvas, text, {
+        width: 260,
+        margin: 2,
+        color: { dark: '#000', light: '#fff' }
+      });
+    } catch(e){
+      // If text is too long for QR, truncate
+      const short = text.slice(0, 500);
+      QRCode.toCanvas(canvas, short, { width: 260, margin: 2, color: { dark: '#000', light: '#fff' } });
+    }
+    $('qrModal').classList.add('show');
+  }
+
+  $('qrBtn').addEventListener('click', () => showQr(getResultText()));
+  $('pairQrBtn').addEventListener('click', () => showQr(getPairResultText()));
+  $('qrCloseBtn').addEventListener('click', () => $('qrModal').classList.remove('show'));
+  $('qrModal').addEventListener('click', (e) => {
+    if (e.target === $('qrModal')) $('qrModal').classList.remove('show');
   });
 
   // Auto-join if #remote=xxx
