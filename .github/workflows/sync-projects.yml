@@ -1,0 +1,36 @@
+name: Sync project activity
+
+on:
+  schedule:
+    - cron: '0 1 * * *'  # 01:00 UTC = 09:00 Asia/Taipei
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update CLAUDE.md with recent sub-project activity
+        env:
+          # GITHUB_TOKEN only covers public repos. To include private repos
+          # (e.g. purple-and-friends), create a fine-grained PAT with
+          # "Contents: Read" on those repos and store it as secret
+          # SUBPROJECTS_TOKEN.
+          GH_TOKEN: ${{ secrets.SUBPROJECTS_TOKEN || secrets.GITHUB_TOKEN }}
+        run: python3 .github/scripts/sync_projects.py
+
+      - name: Commit and push if CLAUDE.md changed
+        run: |
+          if git diff --quiet -- CLAUDE.md; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CLAUDE.md
+          git commit -m "chore: sync project activity ($(TZ=Asia/Taipei date +%Y-%m-%d))"
+          git push
