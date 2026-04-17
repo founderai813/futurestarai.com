@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PartyUp · 讓聚會嗨起來</title>
+<meta name="description" content="PartyUp 是一組輕量互動小工具：遠端猜拳、抽籤、分組、配對，把聚會、課堂、直播變得更有趣。" />
+<meta property="og:title" content="PartyUp · 讓聚會嗨起來" />
+<meta property="og:description" content="遠端猜拳、抽籤、分組、配對，一鍵開趴的互動工具。" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0a;
+    --panel: #141414;
+    --panel-2: #1c1c1f;
+    --border: #2a2a2e;
+    --text: #e8e8ea;
+    --muted: #888;
+    --accent-1: #00d2ff;
+    --accent-2: #7b2ff7;
+    --pink: #ff5fa2;
+  }
+
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Noto Sans TC', Roboto, sans-serif;
+    background:
+      radial-gradient(1200px 600px at 20% -10%, rgba(123,47,247,.22), transparent 60%),
+      radial-gradient(1000px 600px at 100% 110%, rgba(0,210,255,.15), transparent 60%),
+      radial-gradient(800px 400px at 80% 10%, rgba(255,95,162,.12), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  header {
+    width: 100%;
+    max-width: 960px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+  }
+  .brand {
+    font-size: .95rem;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .brand:hover { color: var(--text); }
+
+  .hero {
+    text-align: center;
+    margin: 1rem 0 2.5rem;
+    max-width: 720px;
+  }
+  .logo-mark {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .2rem;
+    font-size: clamp(3rem, 8vw, 5rem);
+    font-weight: 900;
+    letter-spacing: -.04em;
+    margin-bottom: .5rem;
+  }
+  .logo-mark .p1 {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .logo-mark .p2 {
+    background: linear-gradient(135deg, var(--accent-2), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .logo-mark .dot {
+    width: .6em;
+    height: .6em;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-1), var(--pink));
+    display: inline-block;
+    align-self: center;
+    margin-left: .15em;
+  }
+
+  .tagline {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    color: var(--muted);
+    margin-bottom: .25rem;
+  }
+  .parent-brand {
+    font-size: .85rem;
+    color: #555;
+  }
+  .parent-brand a { color: var(--muted); text-decoration: none; }
+  .parent-brand a:hover { color: var(--accent-1); }
+
+  .tools {
+    width: 100%;
+    max-width: 960px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  .tool {
+    position: relative;
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition: transform .18s, border-color .2s, box-shadow .2s;
+    overflow: hidden;
+  }
+  .tool::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-1), var(--accent-2), var(--pink));
+    opacity: .6;
+  }
+  .tool:hover {
+    transform: translateY(-3px);
+    border-color: rgba(0,210,255,.4);
+    box-shadow: 0 15px 40px rgba(123,47,247,.2);
+  }
+  .tool .icon {
+    font-size: 2.5rem;
+    margin-bottom: .75rem;
+    display: block;
+  }
+  .tool h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: .4rem;
+  }
+  .tool p {
+    color: var(--muted);
+    font-size: .9rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+  .tool .go {
+    color: var(--accent-1);
+    font-weight: 600;
+    font-size: .9rem;
+  }
+  .tool .tag {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: .7rem;
+    padding: .2rem .5rem;
+    border-radius: 999px;
+    background: rgba(255,95,162,.15);
+    color: var(--pink);
+    font-weight: 600;
+  }
+
+  .coming {
+    opacity: .55;
+    cursor: default;
+  }
+  .coming:hover {
+    transform: none;
+    border-color: var(--border);
+    box-shadow: none;
+  }
+  .coming .tag {
+    background: rgba(136,136,136,.15);
+    color: var(--muted);
+  }
+
+  footer {
+    margin-top: 3rem;
+    color: #555;
+    font-size: .85rem;
+    text-align: center;
+  }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--accent-1); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="/">← FuturestarAI</a>
+  <span style="font-size:.85rem;color:var(--muted);">讓聚會嗨起來 🎉</span>
+</header>
+
+<div class="hero">
+  <div class="logo-mark">
+    <span class="p1">Party</span><span class="p2">Up</span><span class="dot"></span>
+  </div>
+  <p class="tagline">互動小工具，一鍵開趴</p>
+  <p class="parent-brand">by <a href="/">FuturestarAI</a></p>
+</div>
+
+<section class="tools">
+
+  <a class="tool" href="/rps/">
+    <span class="icon">✊✋✌️</span>
+    <h2>遠端猜拳</h2>
+    <p>開房傳連結，和朋友即時對戰、計分、再戰一局。P2P 連線，公平無延遲。</p>
+    <span class="go">開始玩 →</span>
+  </a>
+
+  <a class="tool" href="/draw/">
+    <span class="icon">🎲</span>
+    <h2>抽籤</h2>
+    <p>貼上名單，抽 N 個、可重複、分組通通可以。支援抽過排除、歷史紀錄。</p>
+    <span class="go">開始抽 →</span>
+  </a>
+
+  <div class="tool coming">
+    <span class="tag">開發中</span>
+    <span class="icon">💝</span>
+    <h2>配對抽籤</h2>
+    <p>兩組名單互相配對，適合交換禮物、秘密聖誕老人、搭檔分組。</p>
+    <span class="go" style="color:var(--muted);">即將推出</span>
+  </div>
+
+  <div class="tool coming">
+    <span class="tag">開發中</span>
+    <span class="icon">📡</span>
+    <h2>遠端同步抽籤</h2>
+    <p>房主抽、觀眾同步看。直播、Zoom 會議、線上活動的最佳互動工具。</p>
+    <span class="go" style="color:var(--muted);">即將推出</span>
+  </div>
+
+  <div class="tool coming">
+    <span class="tag">開發中</span>
+    <span class="icon">📊</span>
+    <h2>即時投票</h2>
+    <p>掃 QR 就能投票，結果即時更新。適合會議、直播、課堂互動。</p>
+    <span class="go" style="color:var(--muted);">即將推出</span>
+  </div>
+
+  <div class="tool coming">
+    <span class="tag">開發中</span>
+    <span class="icon">⏱️</span>
+    <h2>倒數計時</h2>
+    <p>大字倒數，團康、搶答、活動進場用。可分享給全場同時倒數。</p>
+    <span class="go" style="color:var(--muted);">即將推出</span>
+  </div>
+
+</section>
+
+<footer>
+  &copy; 2026 <a href="/">FuturestarAI</a> · PartyUp 所有工具皆 P2P / 本機運算，不儲存你的資料
+</footer>
+
+</body>
+</html>

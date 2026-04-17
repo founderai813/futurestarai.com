@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>遠端猜拳 · FuturestarAI</title>
+<title>遠端猜拳 · PartyUp</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -50,10 +50,12 @@
     color: var(--muted);
     text-decoration: none;
   }
+  .brand:hover { color: var(--text); }
   .brand b {
     background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    font-weight: 800;
   }
 
   h1 {
@@ -334,7 +336,7 @@
 <body>
 
 <header>
-  <a class="brand" href="/"><b>FuturestarAI</b></a>
+  <a class="brand" href="/partyup/"><b>PartyUp</b> · 遠端猜拳</a>
   <span class="room-pill" id="roomPill">未連線</span>
 </header>
 
@@ -418,7 +420,7 @@
 
 <div class="toast" id="toast"></div>
 
-<footer>&copy; 2026 FuturestarAI · 點對點連線，無伺服器儲存</footer>
+<footer>&copy; 2026 <a href="/" style="color:inherit;">FuturestarAI</a> · <a href="/partyup/" style="color:inherit;">PartyUp</a> · 點對點連線，無伺服器儲存</footer>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
