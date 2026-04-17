@@ -546,6 +546,59 @@
     min-width: 2em;
     text-align: right;
   }
+
+  /* Remote */
+  .tile-r {
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+  }
+  .tile-r h3 { font-size: 1.1rem; font-weight: 700; }
+  .remote-status {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin-bottom: 1rem;
+    color: var(--muted);
+    font-size: .9rem;
+    flex-wrap: wrap;
+  }
+  .dot {
+    width: 9px; height: 9px; border-radius: 50%; background: #555;
+  }
+  .dot.online { background: var(--ok); }
+  .dot.connecting { background: var(--warn); animation: pulse 1.2s infinite; }
+  .dot.offline { background: #f87171; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  .share {
+    background: #0f0f12;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: .75rem;
+  }
+  .share-link {
+    display: flex; gap: .5rem; align-items: center;
+    background: #18181b; border: 1px solid var(--border);
+    border-radius: 8px; padding: .5rem .65rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .85rem; color: var(--text);
+    overflow: hidden;
+  }
+  .share-link span {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+  }
+  .copy-btn {
+    appearance: none;
+    background: transparent; color: var(--accent-1);
+    padding: .3rem .55rem; font-size: .85rem;
+    border: 1px solid var(--border); border-radius: 6px;
+    cursor: pointer; font-family: inherit;
+  }
+  .copy-btn:hover { background: rgba(0,210,255,.08); }
+  .hidden { display: none !important; }
+  .controls { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -670,19 +723,88 @@
 </section>
 </div><!-- /tab pair -->
 
-<!-- ===== Tab: Remote (placeholder for Step 3) ===== -->
+<!-- ===== Tab: Remote ===== -->
 <div class="tab-content" data-tab="remote">
-<section class="card" style="text-align:center; padding:3rem 1.5rem;">
-  <p style="font-size:3rem;margin-bottom:1rem;">📡</p>
-  <h2 style="margin-bottom:.5rem;">遠端同步抽籤</h2>
-  <p style="color:var(--muted);">即將推出 — 房主抽、觀眾同步看結果。</p>
+
+<!-- Lobby -->
+<section class="card" id="remoteLobby">
+  <h2 style="margin-bottom:1rem;">📡 遠端同步抽籤</h2>
+  <p style="color:var(--muted);margin-bottom:1.25rem;">房主負責輸入名單和抽籤，所有觀眾同步看到結果。</p>
+  <div class="pair-grid">
+    <div class="tile-r">
+      <h3>🎮 我是主持人</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin:.5rem 0;">建立房間、分享連結給觀眾。</p>
+      <button class="primary" id="remoteHostBtn" type="button">建立房間</button>
+    </div>
+    <div class="tile-r">
+      <h3>👀 我是觀眾</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin:.5rem 0;">輸入房號或點主持人的連結。</p>
+      <input id="remoteJoinInput" type="text" placeholder="輸入房號" autocomplete="off" />
+      <button class="primary" id="remoteJoinBtn" type="button" style="margin-top:.5rem;">加入房間</button>
+    </div>
+  </div>
 </section>
+
+<!-- Host UI -->
+<section class="card hidden" id="remoteHostUI">
+  <div class="remote-status">
+    <span class="dot online" id="remoteDot"></span>
+    <span id="remoteStatusText">等待觀眾...</span>
+    <span class="pill" id="remoteViewerCount">0 位觀眾</span>
+  </div>
+
+  <div class="share" id="remoteShareBox">
+    <div style="margin-bottom:.5rem;color:var(--muted);font-size:.9rem;">把這個連結傳給觀眾：</div>
+    <div class="share-link">
+      <span id="remoteShareLink"></span>
+      <button class="copy-btn" id="remoteCopyBtn" type="button">複製</button>
+    </div>
+    <div style="margin-top:.6rem;color:var(--muted);font-size:.85rem;">房號：<b id="remoteShareCode" style="color:var(--text);font-family:ui-monospace,monospace;"></b></div>
+  </div>
+
+  <label for="remoteNames" style="margin-top:1rem;display:block;">名單（每行一個，支援加權）</label>
+  <textarea id="remoteNames" placeholder="小明&#10;小華&#10;阿志" spellcheck="false" style="min-height:120px;"></textarea>
+  <div class="count" id="remoteCountText">0 人</div>
+
+  <div style="display:flex;gap:.5rem;align-items:center;margin:1rem 0;">
+    <label for="remoteN" style="margin:0;white-space:nowrap;">抽幾個</label>
+    <input id="remoteN" type="number" min="1" value="1" style="width:80px;" />
+  </div>
+
+  <div class="draw-bar">
+    <button class="primary" id="remoteDrawBtn" type="button">📡 同步抽籤</button>
+    <button class="ghost" id="remoteLeaveBtn" type="button">🚪 關閉房間</button>
+  </div>
+
+  <div id="remoteHostResult"></div>
+</section>
+
+<!-- Viewer UI -->
+<section class="card hidden" id="remoteViewerUI">
+  <div class="remote-status">
+    <span class="dot connecting" id="viewerDot"></span>
+    <span id="viewerStatusText">連線中...</span>
+  </div>
+  <div id="viewerWaiting" style="text-align:center;padding:2.5rem 0;">
+    <p style="font-size:2.5rem;margin-bottom:.5rem;">⏳</p>
+    <p style="color:var(--muted);">等待主持人抽籤...</p>
+  </div>
+  <div id="viewerResult" class="hidden">
+    <h2 id="viewerResultTitle" style="margin-bottom:1rem;">結果</h2>
+    <div id="viewerResultArea" class="results"></div>
+  </div>
+  <div class="controls" style="margin-top:1rem;">
+    <button class="ghost" id="viewerLeaveBtn" type="button">🚪 離開房間</button>
+  </div>
+</section>
+
 </div><!-- /tab remote -->
 
 <div class="toast" id="toast"></div>
 
 <footer>&copy; 2026 <a href="/" style="color:inherit;">FuturestarAI</a> · <a href="/partyup/" style="color:inherit;">PartyUp</a> · 抽籤結果僅存於你的瀏覽器</footer>
 
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 (function(){
   const $ = (id) => document.getElementById(id);
@@ -1273,6 +1395,195 @@
     try { localStorage.setItem(PAIR_B_KEY, $('pairB').value); } catch(e){}
   });
 
+  // ---- Remote sync ----
+  let remotePeer = null;
+  let remoteConns = [];   // host: array of viewer connections
+  let hostConn = null;    // viewer: single connection to host
+  let isRemoteHost = false;
+
+  function remoteCode(){
+    const c = 'abcdefghjkmnpqrstuvwxyz23456789';
+    let s = '';
+    for(let i=0;i<3;i++) s += c[Math.floor(Math.random()*c.length)];
+    s += '-';
+    for(let i=0;i<4;i++) s += c[Math.floor(Math.random()*c.length)];
+    return 'draw-' + s;
+  }
+
+  function remoteShareUrl(code){
+    return location.origin + location.pathname + '#remote=' + code;
+  }
+
+  function updateRemoteViewerCount(){
+    const n = remoteConns.filter(c => c.open).length;
+    $('remoteViewerCount').textContent = n + ' 位觀眾';
+    $('remoteStatusText').textContent = n > 0 ? `${n} 位觀眾已連線` : '等待觀眾加入...';
+  }
+
+  function broadcastToViewers(msg){
+    remoteConns.forEach(c => { try { if (c.open) c.send(msg); } catch(e){} });
+  }
+
+  async function initRemotePeer(id){
+    return new Promise((resolve, reject) => {
+      const p = new Peer(id, { debug: 1 });
+      p.on('open', () => resolve(p));
+      p.on('error', (err) => {
+        if (err.type === 'unavailable-id') reject(new Error('房號已被使用'));
+        else if (err.type === 'peer-unavailable') reject(new Error('找不到此房號'));
+        else reject(err);
+      });
+    });
+  }
+
+  // Host
+  async function startHost(){
+    const code = remoteCode();
+    try {
+      remotePeer = await initRemotePeer(code);
+    } catch(e){ toast(e.message || '建立失敗'); return; }
+    isRemoteHost = true;
+    history.replaceState(null, '', '#remote=' + code);
+    $('remoteLobby').classList.add('hidden');
+    $('remoteHostUI').classList.remove('hidden');
+    $('remoteShareLink').textContent = remoteShareUrl(code);
+    $('remoteShareCode').textContent = code;
+    updateRemoteViewerCount();
+
+    remotePeer.on('connection', (c) => {
+      remoteConns.push(c);
+      c.on('open', () => {
+        updateRemoteViewerCount();
+        toast('有觀眾加入了');
+      });
+      c.on('close', () => {
+        remoteConns = remoteConns.filter(x => x !== c);
+        updateRemoteViewerCount();
+      });
+    });
+  }
+
+  async function doRemoteDraw(){
+    const entries = parseEntries($('remoteNames').value);
+    const names = entries.map(e => e.name);
+    if (names.length === 0){ toast('請先輸入名單'); return; }
+    const hasWeights = entries.some(e => e.weight > 1);
+    let n = parseInt($('remoteN').value, 10);
+    if (isNaN(n) || n < 1) n = 1;
+    if (n > names.length) n = names.length;
+
+    const result = hasWeights ? weightedPickUnique(entries, n) : pickUnique(names, n);
+    const title = `抽中 ${n} 位`;
+
+    // Show locally
+    const area = $('remoteHostResult');
+    area.className = 'results';
+    area.style.marginTop = '1rem';
+    await spinReveal(names, result, area);
+
+    // Broadcast to viewers
+    broadcastToViewers({ type: 'draw-result', title, pool: names, result });
+  }
+
+  $('remoteHostBtn').addEventListener('click', startHost);
+  $('remoteDrawBtn').addEventListener('click', doRemoteDraw);
+  $('remoteCopyBtn').addEventListener('click', async () => {
+    const url = $('remoteShareLink').textContent;
+    try { await navigator.clipboard.writeText(url); toast('連結已複製'); }
+    catch(e){ toast('複製失敗'); }
+  });
+  $('remoteNames').addEventListener('input', () => {
+    const n = parseNames($('remoteNames').value).length;
+    $('remoteCountText').textContent = n + ' 人';
+  });
+  $('remoteLeaveBtn').addEventListener('click', () => {
+    broadcastToViewers({ type: 'bye' });
+    remoteConns.forEach(c => { try { c.close(); } catch(e){} });
+    remoteConns = [];
+    if (remotePeer){ try { remotePeer.destroy(); } catch(e){} remotePeer = null; }
+    isRemoteHost = false;
+    history.replaceState(null, '', location.pathname);
+    $('remoteHostUI').classList.add('hidden');
+    $('remoteLobby').classList.remove('hidden');
+    $('remoteHostResult').innerHTML = '';
+  });
+
+  // Viewer
+  async function joinAsViewer(code){
+    try {
+      remotePeer = await initRemotePeer(undefined);
+    } catch(e){ toast(e.message || '連線失敗'); return; }
+    $('remoteLobby').classList.add('hidden');
+    $('remoteViewerUI').classList.remove('hidden');
+    $('viewerDot').className = 'dot connecting';
+    $('viewerStatusText').textContent = '連線中...';
+
+    hostConn = remotePeer.connect(code, { reliable: true });
+    hostConn.on('open', () => {
+      $('viewerDot').className = 'dot online';
+      $('viewerStatusText').textContent = '已連線，等待主持人抽籤...';
+    });
+    hostConn.on('data', async (data) => {
+      if (!data || typeof data !== 'object') return;
+      if (data.type === 'draw-result'){
+        $('viewerWaiting').classList.add('hidden');
+        const vr = $('viewerResult');
+        vr.classList.remove('hidden');
+        $('viewerResultTitle').textContent = data.title || '結果';
+        const area = $('viewerResultArea');
+        area.className = 'results';
+        await spinReveal(data.pool || [], data.result || [], area);
+      } else if (data.type === 'bye'){
+        $('viewerDot').className = 'dot offline';
+        $('viewerStatusText').textContent = '主持人已關閉房間';
+        toast('主持人已關閉房間');
+      }
+    });
+    hostConn.on('close', () => {
+      $('viewerDot').className = 'dot offline';
+      $('viewerStatusText').textContent = '連線中斷';
+    });
+    hostConn.on('error', () => {
+      $('viewerDot').className = 'dot offline';
+      $('viewerStatusText').textContent = '連線錯誤';
+      toast('連線失敗，請確認房號');
+    });
+  }
+
+  $('remoteJoinBtn').addEventListener('click', () => {
+    const code = $('remoteJoinInput').value.trim();
+    if (!code){ toast('請輸入房號'); return; }
+    history.replaceState(null, '', '#remote=' + code);
+    joinAsViewer(code);
+  });
+  $('remoteJoinInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') $('remoteJoinBtn').click();
+  });
+  $('viewerLeaveBtn').addEventListener('click', () => {
+    if (hostConn){ try { hostConn.close(); } catch(e){} hostConn = null; }
+    if (remotePeer){ try { remotePeer.destroy(); } catch(e){} remotePeer = null; }
+    history.replaceState(null, '', location.pathname);
+    $('remoteViewerUI').classList.add('hidden');
+    $('remoteLobby').classList.remove('hidden');
+    $('viewerWaiting').classList.remove('hidden');
+    $('viewerResult').classList.add('hidden');
+  });
+
+  // Auto-join if #remote=xxx
+  function checkRemoteHash(){
+    const h = (location.hash || '').replace(/^#/, '');
+    const m = h.match(/^remote=(.+)$/);
+    if (m){
+      const code = m[1];
+      // Switch to remote tab
+      document.querySelectorAll('.top-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector('.top-tab[data-tab="remote"]').classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelector('.tab-content[data-tab="remote"]').classList.add('active');
+      joinAsViewer(code);
+    }
+  }
+
   // Restore pair data
   try {
     const savedA = localStorage.getItem(PAIR_A_KEY);
@@ -1288,6 +1599,7 @@
   renderListSelect();
   try { $('excludeToggle').checked = localStorage.getItem(EXCLUDE_KEY) === '1'; } catch(e){}
   updateCount();
+  checkRemoteHash();
 })();
 </script>
 
