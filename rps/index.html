@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>遠端猜拳 · PartyUp</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0a;
+    --panel: #141414;
+    --panel-2: #1c1c1f;
+    --border: #2a2a2e;
+    --text: #e8e8ea;
+    --muted: #888;
+    --accent-1: #00d2ff;
+    --accent-2: #7b2ff7;
+    --win: #4ade80;
+    --lose: #f87171;
+    --tie: #fbbf24;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Noto Sans TC', Roboto, sans-serif;
+    background: radial-gradient(1200px 600px at 20% -10%, rgba(123,47,247,.18), transparent 60%),
+                radial-gradient(1000px 600px at 100% 110%, rgba(0,210,255,.12), transparent 60%),
+                var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  header {
+    width: 100%;
+    max-width: 920px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .brand {
+    font-size: 1rem;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .brand:hover { color: var(--text); }
+  .brand b {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -.02em;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+    margin: .25rem 0 .5rem;
+  }
+
+  .sub {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 1.75rem;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 920px;
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+
+  /* Lobby */
+  .lobby-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  @media (min-width: 640px) {
+    .lobby-actions { grid-template-columns: 1fr 1fr; }
+  }
+
+  .tile {
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+  }
+
+  .tile h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .tile p { color: var(--muted); font-size: .9rem; }
+
+  input[type="text"] {
+    background: #0f0f12;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    padding: .75rem .9rem;
+    font-size: 1rem;
+    font-family: inherit;
+    width: 100%;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input[type="text"]:focus {
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 3px rgba(0,210,255,.18);
+  }
+
+  button, .btn {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: .8rem 1.1rem;
+    border-radius: 10px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-1));
+    transition: transform .12s ease, box-shadow .15s ease, opacity .15s;
+  }
+  button:hover:not(:disabled), .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(123,47,247,.25); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: #232327;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-secondary:hover { background: #2b2b30; box-shadow: none; transform: none; }
+
+  .row { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 140px; }
+
+  /* Status bar */
+  .status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .status-left { display: flex; align-items: center; gap: .6rem; color: var(--muted); font-size: .9rem;}
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #555; box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+  .dot.connecting { background: var(--tie); animation: pulse 1.2s infinite; }
+  .dot.online { background: var(--win); }
+  .dot.offline { background: var(--lose); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+  .room-pill {
+    background: #18181b;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: .35rem .7rem;
+    border-radius: 999px;
+    font-size: .85rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  /* Share box */
+  .share {
+    background: #0f0f12;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+  .share-link {
+    display: flex; gap: .5rem; align-items: center;
+    background: #18181b; border: 1px solid var(--border);
+    border-radius: 8px; padding: .5rem .65rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .85rem; color: var(--text);
+    overflow: hidden;
+  }
+  .share-link span {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+  }
+  .copy-btn {
+    background: transparent; color: var(--accent-1);
+    padding: .3rem .55rem; font-size: .85rem;
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  .copy-btn:hover { background: rgba(0,210,255,.08); transform: none; box-shadow: none; }
+
+  /* Score */
+  .score {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    align-items: center;
+    margin: 1rem 0 1.25rem;
+    text-align: center;
+  }
+  .score .player { padding: .85rem 1rem; background: #18181b; border: 1px solid var(--border); border-radius: 12px; }
+  .score .player.me { border-color: rgba(0,210,255,.5); }
+  .score .player .name { font-size: .85rem; color: var(--muted); }
+  .score .player .num { font-size: 2rem; font-weight: 800; }
+  .score .vs { font-weight: 700; color: var(--muted); }
+
+  /* Choices */
+  .arena {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    align-items: center;
+    margin: 1.25rem 0;
+  }
+  .hand {
+    aspect-ratio: 1;
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(3rem, 12vw, 5.5rem);
+    transition: transform .25s, border-color .25s, background .25s;
+  }
+  .hand.win { border-color: var(--win); box-shadow: 0 0 0 3px rgba(74,222,128,.2); }
+  .hand.lose { border-color: var(--lose); box-shadow: 0 0 0 3px rgba(248,113,113,.2); }
+  .hand.tie  { border-color: var(--tie);  box-shadow: 0 0 0 3px rgba(251,191,36,.2); }
+  .hand.shake { animation: shake .35s ease-in-out 3; }
+  @keyframes shake {
+    0%,100% { transform: translateY(0) rotate(0); }
+    25% { transform: translateY(-8px) rotate(-6deg); }
+    75% { transform: translateY(-8px) rotate(6deg); }
+  }
+  .vs-big {
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: var(--muted);
+  }
+
+  .label {
+    text-align: center;
+    margin-top: .4rem;
+    color: var(--muted);
+    font-size: .85rem;
+  }
+
+  /* Choice buttons */
+  .choices {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .75rem;
+    margin-top: 1rem;
+  }
+  .choice {
+    background: #18181b;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 14px;
+    padding: 1rem .5rem;
+    font-size: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    align-items: center;
+    cursor: pointer;
+    transition: transform .12s, border-color .15s, background .15s;
+  }
+  .choice:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: var(--accent-1);
+    background: #1d1d22;
+  }
+  .choice .emoji { font-size: 2.2rem; }
+  .choice.selected {
+    border-color: var(--accent-2);
+    background: linear-gradient(180deg, rgba(123,47,247,.15), rgba(0,210,255,.08));
+  }
+  .choice:disabled { cursor: not-allowed; opacity: .5; }
+
+  .result {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    min-height: 1.6em;
+  }
+  .result.win  { color: var(--win); }
+  .result.lose { color: var(--lose); }
+  .result.tie  { color: var(--tie); }
+
+  .controls {
+    display: flex;
+    gap: .5rem;
+    margin-top: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .toast {
+    position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
+    background: #18181b; border: 1px solid var(--border);
+    color: var(--text); padding: .65rem 1rem; border-radius: 999px;
+    font-size: .9rem; opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  .hidden { display: none !important; }
+
+  footer {
+    margin-top: 2rem;
+    color: #555;
+    font-size: .85rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="https://partyup.futurestarai.com"><b>PartyUp</b> · 遠端猜拳</a>
+  <span class="room-pill" id="roomPill">未連線</span>
+</header>
+
+<h1>遠端猜拳 ✊✋✌️</h1>
+<p class="sub">把連結傳給朋友，馬上開始 P2P 對戰</p>
+
+<!-- Lobby -->
+<section id="lobby" class="card">
+  <div class="lobby-actions">
+    <div class="tile">
+      <h3>🎮 開新房間</h3>
+      <p>產生一個房號和分享連結，把連結傳給對手就能開戰。</p>
+      <button id="createBtn">建立房間</button>
+    </div>
+    <div class="tile">
+      <h3>🚪 加入房間</h3>
+      <p>輸入對方給你的房號，或直接點他傳給你的連結。</p>
+      <input id="roomInput" type="text" placeholder="輸入房號（例：rps-abc-1234）" autocomplete="off" />
+      <button id="joinBtn">加入</button>
+    </div>
+  </div>
+
+  <div class="share hidden" id="shareBox">
+    <div style="margin-bottom:.5rem;color:var(--muted);font-size:.9rem;">把這個連結傳給朋友：</div>
+    <div class="share-link">
+      <span id="shareLink"></span>
+      <button class="copy-btn" id="copyBtn">複製</button>
+    </div>
+    <div style="margin-top:.6rem;color:var(--muted);font-size:.85rem;">房號：<b id="shareCode" style="color:var(--text);font-family:ui-monospace,monospace;"></b></div>
+  </div>
+</section>
+
+<!-- Game -->
+<section id="game" class="card hidden" style="margin-top:1rem;">
+  <div class="status">
+    <div class="status-left">
+      <span class="dot" id="dot"></span>
+      <span id="statusText">等待連線...</span>
+    </div>
+    <span class="room-pill" id="gameRoomPill"></span>
+  </div>
+
+  <div class="score">
+    <div class="player me">
+      <div class="name">我</div>
+      <div class="num" id="scoreMe">0</div>
+    </div>
+    <div class="vs">VS</div>
+    <div class="player">
+      <div class="name">對手</div>
+      <div class="num" id="scoreOpp">0</div>
+    </div>
+  </div>
+
+  <div class="arena">
+    <div>
+      <div class="hand" id="handMe">❔</div>
+      <div class="label">我</div>
+    </div>
+    <div class="vs-big">VS</div>
+    <div>
+      <div class="hand" id="handOpp">❔</div>
+      <div class="label">對手</div>
+    </div>
+  </div>
+
+  <div class="result" id="result"></div>
+
+  <div class="choices">
+    <button class="choice" data-move="rock"     id="cRock"><span class="emoji">✊</span><span>石頭</span></button>
+    <button class="choice" data-move="paper"    id="cPaper"><span class="emoji">✋</span><span>布</span></button>
+    <button class="choice" data-move="scissors" id="cScissors"><span class="emoji">✌️</span><span>剪刀</span></button>
+  </div>
+
+  <div class="controls">
+    <button class="btn-secondary" id="rematchBtn">🔄 再來一局</button>
+    <button class="btn-secondary" id="resetScoreBtn">🧮 重設比分</button>
+    <button class="btn-secondary" id="leaveBtn">🚪 離開房間</button>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<footer>&copy; 2026 <a href="/" style="color:inherit;">FuturestarAI</a> · <a href="https://partyup.futurestarai.com" style="color:inherit;">PartyUp</a> · 點對點連線，無伺服器儲存</footer>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function(){
+  // ---- Utilities ----
+  const $ = (id) => document.getElementById(id);
+  const moves = ['rock', 'paper', 'scissors'];
+  const emojiMap = { rock: '✊', paper: '✋', scissors: '✌️' };
+  const nameMap  = { rock: '石頭', paper: '布', scissors: '剪刀' };
+
+  function toast(msg, ms=1800){
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('show'), ms);
+  }
+
+  function randomCode(){
+    const c = 'abcdefghjkmnpqrstuvwxyz23456789';
+    let s = '';
+    for (let i=0;i<3;i++) s += c[Math.floor(Math.random()*c.length)];
+    s += '-';
+    for (let i=0;i<4;i++) s += c[Math.floor(Math.random()*c.length)];
+    return 'rps-' + s;
+  }
+
+  function shareUrl(code){
+    return location.origin + location.pathname + '#' + code;
+  }
+
+  function setStatus(state, text){
+    const dot = $('dot');
+    dot.classList.remove('connecting','online','offline');
+    if (state) dot.classList.add(state);
+    $('statusText').textContent = text;
+  }
+
+  function setRoomPills(code){
+    $('roomPill').textContent = code ? ('房號：' + code) : '未連線';
+    $('gameRoomPill').textContent = code ? ('房號：' + code) : '';
+  }
+
+  // ---- State ----
+  let peer = null;
+  let conn = null;
+  let isHost = false;
+  let myMove = null;
+  let oppMove = null;
+  let scoreMe = 0, scoreOpp = 0;
+  let resolved = false;
+
+  // ---- Game logic ----
+  function judge(a, b){
+    if (a === b) return 'tie';
+    if ((a==='rock' && b==='scissors') ||
+        (a==='paper' && b==='rock') ||
+        (a==='scissors' && b==='paper')) return 'win';
+    return 'lose';
+  }
+
+  function showGame(){
+    $('lobby').classList.add('hidden');
+    $('game').classList.remove('hidden');
+  }
+
+  function showLobby(){
+    $('game').classList.add('hidden');
+    $('lobby').classList.remove('hidden');
+  }
+
+  function resetRound(){
+    myMove = null; oppMove = null; resolved = false;
+    $('handMe').textContent = '❔';
+    $('handOpp').textContent = '❔';
+    ['handMe','handOpp'].forEach(id => {
+      const el = $(id);
+      el.classList.remove('win','lose','tie','shake');
+    });
+    $('result').textContent = '';
+    $('result').className = 'result';
+    document.querySelectorAll('.choice').forEach(b => {
+      b.classList.remove('selected');
+      b.disabled = false;
+    });
+  }
+
+  function tryResolve(){
+    if (resolved) return;
+    if (!myMove || !oppMove) return;
+    resolved = true;
+    const me = $('handMe'), opp = $('handOpp');
+    me.classList.add('shake');
+    opp.classList.add('shake');
+    setTimeout(()=>{
+      me.classList.remove('shake'); opp.classList.remove('shake');
+      me.textContent = emojiMap[myMove];
+      opp.textContent = emojiMap[oppMove];
+      const r = judge(myMove, oppMove);
+      const resEl = $('result');
+      if (r === 'win'){
+        scoreMe++; resEl.textContent = '🎉 你贏了！'; resEl.classList.add('win');
+        me.classList.add('win'); opp.classList.add('lose');
+      } else if (r === 'lose'){
+        scoreOpp++; resEl.textContent = '😢 你輸了'; resEl.classList.add('lose');
+        me.classList.add('lose'); opp.classList.add('win');
+      } else {
+        resEl.textContent = '🤝 平手'; resEl.classList.add('tie');
+        me.classList.add('tie'); opp.classList.add('tie');
+      }
+      $('scoreMe').textContent = scoreMe;
+      $('scoreOpp').textContent = scoreOpp;
+    }, 1100);
+  }
+
+  // ---- PeerJS connection ----
+  function initPeer(id){
+    return new Promise((resolve, reject) => {
+      try {
+        const p = new Peer(id, { debug: 1 });
+        p.on('open', () => resolve(p));
+        p.on('error', (err) => {
+          console.error('Peer error:', err);
+          if (err.type === 'unavailable-id'){
+            reject(new Error('房號已被使用，請改一個。'));
+          } else if (err.type === 'peer-unavailable'){
+            reject(new Error('找不到此房號，請確認對方已開房。'));
+          } else if (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error'){
+            reject(new Error('連線伺服器無法使用，請稍後再試。'));
+          } else {
+            reject(err);
+          }
+        });
+      } catch(e){ reject(e); }
+    });
+  }
+
+  function attachConn(c){
+    conn = c;
+    setStatus('connecting', '連線建立中...');
+
+    c.on('open', () => {
+      setStatus('online', '已連線，請出招！');
+      toast('對手已連線');
+      send({ type: 'hello' });
+    });
+
+    c.on('data', (data) => {
+      if (!data || typeof data !== 'object') return;
+      switch (data.type){
+        case 'hello': break;
+        case 'move':
+          if (moves.includes(data.move)){
+            oppMove = data.move;
+            tryResolve();
+          }
+          break;
+        case 'rematch':
+          resetRound();
+          toast('對手請求新一局');
+          break;
+        case 'reset-score':
+          scoreMe = 0; scoreOpp = 0;
+          $('scoreMe').textContent = 0; $('scoreOpp').textContent = 0;
+          resetRound();
+          toast('比分已重設');
+          break;
+        case 'bye':
+          setStatus('offline', '對手已離開');
+          toast('對手已離開');
+          break;
+      }
+    });
+
+    c.on('close', () => {
+      setStatus('offline', '連線中斷');
+      toast('連線中斷');
+    });
+
+    c.on('error', (err) => {
+      console.error(err);
+      setStatus('offline', '連線錯誤');
+    });
+  }
+
+  function send(obj){
+    if (conn && conn.open){
+      try { conn.send(obj); } catch(e){ console.error(e); }
+    }
+  }
+
+  async function host(code){
+    isHost = true;
+    setStatus('connecting', '建立房間中...');
+    try {
+      peer = await initPeer(code);
+      setRoomPills(code);
+      $('shareBox').classList.remove('hidden');
+      $('shareLink').textContent = shareUrl(code);
+      $('shareCode').textContent = code;
+      showGame();
+      setStatus('connecting', '等待對手加入...');
+
+      peer.on('connection', (c) => {
+        if (conn && conn.open){
+          // already have a peer — reject extras
+          try { c.close(); } catch(e){}
+          return;
+        }
+        attachConn(c);
+      });
+    } catch(err){
+      toast(err.message || '建立失敗');
+      setStatus('offline', '建立失敗');
+      isHost = false;
+    }
+  }
+
+  async function join(code){
+    isHost = false;
+    setStatus('connecting', '加入房間中...');
+    try {
+      // Use random self id; connect to host's id (the room code)
+      peer = await initPeer(undefined);
+      setRoomPills(code);
+      showGame();
+
+      const c = peer.connect(code, { reliable: true });
+      attachConn(c);
+    } catch(err){
+      toast(err.message || '加入失敗');
+      setStatus('offline', '加入失敗');
+    }
+  }
+
+  function leave(){
+    try { send({ type: 'bye' }); } catch(e){}
+    if (conn) { try { conn.close(); } catch(e){} conn = null; }
+    if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+    history.replaceState(null, '', location.pathname);
+    setRoomPills(null);
+    setStatus(null, '等待連線...');
+    scoreMe = 0; scoreOpp = 0;
+    $('scoreMe').textContent = 0; $('scoreOpp').textContent = 0;
+    $('shareBox').classList.add('hidden');
+    resetRound();
+    showLobby();
+  }
+
+  // ---- UI bindings ----
+  $('createBtn').addEventListener('click', () => {
+    const code = randomCode();
+    history.replaceState(null, '', '#' + code);
+    host(code);
+  });
+
+  $('joinBtn').addEventListener('click', () => {
+    const code = $('roomInput').value.trim();
+    if (!code){ toast('請輸入房號'); return; }
+    history.replaceState(null, '', '#' + code);
+    join(code);
+  });
+
+  $('roomInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') $('joinBtn').click();
+  });
+
+  $('copyBtn').addEventListener('click', async () => {
+    const url = $('shareLink').textContent;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast('連結已複製');
+    } catch(e){
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = url; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); ta.remove();
+      toast('連結已複製');
+    }
+  });
+
+  document.querySelectorAll('.choice').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (resolved) return;
+      if (!conn || !conn.open){ toast('還沒連線喔'); return; }
+      if (myMove) return;
+      const move = btn.dataset.move;
+      myMove = move;
+      document.querySelectorAll('.choice').forEach(b => {
+        b.classList.toggle('selected', b === btn);
+        b.disabled = true;
+      });
+      send({ type: 'move', move });
+      tryResolve();
+    });
+  });
+
+  $('rematchBtn').addEventListener('click', () => {
+    resetRound();
+    send({ type: 'rematch' });
+  });
+
+  $('resetScoreBtn').addEventListener('click', () => {
+    scoreMe = 0; scoreOpp = 0;
+    $('scoreMe').textContent = 0; $('scoreOpp').textContent = 0;
+    resetRound();
+    send({ type: 'reset-score' });
+    toast('比分已重設');
+  });
+
+  $('leaveBtn').addEventListener('click', leave);
+
+  // Auto-join via #hash
+  function parseHash(){
+    const h = (location.hash || '').replace(/^#/, '').trim();
+    return h || '';
+  }
+
+  window.addEventListener('load', () => {
+    const code = parseHash();
+    if (code){
+      $('roomInput').value = code;
+      // Auto-join: assume the link is from a host
+      join(code);
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

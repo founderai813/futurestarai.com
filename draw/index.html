@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>抽籤 · PartyUp</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0a;
+    --panel: #141414;
+    --panel-2: #1c1c1f;
+    --border: #2a2a2e;
+    --text: #e8e8ea;
+    --muted: #888;
+    --accent-1: #00d2ff;
+    --accent-2: #7b2ff7;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Noto Sans TC', Roboto, sans-serif;
+    background: radial-gradient(1200px 600px at 20% -10%, rgba(123,47,247,.18), transparent 60%),
+                radial-gradient(1000px 600px at 100% 110%, rgba(0,210,255,.12), transparent 60%),
+                var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  header {
+    width: 100%;
+    max-width: 920px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .brand {
+    font-size: 1rem;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .brand:hover { color: var(--text); }
+  .brand b {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+  }
+  .pill {
+    background: #18181b;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: .35rem .7rem;
+    border-radius: 999px;
+    font-size: .85rem;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -.02em;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+    margin: .25rem 0 .5rem;
+  }
+  .sub {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 1.75rem;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 920px;
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+  .card + .card { margin-top: 1rem; }
+
+  label {
+    display: block;
+    font-size: .9rem;
+    color: var(--muted);
+    margin-bottom: .5rem;
+  }
+
+  textarea, input[type="text"], input[type="number"] {
+    width: 100%;
+    background: #0f0f12;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    padding: .75rem .9rem;
+    font-size: 1rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  textarea { resize: vertical; min-height: 160px; line-height: 1.5; }
+  textarea:focus, input:focus {
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 3px rgba(0,210,255,.18);
+  }
+
+  .count {
+    text-align: right;
+    color: var(--muted);
+    font-size: .8rem;
+    margin-top: .3rem;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  @media (min-width: 640px) {
+    .row { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .mode-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .5rem;
+    background: #0f0f12;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: .35rem;
+  }
+  .mode-tab {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    padding: .6rem .5rem;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .mode-tab:hover { color: var(--text); }
+  .mode-tab.active {
+    background: linear-gradient(135deg, rgba(123,47,247,.3), rgba(0,210,255,.2));
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px rgba(0,210,255,.25);
+  }
+
+  button.primary {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding: .95rem 1.2rem;
+    border-radius: 12px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-1));
+    transition: transform .12s ease, box-shadow .15s ease, opacity .15s;
+    width: 100%;
+  }
+  button.primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(123,47,247,.25);
+  }
+  button.primary:disabled { opacity: .5; cursor: not-allowed; }
+
+  button.ghost {
+    appearance: none;
+    background: #232327;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: .6rem .9rem;
+    font-family: inherit;
+    font-size: .9rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  button.ghost:hover { background: #2b2b30; }
+
+  .draw-bar {
+    margin-top: 1.25rem;
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+  }
+  .draw-bar button.primary { flex: 1; min-width: 200px; }
+
+  /* Result */
+  .result-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .result-title h2 { font-size: 1.2rem; }
+
+  .results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: .6rem;
+  }
+  .result {
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem .75rem;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.05rem;
+    word-break: break-word;
+    min-height: 3.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: border-color .25s, background .25s, transform .2s;
+  }
+  .result.spinning {
+    color: var(--muted);
+    border-color: var(--border);
+  }
+  .result.revealed {
+    border-color: rgba(0,210,255,.5);
+    background: linear-gradient(180deg, rgba(123,47,247,.12), rgba(0,210,255,.08));
+    animation: pop .35s ease;
+  }
+  .result .badge {
+    position: absolute;
+    top: -8px; left: -8px;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-1));
+    color: #fff; font-size: .75rem; font-weight: 800;
+    padding: 2px 8px; border-radius: 999px;
+  }
+  @keyframes pop {
+    0% { transform: scale(.9); }
+    60% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+
+  .group {
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: .75rem;
+  }
+  .group h3 {
+    font-size: 1rem;
+    margin-bottom: .6rem;
+    color: var(--accent-1);
+  }
+  .group ul { list-style: none; display: flex; flex-wrap: wrap; gap: .4rem; }
+  .group li {
+    background: #222228;
+    border: 1px solid var(--border);
+    padding: .35rem .65rem;
+    border-radius: 8px;
+    font-size: .9rem;
+  }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 1.5rem 0;
+  }
+
+  /* History / exclude */
+  .history-panel {
+    margin-top: 1rem;
+    padding: .9rem 1rem;
+    background: #0f0f12;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .history-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    flex-wrap: wrap;
+  }
+  .switch {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    cursor: pointer;
+    user-select: none;
+    font-size: .9rem;
+    color: var(--text);
+  }
+  .switch input { position: absolute; opacity: 0; pointer-events: none; }
+  .switch .track {
+    width: 38px; height: 22px;
+    background: #2a2a2e;
+    border-radius: 999px;
+    position: relative;
+    transition: background .15s;
+  }
+  .switch .track::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    background: #e8e8ea;
+    border-radius: 50%;
+    transition: transform .18s;
+  }
+  .switch input:checked + .track {
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-1));
+  }
+  .switch input:checked + .track::after { transform: translateX(16px); }
+
+  .history-meta {
+    color: var(--muted);
+    font-size: .85rem;
+  }
+  .history-meta b { color: var(--text); }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin-top: .75rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    background: #222228;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: .3rem .55rem;
+    border-radius: 999px;
+    font-size: .82rem;
+  }
+  .chip button {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: .9rem;
+    line-height: 1;
+    padding: 0;
+  }
+  .chip button:hover { color: var(--lose, #f87171); }
+  .chips .empty-note {
+    color: var(--muted);
+    font-size: .85rem;
+    padding: .2rem 0;
+  }
+
+  .toast {
+    position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
+    background: #18181b; border: 1px solid var(--border);
+    color: var(--text); padding: .65rem 1rem; border-radius: 999px;
+    font-size: .9rem; opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  .hidden { display: none !important; }
+
+  footer {
+    margin-top: 2rem;
+    color: #555;
+    font-size: .85rem;
+    text-align: center;
+  }
+
+  /* List manager */
+  .list-manager {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+    padding: .85rem 1rem;
+    background: #0f0f12;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+  }
+  .list-manager .label {
+    color: var(--muted);
+    font-size: .85rem;
+    margin-right: .25rem;
+  }
+  .list-manager select {
+    flex: 1;
+    min-width: 160px;
+    background: #18181b;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: .55rem .7rem;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .95rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .list-manager select:focus {
+    border-color: var(--accent-1);
+  }
+  .list-manager .icon-btn {
+    appearance: none;
+    background: #18181b;
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background .15s, border-color .15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .list-manager .icon-btn:hover { background: #232327; border-color: var(--accent-1); }
+  .list-manager .icon-btn.danger:hover { border-color: #f87171; }
+
+  .weight-hint {
+    font-size: .75rem;
+    color: #666;
+    margin-top: .3rem;
+  }
+  .weight-hint code {
+    background: #232327;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: .8rem;
+    color: var(--accent-1);
+  }
+
+  /* Top tabs */
+  .top-tabs {
+    width: 100%;
+    max-width: 920px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .4rem;
+    background: #0f0f12;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: .35rem;
+    margin-bottom: 1.25rem;
+  }
+  .top-tab {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    padding: .7rem .5rem;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .top-tab:hover { color: var(--text); }
+  .top-tab.active {
+    background: linear-gradient(135deg, rgba(123,47,247,.3), rgba(0,210,255,.2));
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px rgba(0,210,255,.25);
+  }
+  .tab-content { display: none; width: 100%; max-width: 920px; }
+  .tab-content.active { display: block; }
+
+  /* Pair mode */
+  .pair-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 640px) {
+    .pair-grid { grid-template-columns: 1fr; }
+  }
+  .pair-grid textarea {
+    min-height: 140px;
+  }
+  .pair-modes {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+  }
+  .pair-mode-btn {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: #18181b;
+    color: var(--muted);
+    padding: .6rem .9rem;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .pair-mode-btn:hover { color: var(--text); border-color: var(--accent-1); }
+  .pair-mode-btn.active {
+    background: linear-gradient(135deg, rgba(123,47,247,.2), rgba(0,210,255,.12));
+    color: var(--text);
+    border-color: var(--accent-2);
+  }
+  .pair-result-list {
+    list-style: none;
+  }
+  .pair-result-list li {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem .8rem;
+    margin-bottom: .4rem;
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: .95rem;
+    animation: pop .3s ease;
+  }
+  .pair-result-list .arrow {
+    color: var(--accent-1);
+    font-weight: 700;
+  }
+  .pair-result-list .idx {
+    color: var(--muted);
+    font-size: .8rem;
+    min-width: 2em;
+    text-align: right;
+  }
+
+  /* Remote */
+  .tile-r {
+    background: #18181b;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+  }
+  .tile-r h3 { font-size: 1.1rem; font-weight: 700; }
+  .remote-status {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin-bottom: 1rem;
+    color: var(--muted);
+    font-size: .9rem;
+    flex-wrap: wrap;
+  }
+  .dot {
+    width: 9px; height: 9px; border-radius: 50%; background: #555;
+  }
+  .dot.online { background: var(--ok); }
+  .dot.connecting { background: var(--warn); animation: pulse 1.2s infinite; }
+  .dot.offline { background: #f87171; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  .share {
+    background: #0f0f12;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: .75rem;
+  }
+  .share-link {
+    display: flex; gap: .5rem; align-items: center;
+    background: #18181b; border: 1px solid var(--border);
+    border-radius: 8px; padding: .5rem .65rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .85rem; color: var(--text);
+    overflow: hidden;
+  }
+  .share-link span {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+  }
+  .copy-btn {
+    appearance: none;
+    background: transparent; color: var(--accent-1);
+    padding: .3rem .55rem; font-size: .85rem;
+    border: 1px solid var(--border); border-radius: 6px;
+    cursor: pointer; font-family: inherit;
+  }
+  .copy-btn:hover { background: rgba(0,210,255,.08); }
+  .hidden { display: none !important; }
+  .controls { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
+
+  /* QR Modal */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+  }
+  .modal-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 1.5rem;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+  }
+  .modal-box h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+  .modal-box canvas {
+    background: #fff;
+    border-radius: 8px;
+    max-width: 100%;
+  }
+  .modal-box .qr-text {
+    font-size: .75rem;
+    color: var(--muted);
+    margin-top: .75rem;
+    word-break: break-all;
+    max-height: 100px;
+    overflow-y: auto;
+    text-align: left;
+    background: #0f0f12;
+    border-radius: 8px;
+    padding: .5rem;
+  }
+  .modal-box .modal-btns {
+    display: flex;
+    gap: .5rem;
+    margin-top: 1rem;
+    justify-content: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="https://partyup.futurestarai.com"><b>PartyUp</b> · 抽籤</a>
+  <span class="pill" id="countPill">0 人</span>
+</header>
+
+<h1>抽籤 🎲</h1>
+<p class="sub">貼上名單、選模式，按下去就見真章</p>
+
+<nav class="top-tabs">
+  <button class="top-tab active" data-tab="normal">🎯 一般抽籤</button>
+  <button class="top-tab" data-tab="pair">💝 配對抽籤</button>
+  <button class="top-tab" data-tab="remote">📡 遠端同步</button>
+</nav>
+
+<!-- ===== Tab: Normal ===== -->
+<div class="tab-content active" data-tab="normal">
+
+<!-- Input card -->
+<section class="card">
+  <div class="list-manager">
+    <span class="label">📋 名單</span>
+    <select id="listSelect" title="切換名單"></select>
+    <button class="icon-btn" id="listNewBtn" title="新增名單" type="button">＋</button>
+    <button class="icon-btn" id="listRenameBtn" title="重新命名" type="button">✏️</button>
+    <button class="icon-btn danger" id="listDeleteBtn" title="刪除名單" type="button">🗑</button>
+  </div>
+
+  <label for="names">內容（每行一個）</label>
+  <textarea id="names" placeholder="小明&#10;小華&#10;阿志&#10;王小明 x3     ← 權重 3 倍" spellcheck="false"></textarea>
+  <div class="count" id="countText">0 人</div>
+  <div class="weight-hint">💡 加權語法：<code>王小明 x3</code> 或 <code>王小明 *3</code>，代表他的中獎機率是 3 倍（不重複／可重複模式生效）</div>
+
+  <div class="row">
+    <div>
+      <label>模式</label>
+      <div class="mode-tabs" role="tablist">
+        <button class="mode-tab active" data-mode="unique">抽 N 個（不重複）</button>
+        <button class="mode-tab" data-mode="repeat">抽 N 個（可重複）</button>
+        <button class="mode-tab" data-mode="groups">分成 N 組</button>
+      </div>
+    </div>
+    <div>
+      <label id="nLabel" for="nInput">抽幾個</label>
+      <input id="nInput" type="number" min="1" value="1" />
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:.5rem;">
+      <button class="ghost" id="clearBtn" type="button">清空名單</button>
+      <button class="ghost" id="sampleBtn" type="button">範例</button>
+    </div>
+  </div>
+
+  <div class="history-panel" id="historyPanel">
+    <div class="history-top">
+      <label class="switch">
+        <input type="checkbox" id="excludeToggle" />
+        <span class="track"></span>
+        <span>排除已抽過的人（僅不重複模式）</span>
+      </label>
+      <div class="history-meta">
+        可抽 <b id="availCount">0</b> 人 · 已抽過 <b id="drawnCount">0</b> 人
+        <button class="ghost" id="resetHistoryBtn" type="button" style="margin-left:.5rem;">重置紀錄</button>
+      </div>
+    </div>
+    <div class="chips" id="chips" style="display:none;"></div>
+  </div>
+
+  <div class="draw-bar">
+    <button class="primary" id="drawBtn">🎲 開始抽籤</button>
+  </div>
+</section>
+
+<!-- Result card -->
+<section class="card" id="resultCard" style="display:none;">
+  <div class="result-title">
+    <h2 id="resultTitle">結果</h2>
+    <div style="display:flex;gap:.5rem;">
+      <button class="ghost" id="copyBtn" type="button">複製結果</button>
+      <button class="ghost" id="qrBtn" type="button">QR 分享</button>
+    </div>
+  </div>
+  <div id="resultArea"></div>
+</section>
+
+</div><!-- /tab normal -->
+
+<!-- ===== Tab: Pair ===== -->
+<div class="tab-content" data-tab="pair">
+<section class="card">
+  <h2 style="margin-bottom:1rem;">💝 配對抽籤</h2>
+
+  <div class="pair-grid">
+    <div>
+      <label for="pairA">A 組名單（每行一個）</label>
+      <textarea id="pairA" placeholder="小明&#10;小華&#10;阿志" spellcheck="false"></textarea>
+      <div class="count" id="pairACount">0 人</div>
+    </div>
+    <div>
+      <label for="pairB">B 組名單（每行一個）</label>
+      <textarea id="pairB" placeholder="Alice&#10;Bob&#10;Carol&#10;&#10;留空 = 秘密聖誕老人（A 內部配對）" spellcheck="false"></textarea>
+      <div class="count" id="pairBCount">0 人</div>
+    </div>
+  </div>
+
+  <div class="pair-modes">
+    <button class="pair-mode-btn active" data-mode="oneToOne">🔗 一對一配對</button>
+    <button class="pair-mode-btn" data-mode="aGetsB">🎁 A 每人分配一個 B（B 不足可重複）</button>
+    <button class="pair-mode-btn" data-mode="santa">🎅 秘密聖誕老人（A 內部互配）</button>
+  </div>
+
+  <div class="draw-bar">
+    <button class="primary" id="pairDrawBtn">💝 開始配對</button>
+  </div>
+</section>
+
+<section class="card" id="pairResultCard" style="display:none;">
+  <div class="result-title">
+    <h2 id="pairResultTitle">配對結果</h2>
+    <div style="display:flex;gap:.5rem;">
+      <button class="ghost" id="pairCopyBtn" type="button">複製結果</button>
+      <button class="ghost" id="pairQrBtn" type="button">QR 分享</button>
+    </div>
+  </div>
+  <ol class="pair-result-list" id="pairResultArea"></ol>
+</section>
+</div><!-- /tab pair -->
+
+<!-- ===== Tab: Remote ===== -->
+<div class="tab-content" data-tab="remote">
+
+<!-- Lobby -->
+<section class="card" id="remoteLobby">
+  <h2 style="margin-bottom:1rem;">📡 遠端同步抽籤</h2>
+  <p style="color:var(--muted);margin-bottom:1.25rem;">房主負責輸入名單和抽籤，所有觀眾同步看到結果。</p>
+  <div class="pair-grid">
+    <div class="tile-r">
+      <h3>🎮 我是主持人</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin:.5rem 0;">建立房間、分享連結給觀眾。</p>
+      <button class="primary" id="remoteHostBtn" type="button">建立房間</button>
+    </div>
+    <div class="tile-r">
+      <h3>👀 我是觀眾</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin:.5rem 0;">輸入房號或點主持人的連結。</p>
+      <input id="remoteJoinInput" type="text" placeholder="輸入房號" autocomplete="off" />
+      <button class="primary" id="remoteJoinBtn" type="button" style="margin-top:.5rem;">加入房間</button>
+    </div>
+  </div>
+</section>
+
+<!-- Host UI -->
+<section class="card hidden" id="remoteHostUI">
+  <div class="remote-status">
+    <span class="dot online" id="remoteDot"></span>
+    <span id="remoteStatusText">等待觀眾...</span>
+    <span class="pill" id="remoteViewerCount">0 位觀眾</span>
+  </div>
+
+  <div class="share" id="remoteShareBox">
+    <div style="margin-bottom:.5rem;color:var(--muted);font-size:.9rem;">把這個連結傳給觀眾：</div>
+    <div class="share-link">
+      <span id="remoteShareLink"></span>
+      <button class="copy-btn" id="remoteCopyBtn" type="button">複製</button>
+    </div>
+    <div style="margin-top:.6rem;color:var(--muted);font-size:.85rem;">房號：<b id="remoteShareCode" style="color:var(--text);font-family:ui-monospace,monospace;"></b></div>
+  </div>
+
+  <label for="remoteNames" style="margin-top:1rem;display:block;">名單（每行一個，支援加權）</label>
+  <textarea id="remoteNames" placeholder="小明&#10;小華&#10;阿志" spellcheck="false" style="min-height:120px;"></textarea>
+  <div class="count" id="remoteCountText">0 人</div>
+
+  <div style="display:flex;gap:.5rem;align-items:center;margin:1rem 0;">
+    <label for="remoteN" style="margin:0;white-space:nowrap;">抽幾個</label>
+    <input id="remoteN" type="number" min="1" value="1" style="width:80px;" />
+  </div>
+
+  <div class="draw-bar">
+    <button class="primary" id="remoteDrawBtn" type="button">📡 同步抽籤</button>
+    <button class="ghost" id="remoteLeaveBtn" type="button">🚪 關閉房間</button>
+  </div>
+
+  <div id="remoteHostResult"></div>
+</section>
+
+<!-- Viewer UI -->
+<section class="card hidden" id="remoteViewerUI">
+  <div class="remote-status">
+    <span class="dot connecting" id="viewerDot"></span>
+    <span id="viewerStatusText">連線中...</span>
+  </div>
+  <div id="viewerWaiting" style="text-align:center;padding:2.5rem 0;">
+    <p style="font-size:2.5rem;margin-bottom:.5rem;">⏳</p>
+    <p style="color:var(--muted);">等待主持人抽籤...</p>
+  </div>
+  <div id="viewerResult" class="hidden">
+    <h2 id="viewerResultTitle" style="margin-bottom:1rem;">結果</h2>
+    <div id="viewerResultArea" class="results"></div>
+  </div>
+  <div class="controls" style="margin-top:1rem;">
+    <button class="ghost" id="viewerLeaveBtn" type="button">🚪 離開房間</button>
+  </div>
+</section>
+
+</div><!-- /tab remote -->
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="qrModal">
+  <div class="modal-box">
+    <h3>📱 掃描 QR Code 分享結果</h3>
+    <canvas id="qrCanvas"></canvas>
+    <div class="qr-text" id="qrText"></div>
+    <div class="modal-btns">
+      <button class="ghost" id="qrCloseBtn" type="button">關閉</button>
+    </div>
+  </div>
+</div>
+
+<footer>&copy; 2026 <a href="/" style="color:inherit;">FuturestarAI</a> · <a href="https://partyup.futurestarai.com" style="color:inherit;">PartyUp</a> · 抽籤結果僅存於你的瀏覽器</footer>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+
+  const STORAGE_KEY = 'futurestarai.draw.v1';          // legacy single-list content
+  const LISTS_KEY   = 'futurestarai.draw.lists.v2';    // multi-list store
+  const CURRENT_KEY = 'futurestarai.draw.current.v2';  // current list id
+  const HISTORY_KEY = 'futurestarai.draw.history.v1';
+  const EXCLUDE_KEY = 'futurestarai.draw.exclude.v1';
+
+  // ---- History ----
+  let drawnHistory = new Set();
+  try {
+    const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    if (Array.isArray(saved)) drawnHistory = new Set(saved);
+  } catch(e){}
+
+  function saveHistory(){
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify([...drawnHistory])); } catch(e){}
+  }
+
+  function toast(msg, ms=1500){
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('show'), ms);
+  }
+
+  // Parse text into weighted entries. Supports `name xN` or `name *N`.
+  function parseEntries(text){
+    return text
+      .split(/\r?\n/)
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(line => {
+        const m = line.match(/^(.+?)\s*[x*X✕✖×]\s*(\d+)\s*$/);
+        if (m){
+          const w = Math.max(1, Math.min(999, parseInt(m[2], 10)));
+          return { name: m[1].trim(), weight: w };
+        }
+        return { name: line, weight: 1 };
+      });
+  }
+  // Flat names array (names repeated by weight). Useful for groups and display.
+  function parseNames(text){
+    return parseEntries(text).map(e => e.name);
+  }
+  function totalTickets(entries){
+    return entries.reduce((s, e) => s + e.weight, 0);
+  }
+
+  function updateCount(){
+    const entries = parseEntries($('names').value);
+    const names = entries.map(e => e.name);
+    const tickets = totalTickets(entries);
+    const hasWeights = entries.some(e => e.weight > 1);
+    const txt = hasWeights ? `${names.length} 人 · ${tickets} 籤` : `${names.length} 人`;
+    $('countText').textContent = txt;
+    $('countPill').textContent = txt;
+    renderHistory(names);
+  }
+
+  function isExcluding(){
+    return $('excludeToggle').checked && mode === 'unique';
+  }
+
+  function availableEntries(entries){
+    if ($('excludeToggle').checked){
+      return entries.filter(e => !drawnHistory.has(e.name));
+    }
+    return entries;
+  }
+  function availablePool(names){
+    if ($('excludeToggle').checked){
+      return names.filter(n => !drawnHistory.has(n));
+    }
+    return names;
+  }
+
+  function renderHistory(namesOpt){
+    const names = namesOpt || parseNames($('names').value);
+    const drawnInList = names.filter(n => drawnHistory.has(n));
+    const avail = $('excludeToggle').checked ? (names.length - drawnInList.length) : names.length;
+    $('availCount').textContent = avail;
+    $('drawnCount').textContent = drawnInList.length;
+
+    const chips = $('chips');
+    if (!$('excludeToggle').checked){
+      chips.style.display = 'none';
+      return;
+    }
+    chips.style.display = '';
+    chips.innerHTML = '';
+    if (drawnInList.length === 0){
+      const e = document.createElement('div');
+      e.className = 'empty-note';
+      e.textContent = '還沒有抽過的紀錄';
+      chips.appendChild(e);
+      return;
+    }
+    drawnInList.forEach(name => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = name;
+      const x = document.createElement('button');
+      x.type = 'button';
+      x.textContent = '×';
+      x.title = '從紀錄中移除';
+      x.addEventListener('click', () => {
+        drawnHistory.delete(name);
+        saveHistory();
+        renderHistory();
+      });
+      chip.appendChild(x);
+      chips.appendChild(chip);
+    });
+  }
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function pickUnique(arr, n){
+    return shuffle(arr).slice(0, n);
+  }
+  function pickRepeat(arr, n){
+    const out = [];
+    for (let i=0;i<n;i++) out.push(arr[Math.floor(Math.random()*arr.length)]);
+    return out;
+  }
+
+  // Weighted versions
+  function weightedPickUnique(entries, n){
+    const pool = entries.map(e => ({...e}));
+    const result = [];
+    n = Math.min(n, pool.length);
+    for (let i = 0; i < n; i++){
+      const total = pool.reduce((s, e) => s + e.weight, 0);
+      let r = Math.random() * total;
+      let idx = 0;
+      for (let j = 0; j < pool.length; j++){
+        r -= pool[j].weight;
+        if (r <= 0){ idx = j; break; }
+      }
+      result.push(pool[idx].name);
+      pool.splice(idx, 1);
+    }
+    return result;
+  }
+  function weightedPickRepeat(entries, n){
+    const total = entries.reduce((s, e) => s + e.weight, 0);
+    const result = [];
+    for (let i = 0; i < n; i++){
+      let r = Math.random() * total;
+      for (const e of entries){
+        r -= e.weight;
+        if (r <= 0){ result.push(e.name); break; }
+      }
+    }
+    return result;
+  }
+
+  function splitGroups(arr, k){
+    const shuffled = shuffle(arr);
+    const groups = Array.from({length: k}, () => []);
+    shuffled.forEach((v, i) => groups[i % k].push(v));
+    return groups;
+  }
+
+  // ---- Mode ----
+  let mode = 'unique';
+  const nLabel = $('nLabel');
+  const nInput = $('nInput');
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      mode = tab.dataset.mode;
+      if (mode === 'groups'){
+        nLabel.textContent = '分幾組';
+        if (+nInput.value < 2) nInput.value = 2;
+      } else {
+        nLabel.textContent = '抽幾個';
+      }
+      renderHistory();
+    });
+  });
+
+  // ---- Animation ----
+  function spinReveal(pool, finals, container){
+    container.innerHTML = '';
+    const cells = finals.map(() => {
+      const d = document.createElement('div');
+      d.className = 'result spinning';
+      d.textContent = '?';
+      container.appendChild(d);
+      return d;
+    });
+
+    if (!pool.length){ return Promise.resolve(); }
+
+    const totalMs = 1200;
+    const tickMs = 60;
+    const start = performance.now();
+
+    return new Promise(resolve => {
+      const id = setInterval(() => {
+        const elapsed = performance.now() - start;
+        cells.forEach((cell, i) => {
+          if (cell.classList.contains('revealed')) return;
+          cell.textContent = pool[Math.floor(Math.random() * pool.length)];
+        });
+        if (elapsed >= totalMs){
+          clearInterval(id);
+          // Reveal one by one
+          let i = 0;
+          const revealNext = () => {
+            if (i >= cells.length){ resolve(); return; }
+            const cell = cells[i];
+            cell.classList.remove('spinning');
+            cell.classList.add('revealed');
+            cell.textContent = finals[i];
+            if (finals.length > 1){
+              const b = document.createElement('div');
+              b.className = 'badge';
+              b.textContent = '#' + (i+1);
+              cell.appendChild(b);
+            }
+            i++;
+            setTimeout(revealNext, 180);
+          };
+          revealNext();
+        }
+      }, tickMs);
+    });
+  }
+
+  // ---- Draw ----
+  async function doDraw(){
+    const entries = parseEntries($('names').value);
+    const allNames = entries.map(e => e.name);
+    if (entries.length === 0){ toast('請先輸入名單'); return; }
+    const hasWeights = entries.some(e => e.weight > 1);
+
+    let n = parseInt(nInput.value, 10);
+    if (isNaN(n) || n < 1) n = 1;
+
+    const card = $('resultCard');
+    const area = $('resultArea');
+    const title = $('resultTitle');
+    card.style.display = '';
+
+    $('drawBtn').disabled = true;
+
+    try {
+      if (mode === 'unique'){
+        const poolEntries = availableEntries(entries);
+        const poolNames = poolEntries.map(e => e.name);
+        if (poolNames.length === 0){
+          toast('所有人都抽過了，請先重置紀錄或關閉排除');
+          return;
+        }
+        if (n > poolNames.length){
+          toast(`可抽的人只剩 ${poolNames.length} 位`);
+          n = poolNames.length;
+          nInput.value = n;
+        }
+        const excluding = $('excludeToggle').checked;
+        title.textContent = excluding
+          ? `抽中 ${n} 位（已排除 ${allNames.length - poolNames.length} 位抽過的人）`
+          : `抽中 ${n} 位`;
+        area.className = 'results';
+        const result = hasWeights ? weightedPickUnique(poolEntries, n) : pickUnique(poolNames, n);
+        await spinReveal(poolNames, result, area);
+        if (excluding){
+          result.forEach(name => drawnHistory.add(name));
+          saveHistory();
+          renderHistory(allNames);
+        }
+      } else if (mode === 'repeat'){
+        title.textContent = `抽中 ${n} 位（可重複）`;
+        area.className = 'results';
+        const result = hasWeights ? weightedPickRepeat(entries, n) : pickRepeat(allNames, n);
+        await spinReveal(allNames, result, area);
+      } else {
+        if (n < 2) n = 2;
+        if (n > allNames.length) n = allNames.length;
+        nInput.value = n;
+        title.textContent = `分成 ${n} 組`;
+        area.className = 'groups-wrap';
+        const groups = splitGroups(allNames, n);
+        area.innerHTML = '';
+        for (let i=0;i<groups.length;i++){
+          const div = document.createElement('div');
+          div.className = 'group';
+          const h = document.createElement('h3'); h.textContent = '第 ' + (i+1) + ' 組（' + groups[i].length + ' 人）';
+          const ul = document.createElement('ul');
+          groups[i].forEach(name => {
+            const li = document.createElement('li'); li.textContent = name; ul.appendChild(li);
+          });
+          div.appendChild(h); div.appendChild(ul); area.appendChild(div);
+          await new Promise(r => setTimeout(r, 220));
+        }
+      }
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } finally {
+      $('drawBtn').disabled = false;
+    }
+  }
+
+  // ---- Copy ----
+  async function copyResult(){
+    const area = $('resultArea');
+    let text = '';
+    if (area.classList.contains('results')){
+      const items = [...area.querySelectorAll('.result')];
+      text = items.map((el, i) => (items.length > 1 ? `${i+1}. ` : '') + (el.childNodes[0]?.nodeValue || el.textContent).trim()).join('\n');
+    } else {
+      const groups = [...area.querySelectorAll('.group')];
+      text = groups.map(g => {
+        const h = g.querySelector('h3')?.textContent || '';
+        const names = [...g.querySelectorAll('li')].map(li => li.textContent).join('、');
+        return h + '\n' + names;
+      }).join('\n\n');
+    }
+    if (!text){ toast('沒有結果可複製'); return; }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('已複製結果');
+    } catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+      toast('已複製結果');
+    }
+  }
+
+  // ---- Multi-list manager ----
+  let lists = [];
+  let currentListId = null;
+
+  function genId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+  function loadLists(){
+    try {
+      const raw = localStorage.getItem(LISTS_KEY);
+      if (raw){ lists = JSON.parse(raw); }
+    } catch(e){}
+    // Migrate from legacy single-list if no lists exist
+    if (!lists.length){
+      const legacy = localStorage.getItem(STORAGE_KEY) || '';
+      lists = [{ id: 'default', name: '預設', content: legacy }];
+    }
+    try { currentListId = localStorage.getItem(CURRENT_KEY) || lists[0].id; } catch(e){ currentListId = lists[0].id; }
+    if (!lists.find(l => l.id === currentListId)) currentListId = lists[0].id;
+  }
+
+  function saveLists(){
+    try {
+      localStorage.setItem(LISTS_KEY, JSON.stringify(lists));
+      localStorage.setItem(CURRENT_KEY, currentListId);
+    } catch(e){}
+  }
+
+  function currentList(){ return lists.find(l => l.id === currentListId) || lists[0]; }
+
+  function renderListSelect(){
+    const sel = $('listSelect');
+    sel.innerHTML = '';
+    lists.forEach(l => {
+      const opt = document.createElement('option');
+      opt.value = l.id;
+      opt.textContent = l.name;
+      if (l.id === currentListId) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  function switchToList(id){
+    // Save current first
+    const cur = currentList();
+    if (cur) cur.content = $('names').value;
+    currentListId = id;
+    saveLists();
+    const target = currentList();
+    $('names').value = target.content || '';
+    renderListSelect();
+    updateCount();
+  }
+
+  $('listSelect').addEventListener('change', (e) => {
+    switchToList(e.target.value);
+  });
+
+  $('listNewBtn').addEventListener('click', () => {
+    const name = prompt('新名單名稱：');
+    if (!name || !name.trim()) return;
+    const cur = currentList();
+    if (cur) cur.content = $('names').value;
+    const id = genId();
+    lists.push({ id, name: name.trim(), content: '' });
+    currentListId = id;
+    saveLists();
+    $('names').value = '';
+    renderListSelect();
+    updateCount();
+    toast('已建立「' + name.trim() + '」');
+  });
+
+  $('listRenameBtn').addEventListener('click', () => {
+    const cur = currentList();
+    const name = prompt('重新命名：', cur.name);
+    if (!name || !name.trim()) return;
+    cur.name = name.trim();
+    saveLists();
+    renderListSelect();
+    toast('已更名為「' + name.trim() + '」');
+  });
+
+  $('listDeleteBtn').addEventListener('click', () => {
+    if (lists.length <= 1){ toast('至少要保留一份名單'); return; }
+    const cur = currentList();
+    if (!confirm('確定要刪除「' + cur.name + '」嗎？')) return;
+    lists = lists.filter(l => l.id !== cur.id);
+    currentListId = lists[0].id;
+    saveLists();
+    $('names').value = currentList().content || '';
+    renderListSelect();
+    updateCount();
+    toast('已刪除');
+  });
+
+  // ---- Bindings ----
+  $('names').addEventListener('input', () => {
+    updateCount();
+    const cur = currentList();
+    if (cur) cur.content = $('names').value;
+    saveLists();
+  });
+  $('clearBtn').addEventListener('click', () => {
+    $('names').value = ''; updateCount();
+    const cur = currentList();
+    if (cur) cur.content = '';
+    saveLists();
+    $('resultCard').style.display = 'none';
+  });
+  $('sampleBtn').addEventListener('click', () => {
+    $('names').value = ['小明','小華','阿志','美玲','家豪 x2','怡君','俊傑','淑芬 x3','建宏','雅婷'].join('\n');
+    updateCount();
+  });
+  $('drawBtn').addEventListener('click', doDraw);
+  $('copyBtn').addEventListener('click', copyResult);
+
+  $('excludeToggle').addEventListener('change', () => {
+    try { localStorage.setItem(EXCLUDE_KEY, $('excludeToggle').checked ? '1' : '0'); } catch(e){}
+    renderHistory();
+  });
+  $('resetHistoryBtn').addEventListener('click', () => {
+    if (drawnHistory.size === 0){ toast('目前沒有紀錄'); return; }
+    drawnHistory.clear();
+    saveHistory();
+    renderHistory();
+    toast('已重置抽籤紀錄');
+  });
+
+  // ---- Top tabs ----
+  document.querySelectorAll('.top-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.top-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      const target = document.querySelector(`.tab-content[data-tab="${tab.dataset.tab}"]`);
+      if (target) target.classList.add('active');
+    });
+  });
+
+  // ---- Pair mode ----
+  const PAIR_A_KEY = 'futurestarai.draw.pairA.v1';
+  const PAIR_B_KEY = 'futurestarai.draw.pairB.v1';
+  let pairMode = 'oneToOne';
+
+  function parsePairList(text){
+    return text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  }
+
+  function updatePairCount(){
+    $('pairACount').textContent = parsePairList($('pairA').value).length + ' 人';
+    $('pairBCount').textContent = parsePairList($('pairB').value).length + ' 人';
+  }
+
+  document.querySelectorAll('.pair-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.pair-mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      pairMode = btn.dataset.mode;
+    });
+  });
+
+  function derangement(arr){
+    if (arr.length < 2) return arr.slice();
+    let result;
+    do {
+      result = shuffle(arr);
+    } while (result.some((v, i) => v === arr[i]));
+    return result;
+  }
+
+  function doPairDraw(){
+    const a = parsePairList($('pairA').value);
+    const b = parsePairList($('pairB').value);
+    const title = $('pairResultTitle');
+    const area = $('pairResultArea');
+    const card = $('pairResultCard');
+
+    let pairs = [];
+
+    if (pairMode === 'santa'){
+      if (a.length < 2){ toast('秘密聖誕老人至少需要 2 人'); return; }
+      const shuffled = derangement(a);
+      pairs = a.map((from, i) => [from, shuffled[i]]);
+      title.textContent = `🎅 秘密聖誕老人（${a.length} 組）`;
+    } else if (pairMode === 'oneToOne'){
+      if (a.length === 0){ toast('A 組不可為空'); return; }
+      if (b.length === 0){ toast('一對一模式需要 B 組名單'); return; }
+      const n = Math.min(a.length, b.length);
+      const shuffledB = shuffle(b);
+      pairs = a.slice(0, n).map((name, i) => [name, shuffledB[i]]);
+      if (a.length !== b.length){
+        title.textContent = `🔗 一對一配對（${n} 組，人數不同取較少）`;
+      } else {
+        title.textContent = `🔗 一對一配對（${n} 組）`;
+      }
+    } else {
+      if (a.length === 0){ toast('A 組不可為空'); return; }
+      if (b.length === 0){ toast('需要 B 組名單'); return; }
+      pairs = a.map(name => [name, b[Math.floor(Math.random() * b.length)]]);
+      title.textContent = `🎁 A 每人分配一個 B（${a.length} 組）`;
+    }
+
+    area.innerHTML = '';
+    card.style.display = '';
+    pairs.forEach((p, i) => {
+      const li = document.createElement('li');
+      li.style.animationDelay = (i * 0.08) + 's';
+      li.innerHTML = '<span class="idx">' + (i+1) + '</span>' +
+        '<span>' + escHtml(p[0]) + '</span>' +
+        '<span class="arrow">→</span>' +
+        '<span>' + escHtml(p[1]) + '</span>';
+      area.appendChild(li);
+    });
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function escHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function copyPairResult(){
+    const items = [...$('pairResultArea').querySelectorAll('li')];
+    const text = items.map((li, i) => {
+      const spans = li.querySelectorAll('span');
+      return `${i+1}. ${spans[1]?.textContent || ''} → ${spans[3]?.textContent || ''}`;
+    }).join('\n');
+    if (!text){ toast('沒有結果可複製'); return; }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('已複製配對結果');
+    } catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+      toast('已複製配對結果');
+    }
+  }
+
+  $('pairDrawBtn').addEventListener('click', doPairDraw);
+  $('pairCopyBtn').addEventListener('click', copyPairResult);
+
+  $('pairA').addEventListener('input', () => {
+    updatePairCount();
+    try { localStorage.setItem(PAIR_A_KEY, $('pairA').value); } catch(e){}
+  });
+  $('pairB').addEventListener('input', () => {
+    updatePairCount();
+    try { localStorage.setItem(PAIR_B_KEY, $('pairB').value); } catch(e){}
+  });
+
+  // ---- Remote sync ----
+  let remotePeer = null;
+  let remoteConns = [];   // host: array of viewer connections
+  let hostConn = null;    // viewer: single connection to host
+  let isRemoteHost = false;
+
+  function remoteCode(){
+    const c = 'abcdefghjkmnpqrstuvwxyz23456789';
+    let s = '';
+    for(let i=0;i<3;i++) s += c[Math.floor(Math.random()*c.length)];
+    s += '-';
+    for(let i=0;i<4;i++) s += c[Math.floor(Math.random()*c.length)];
+    return 'draw-' + s;
+  }
+
+  function remoteShareUrl(code){
+    return location.origin + location.pathname + '#remote=' + code;
+  }
+
+  function updateRemoteViewerCount(){
+    const n = remoteConns.filter(c => c.open).length;
+    $('remoteViewerCount').textContent = n + ' 位觀眾';
+    $('remoteStatusText').textContent = n > 0 ? `${n} 位觀眾已連線` : '等待觀眾加入...';
+  }
+
+  function broadcastToViewers(msg){
+    remoteConns.forEach(c => { try { if (c.open) c.send(msg); } catch(e){} });
+  }
+
+  async function initRemotePeer(id){
+    return new Promise((resolve, reject) => {
+      const p = new Peer(id, { debug: 1 });
+      p.on('open', () => resolve(p));
+      p.on('error', (err) => {
+        if (err.type === 'unavailable-id') reject(new Error('房號已被使用'));
+        else if (err.type === 'peer-unavailable') reject(new Error('找不到此房號'));
+        else reject(err);
+      });
+    });
+  }
+
+  // Host
+  async function startHost(){
+    const code = remoteCode();
+    try {
+      remotePeer = await initRemotePeer(code);
+    } catch(e){ toast(e.message || '建立失敗'); return; }
+    isRemoteHost = true;
+    history.replaceState(null, '', '#remote=' + code);
+    $('remoteLobby').classList.add('hidden');
+    $('remoteHostUI').classList.remove('hidden');
+    $('remoteShareLink').textContent = remoteShareUrl(code);
+    $('remoteShareCode').textContent = code;
+    updateRemoteViewerCount();
+
+    remotePeer.on('connection', (c) => {
+      remoteConns.push(c);
+      c.on('open', () => {
+        updateRemoteViewerCount();
+        toast('有觀眾加入了');
+      });
+      c.on('close', () => {
+        remoteConns = remoteConns.filter(x => x !== c);
+        updateRemoteViewerCount();
+      });
+    });
+  }
+
+  async function doRemoteDraw(){
+    const entries = parseEntries($('remoteNames').value);
+    const names = entries.map(e => e.name);
+    if (names.length === 0){ toast('請先輸入名單'); return; }
+    const hasWeights = entries.some(e => e.weight > 1);
+    let n = parseInt($('remoteN').value, 10);
+    if (isNaN(n) || n < 1) n = 1;
+    if (n > names.length) n = names.length;
+
+    const result = hasWeights ? weightedPickUnique(entries, n) : pickUnique(names, n);
+    const title = `抽中 ${n} 位`;
+
+    // Show locally
+    const area = $('remoteHostResult');
+    area.className = 'results';
+    area.style.marginTop = '1rem';
+    await spinReveal(names, result, area);
+
+    // Broadcast to viewers
+    broadcastToViewers({ type: 'draw-result', title, pool: names, result });
+  }
+
+  $('remoteHostBtn').addEventListener('click', startHost);
+  $('remoteDrawBtn').addEventListener('click', doRemoteDraw);
+  $('remoteCopyBtn').addEventListener('click', async () => {
+    const url = $('remoteShareLink').textContent;
+    try { await navigator.clipboard.writeText(url); toast('連結已複製'); }
+    catch(e){ toast('複製失敗'); }
+  });
+  $('remoteNames').addEventListener('input', () => {
+    const n = parseNames($('remoteNames').value).length;
+    $('remoteCountText').textContent = n + ' 人';
+  });
+  $('remoteLeaveBtn').addEventListener('click', () => {
+    broadcastToViewers({ type: 'bye' });
+    remoteConns.forEach(c => { try { c.close(); } catch(e){} });
+    remoteConns = [];
+    if (remotePeer){ try { remotePeer.destroy(); } catch(e){} remotePeer = null; }
+    isRemoteHost = false;
+    history.replaceState(null, '', location.pathname);
+    $('remoteHostUI').classList.add('hidden');
+    $('remoteLobby').classList.remove('hidden');
+    $('remoteHostResult').innerHTML = '';
+  });
+
+  // Viewer
+  async function joinAsViewer(code){
+    try {
+      remotePeer = await initRemotePeer(undefined);
+    } catch(e){ toast(e.message || '連線失敗'); return; }
+    $('remoteLobby').classList.add('hidden');
+    $('remoteViewerUI').classList.remove('hidden');
+    $('viewerDot').className = 'dot connecting';
+    $('viewerStatusText').textContent = '連線中...';
+
+    hostConn = remotePeer.connect(code, { reliable: true });
+    hostConn.on('open', () => {
+      $('viewerDot').className = 'dot online';
+      $('viewerStatusText').textContent = '已連線，等待主持人抽籤...';
+    });
+    hostConn.on('data', async (data) => {
+      if (!data || typeof data !== 'object') return;
+      if (data.type === 'draw-result'){
+        $('viewerWaiting').classList.add('hidden');
+        const vr = $('viewerResult');
+        vr.classList.remove('hidden');
+        $('viewerResultTitle').textContent = data.title || '結果';
+        const area = $('viewerResultArea');
+        area.className = 'results';
+        await spinReveal(data.pool || [], data.result || [], area);
+      } else if (data.type === 'bye'){
+        $('viewerDot').className = 'dot offline';
+        $('viewerStatusText').textContent = '主持人已關閉房間';
+        toast('主持人已關閉房間');
+      }
+    });
+    hostConn.on('close', () => {
+      $('viewerDot').className = 'dot offline';
+      $('viewerStatusText').textContent = '連線中斷';
+    });
+    hostConn.on('error', () => {
+      $('viewerDot').className = 'dot offline';
+      $('viewerStatusText').textContent = '連線錯誤';
+      toast('連線失敗，請確認房號');
+    });
+  }
+
+  $('remoteJoinBtn').addEventListener('click', () => {
+    const code = $('remoteJoinInput').value.trim();
+    if (!code){ toast('請輸入房號'); return; }
+    history.replaceState(null, '', '#remote=' + code);
+    joinAsViewer(code);
+  });
+  $('remoteJoinInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') $('remoteJoinBtn').click();
+  });
+  $('viewerLeaveBtn').addEventListener('click', () => {
+    if (hostConn){ try { hostConn.close(); } catch(e){} hostConn = null; }
+    if (remotePeer){ try { remotePeer.destroy(); } catch(e){} remotePeer = null; }
+    history.replaceState(null, '', location.pathname);
+    $('remoteViewerUI').classList.add('hidden');
+    $('remoteLobby').classList.remove('hidden');
+    $('viewerWaiting').classList.remove('hidden');
+    $('viewerResult').classList.add('hidden');
+  });
+
+  // ---- QR Share ----
+  function getResultText(){
+    const area = $('resultArea');
+    if (area.classList.contains('results')){
+      const items = [...area.querySelectorAll('.result')];
+      return items.map((el, i) => (items.length > 1 ? `${i+1}. ` : '') + (el.childNodes[0]?.nodeValue || el.textContent).trim()).join('\n');
+    }
+    const groups = [...area.querySelectorAll('.group')];
+    if (groups.length){
+      return groups.map(g => {
+        const h = g.querySelector('h3')?.textContent || '';
+        const names = [...g.querySelectorAll('li')].map(li => li.textContent).join(', ');
+        return h + '\n' + names;
+      }).join('\n\n');
+    }
+    return '';
+  }
+
+  function getPairResultText(){
+    const items = [...$('pairResultArea').querySelectorAll('li')];
+    return items.map((li, i) => {
+      const spans = li.querySelectorAll('span');
+      return `${i+1}. ${spans[1]?.textContent || ''} → ${spans[3]?.textContent || ''}`;
+    }).join('\n');
+  }
+
+  function showQr(text){
+    if (!text){ toast('沒有結果可分享'); return; }
+    const canvas = $('qrCanvas');
+    $('qrText').textContent = text;
+    try {
+      QRCode.toCanvas(canvas, text, {
+        width: 260,
+        margin: 2,
+        color: { dark: '#000', light: '#fff' }
+      });
+    } catch(e){
+      // If text is too long for QR, truncate
+      const short = text.slice(0, 500);
+      QRCode.toCanvas(canvas, short, { width: 260, margin: 2, color: { dark: '#000', light: '#fff' } });
+    }
+    $('qrModal').classList.add('show');
+  }
+
+  $('qrBtn').addEventListener('click', () => showQr(getResultText()));
+  $('pairQrBtn').addEventListener('click', () => showQr(getPairResultText()));
+  $('qrCloseBtn').addEventListener('click', () => $('qrModal').classList.remove('show'));
+  $('qrModal').addEventListener('click', (e) => {
+    if (e.target === $('qrModal')) $('qrModal').classList.remove('show');
+  });
+
+  // Auto-join if #remote=xxx
+  function checkRemoteHash(){
+    const h = (location.hash || '').replace(/^#/, '');
+    const m = h.match(/^remote=(.+)$/);
+    if (m){
+      const code = m[1];
+      // Switch to remote tab
+      document.querySelectorAll('.top-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector('.top-tab[data-tab="remote"]').classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelector('.tab-content[data-tab="remote"]').classList.add('active');
+      joinAsViewer(code);
+    }
+  }
+
+  // Restore pair data
+  try {
+    const savedA = localStorage.getItem(PAIR_A_KEY);
+    const savedB = localStorage.getItem(PAIR_B_KEY);
+    if (savedA) $('pairA').value = savedA;
+    if (savedB) $('pairB').value = savedB;
+  } catch(e){}
+  updatePairCount();
+
+  // ---- Init ----
+  loadLists();
+  $('names').value = currentList().content || '';
+  renderListSelect();
+  try { $('excludeToggle').checked = localStorage.getItem(EXCLUDE_KEY) === '1'; } catch(e){}
+  updateCount();
+
+  // Auto-switch tab based on hash
+  function switchToTab(tabName){
+    document.querySelectorAll('.top-tab').forEach(t => t.classList.remove('active'));
+    const tab = document.querySelector(`.top-tab[data-tab="${tabName}"]`);
+    if (tab) tab.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const content = document.querySelector(`.tab-content[data-tab="${tabName}"]`);
+    if (content) content.classList.add('active');
+  }
+
+  const initHash = (location.hash || '').replace(/^#/, '');
+  if (initHash === 'pair'){
+    switchToTab('pair');
+  } else if (initHash === 'remote'){
+    switchToTab('remote');
+  } else {
+    checkRemoteHash();
+  }
+})();
+</script>
+
+</body>
+</html>
