@@ -1722,7 +1722,25 @@
   renderListSelect();
   try { $('excludeToggle').checked = localStorage.getItem(EXCLUDE_KEY) === '1'; } catch(e){}
   updateCount();
-  checkRemoteHash();
+
+  // Auto-switch tab based on hash
+  function switchToTab(tabName){
+    document.querySelectorAll('.top-tab').forEach(t => t.classList.remove('active'));
+    const tab = document.querySelector(`.top-tab[data-tab="${tabName}"]`);
+    if (tab) tab.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const content = document.querySelector(`.tab-content[data-tab="${tabName}"]`);
+    if (content) content.classList.add('active');
+  }
+
+  const initHash = (location.hash || '').replace(/^#/, '');
+  if (initHash === 'pair'){
+    switchToTab('pair');
+  } else if (initHash === 'remote'){
+    switchToTab('remote');
+  } else {
+    checkRemoteHash();
+  }
 })();
 </script>
 
