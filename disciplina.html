@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0814">
+<title>Disciplina — 自律魔典</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Disciplina — 自律魔典
+   Single-file HTML app · localStorage · no backend
+============================================================ */
+
+:root{
+  /* Dynamic theme colors (set by JS based on leading house) */
+  --accent: #ff6b35;
+  --accent-soft: rgba(255,107,53,0.2);
+  --accent-glow: rgba(255,107,53,0.5);
+
+  /* Static palette */
+  --bg: #0a0814;
+  --bg-2: #120d20;
+  --surface: rgba(22,18,36,0.72);
+  --surface-2: rgba(30,24,50,0.7);
+  --border: rgba(200,180,255,0.12);
+  --border-strong: rgba(200,180,255,0.28);
+  --text: #e8e4f5;
+  --text-dim: #a59dc2;
+  --text-mute: #6c638a;
+
+  /* House colors */
+  --gryffindor: #ff6b35;
+  --hufflepuff: #f5c518;
+  --slytherin: #2ecc71;
+  --ravenclaw: #4da6ff;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+
+body{
+  font-family:'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+  background:
+    radial-gradient(1200px 800px at 10% -10%, rgba(123,80,220,0.18), transparent 60%),
+    radial-gradient(900px 700px at 110% 10%, rgba(77,166,255,0.12), transparent 60%),
+    radial-gradient(700px 500px at 50% 120%, rgba(255,107,53,0.1), transparent 60%),
+    linear-gradient(180deg, #090612 0%, #0a0814 50%, #0b0a1a 100%);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+  position:relative;
+  padding-bottom:84px;
+}
+
+/* Starry twinkle */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent),
+    radial-gradient(1px 1px at 25% 65%, #fff 50%, transparent),
+    radial-gradient(1.5px 1.5px at 48% 30%, #fff 50%, transparent),
+    radial-gradient(1px 1px at 70% 78%, #fff 50%, transparent),
+    radial-gradient(1.2px 1.2px at 85% 22%, #fff 50%, transparent),
+    radial-gradient(1px 1px at 92% 55%, #fff 50%, transparent),
+    radial-gradient(1px 1px at 35% 88%, #fff 50%, transparent),
+    radial-gradient(1.5px 1.5px at 60% 12%, #fff 50%, transparent),
+    radial-gradient(1px 1px at 8% 45%, #fff 50%, transparent),
+    radial-gradient(1px 1px at 55% 58%, #fff 50%, transparent);
+  background-size: 100% 100%;
+  opacity:0.35;
+  pointer-events:none;
+  animation: twinkle 6s ease-in-out infinite;
+  z-index:0;
+}
+@keyframes twinkle{
+  0%,100%{opacity:.25}
+  50%{opacity:.5}
+}
+
+/* Top glow */
+.top-glow{
+  position:fixed;
+  top:-200px;left:50%;
+  width:800px;height:400px;
+  transform:translateX(-50%);
+  background: radial-gradient(closest-side, var(--accent-glow), transparent 70%);
+  opacity:0.35;
+  pointer-events:none;
+  z-index:0;
+  transition: background 1s ease;
+  filter:blur(40px);
+}
+
+/* Particles canvas */
+#particles{
+  position:fixed;inset:0;
+  pointer-events:none;
+  z-index:1;
+}
+
+/* App container */
+.app{
+  position:relative;
+  z-index:2;
+  max-width:720px;
+  margin:0 auto;
+  padding:18px 18px 8px;
+}
+
+.page{display:none}
+.page.active{display:block; animation: fadeIn .3s ease}
+@keyframes fadeIn{
+  from{opacity:0; transform:translateY(6px)}
+  to{opacity:1; transform:translateY(0)}
+}
+
+/* Header / brand */
+.brand{
+  text-align:center;
+  padding:14px 0 10px;
+}
+.brand h1{
+  font-family:'Cinzel', serif;
+  font-weight:700;
+  font-size:1.7rem;
+  letter-spacing:0.15em;
+  background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  text-transform:uppercase;
+}
+.brand .sub{
+  font-size:.78rem;
+  color:var(--text-mute);
+  letter-spacing:.3em;
+  margin-top:4px;
+}
+
+/* Card */
+.card{
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:16px;
+  margin:12px 0;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  position:relative;
+}
+.card-title{
+  font-family:'Cinzel', serif;
+  font-size:.95rem;
+  letter-spacing:.12em;
+  color:var(--text-dim);
+  text-transform:uppercase;
+  margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
+}
+.card-title::before{
+  content:'';
+  display:inline-block;
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 10px var(--accent-glow);
+}
+
+/* Mentor card */
+.mentor{
+  display:flex;
+  gap:14px;
+  align-items:center;
+}
+.mentor-avatar{
+  width:72px;height:72px;
+  border-radius:50%;
+  overflow:hidden;
+  flex-shrink:0;
+  background: linear-gradient(135deg,#1a1530,#0d0a1c);
+  border:2px solid var(--accent);
+  box-shadow: 0 0 24px var(--accent-glow);
+  position:relative;
+}
+.mentor-avatar img, .mentor-avatar svg{
+  width:100%;height:100%;
+  object-fit:cover;
+  display:block;
+}
+.mentor-body{flex:1; min-width:0}
+.mentor-name{
+  font-family:'Cinzel', serif;
+  font-size:.95rem;
+  letter-spacing:.08em;
+  color:var(--accent);
+  margin-bottom:4px;
+}
+.mentor-line{
+  font-size:.92rem;
+  line-height:1.55;
+  color:var(--text);
+}
+.mentor-line.scolding{
+  color:#ffb4a0;
+  background: rgba(255,80,80,0.08);
+  border-left:3px solid #ff5555;
+  padding:8px 10px;
+  border-radius:0 8px 8px 0;
+  margin-top:6px;
+  font-size:.88rem;
+  line-height:1.6;
+}
+
+/* House row */
+.house-row{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:8px;
+}
+.house-cell{
+  background: var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:10px 6px 12px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  transition: transform .25s ease, border-color .25s ease;
+}
+.house-cell.leading{
+  border-color: var(--hc);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--hc) 30%, transparent);
+  transform: translateY(-2px);
+}
+.house-cell .crown{
+  position:absolute;
+  top:4px;right:6px;
+  font-size:.8rem;
+  opacity:0;
+  transition:opacity .25s ease;
+}
+.house-cell.leading .crown{opacity:1}
+.house-emoji{font-size:1.4rem; margin-bottom:2px}
+.house-name{
+  font-size:.68rem;
+  color:var(--text-dim);
+  letter-spacing:.08em;
+  margin-bottom:2px;
+}
+.house-pts{
+  font-family:'Cinzel', serif;
+  font-size:1.15rem;
+  font-weight:700;
+  color:var(--hc);
+}
+.house-rank{
+  font-size:.65rem;
+  color:var(--text-mute);
+  margin-top:2px;
+  min-height:14px;
+}
+.house-bar{
+  margin-top:6px;
+  height:3px;border-radius:2px;
+  background:rgba(255,255,255,0.06);
+  overflow:hidden;
+}
+.house-bar-fill{
+  height:100%;
+  background:var(--hc);
+  box-shadow: 0 0 8px var(--hc);
+  transition: width .6s ease;
+}
+
+/* Daily quote */
+.quote{
+  text-align:center;
+  font-family:'Cinzel', serif;
+  font-style:italic;
+  color:var(--text-dim);
+  font-size:.95rem;
+  line-height:1.6;
+  padding:14px 10px;
+}
+.quote::before{content:'“'; color:var(--accent); margin-right:4px}
+.quote::after{content:'”'; color:var(--accent); margin-left:4px}
+
+/* Day tabs */
+.day-tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin:14px 0 10px;
+}
+.day-tab{
+  background: var(--surface-2);
+  border:1px solid var(--border);
+  color:var(--text-dim);
+  padding:12px 8px;
+  border-radius:14px;
+  font-family:'Noto Sans TC', sans-serif;
+  font-size:.95rem;
+  font-weight:500;
+  cursor:pointer;
+  transition: all .25s ease;
+}
+.day-tab.active{
+  background: linear-gradient(135deg, var(--accent-soft), transparent);
+  border-color: var(--accent);
+  color: var(--text);
+  box-shadow: 0 0 18px var(--accent-soft);
+}
+.day-tab:hover{border-color: var(--border-strong)}
+
+/* Task list rows */
+.task-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 12px;
+  margin:8px 0;
+  background: var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  cursor:pointer;
+  transition: all .2s ease;
+  border-left:3px solid var(--hc, var(--accent));
+}
+.task-row:hover{border-color: var(--border-strong); transform: translateX(2px)}
+.task-row.checked{
+  background: color-mix(in srgb, var(--hc) 12%, var(--surface-2));
+  border-color: var(--hc);
+}
+.task-row.checked .task-name{color: var(--text-dim); text-decoration: line-through}
+.checkbox{
+  width:22px;height:22px;
+  border-radius:6px;
+  border:2px solid var(--hc, var(--text-mute));
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;
+  color:#fff;
+  background:transparent;
+  transition: all .2s ease;
+}
+.task-row.checked .checkbox{
+  background: var(--hc);
+  box-shadow: 0 0 10px var(--hc);
+}
+.task-icon{font-size:1.2rem; flex-shrink:0}
+.task-body{flex:1; min-width:0}
+.task-name{
+  font-size:.95rem;
+  color:var(--text);
+  margin-bottom:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.task-meta{
+  font-size:.7rem;
+  color:var(--text-mute);
+  letter-spacing:.05em;
+}
+.task-pts{
+  font-family:'Cinzel', serif;
+  font-size:.8rem;
+  font-weight:600;
+  color:var(--hc);
+  padding: 3px 8px;
+  border-radius:8px;
+  background: color-mix(in srgb, var(--hc) 10%, transparent);
+  flex-shrink:0;
+}
+.task-del{
+  background:transparent;
+  border:none;
+  color:var(--text-mute);
+  font-size:1.1rem;
+  cursor:pointer;
+  padding:4px 6px;
+  border-radius:6px;
+}
+.task-del:hover{color:#ff6666; background: rgba(255,80,80,0.1)}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;
+  padding:14px 18px;
+  border:none;
+  border-radius:12px;
+  font-family:'Noto Sans TC', sans-serif;
+  font-size:.95rem;
+  font-weight:600;
+  letter-spacing:.1em;
+  cursor:pointer;
+  transition: all .2s ease;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #000));
+  color:#fff;
+  box-shadow: 0 6px 20px var(--accent-soft);
+  margin-top:10px;
+}
+.btn:hover:not(:disabled){transform:translateY(-1px); box-shadow: 0 8px 24px var(--accent-glow)}
+.btn:active:not(:disabled){transform:translateY(0)}
+.btn:disabled{opacity:.4; cursor:not-allowed; box-shadow:none}
+.btn.ghost{
+  background:transparent;
+  border:1px solid var(--border-strong);
+  color:var(--text-dim);
+  box-shadow:none;
+}
+.btn.ghost:hover{border-color: var(--accent); color: var(--text)}
+.btn.danger{
+  background: linear-gradient(135deg, #ff4d4d, #a82727);
+  box-shadow: 0 6px 20px rgba(255,77,77,0.25);
+}
+
+/* Empty state */
+.empty{
+  text-align:center;
+  padding:26px 12px;
+  color: var(--text-mute);
+  font-size:.9rem;
+  line-height:1.7;
+}
+.empty .emoji{font-size:2rem; display:block; margin-bottom:6px; opacity:.6}
+
+/* Library page - house filter chips */
+.house-tabs{
+  display:flex; gap:6px; overflow-x:auto;
+  padding: 2px 0 4px;
+  margin-bottom:10px;
+  scrollbar-width:none;
+}
+.house-tabs::-webkit-scrollbar{display:none}
+.house-chip{
+  flex-shrink:0;
+  padding:8px 14px;
+  background: var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:20px;
+  font-size:.82rem;
+  color:var(--text-dim);
+  cursor:pointer;
+  transition: all .2s ease;
+  white-space:nowrap;
+}
+.house-chip.active{
+  background: color-mix(in srgb, var(--hc) 18%, transparent);
+  border-color: var(--hc);
+  color: var(--text);
+}
+
+/* Preset task chip */
+.preset-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap:8px;
+}
+.preset-chip{
+  background: var(--surface-2);
+  border:1px solid var(--border);
+  border-left:3px solid var(--hc);
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:.85rem;
+  cursor:pointer;
+  transition: all .2s ease;
+  display:flex; align-items:center; gap:8px;
+}
+.preset-chip:hover{border-color: var(--hc); transform: translateY(-1px)}
+.preset-chip.added{opacity:.5; pointer-events:none}
+.preset-chip .emo{font-size:1.1rem}
+.preset-chip .pts{
+  margin-left:auto;
+  font-family:'Cinzel', serif;
+  font-size:.75rem;
+  color:var(--hc);
+  font-weight:600;
+}
+
+/* Custom form */
+.form-row{
+  display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;
+}
+.form-row > *{flex:1; min-width: 90px}
+.input, .select{
+  background: rgba(10,8,20,0.6);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding: 11px 12px;
+  color: var(--text);
+  font-family:inherit;
+  font-size:.9rem;
+  outline:none;
+  transition: border-color .2s ease;
+}
+.input:focus, .select:focus{border-color: var(--accent)}
+.input::placeholder{color: var(--text-mute)}
+
+/* Weekly report */
+.heatmap{
+  display:grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap:6px;
+  margin:10px 0;
+}
+.heatmap-cell{
+  aspect-ratio:1;
+  background: rgba(255,255,255,0.04);
+  border:1px solid var(--border);
+  border-radius:10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  font-size:.75rem;
+  color:var(--text-dim);
+}
+.heatmap-cell .day{font-size:.65rem; color:var(--text-mute); margin-bottom:2px}
+.heatmap-cell .icon{font-size:1.1rem}
+.heatmap-cell.full{
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.heatmap-cell.part{
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+.heatmap-cell.fail{
+  background: rgba(255,80,80,0.08);
+  border-color: rgba(255,80,80,0.3);
+  color:#ff8888;
+}
+.heatmap-cell.today{outline: 2px solid var(--accent); outline-offset: -1px}
+
+.stats-grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:8px;
+  margin:10px 0;
+}
+.stat{
+  background: var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px 8px;
+  text-align:center;
+}
+.stat-val{
+  font-family:'Cinzel', serif;
+  font-size:1.3rem;
+  font-weight:700;
+  color: var(--accent);
+}
+.stat-lbl{
+  font-size:.7rem;
+  color:var(--text-mute);
+  letter-spacing:.08em;
+  margin-top:4px;
+}
+
+.leaderboard{display:flex; flex-direction:column; gap:10px; margin-top:4px}
+.lb-row{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px;
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-left:3px solid var(--hc);
+  border-radius:12px;
+}
+.lb-rank{
+  font-family:'Cinzel', serif;
+  font-weight:700;
+  color:var(--text-mute);
+  width:24px; text-align:center;
+}
+.lb-row:first-child .lb-rank{color: gold}
+.lb-emo{font-size:1.2rem}
+.lb-name{flex:1; color:var(--text); font-size:.92rem}
+.lb-pts{font-family:'Cinzel', serif; color:var(--hc); font-weight:600}
+.lb-bar{
+  height:4px; border-radius:2px;
+  background: rgba(255,255,255,0.06);
+  margin-top:4px; overflow:hidden;
+}
+.lb-bar-fill{height:100%; background: var(--hc); box-shadow: 0 0 10px var(--hc)}
+
+/* Settings */
+.setting-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.setting-row:last-child{border-bottom:none}
+.setting-label{flex:1; color:var(--text); font-size:.92rem}
+.setting-desc{font-size:.78rem; color:var(--text-mute); margin-top:2px}
+.upload-preview{
+  width:64px;height:64px;border-radius:50%;
+  overflow:hidden;border:2px solid var(--border-strong);
+  flex-shrink:0;
+}
+.upload-preview img, .upload-preview svg{width:100%; height:100%; object-fit:cover; display:block}
+.file-input{display:none}
+
+/* Bottom nav */
+.nav{
+  position:fixed;
+  left:50%; bottom:14px;
+  transform:translateX(-50%);
+  width:calc(100% - 28px);
+  max-width: 360px;
+  z-index:50;
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:4px;
+  padding:6px;
+  background: rgba(12,9,22,0.85);
+  border:1px solid var(--border-strong);
+  border-radius:22px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+.nav-btn{
+  background: transparent;
+  border:none;
+  color: var(--text-mute);
+  font-family:'Noto Sans TC', sans-serif;
+  font-size:.7rem;
+  padding:8px 4px;
+  border-radius:16px;
+  cursor:pointer;
+  transition: all .2s ease;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.nav-btn .nav-icon{font-size:1.1rem}
+.nav-btn.active{
+  color: var(--text);
+  background: var(--accent-soft);
+}
+.nav-btn.active .nav-icon{filter: drop-shadow(0 0 6px var(--accent-glow))}
+
+/* Level-up modal */
+.modal{
+  position:fixed;inset:0;
+  background: rgba(4,2,10,0.8);
+  z-index:100;
+  display:none;
+  align-items:center;justify-content:center;
+  padding:20px;
+  backdrop-filter: blur(8px);
+}
+.modal.show{display:flex; animation: fadeIn .3s ease}
+.modal-card{
+  background: linear-gradient(160deg, var(--surface), var(--bg-2));
+  border:1px solid var(--hc);
+  border-radius:20px;
+  padding:30px 24px;
+  text-align:center;
+  max-width: 340px;
+  width:100%;
+  box-shadow: 0 0 60px var(--hc);
+  position:relative;
+  animation: popIn .5s cubic-bezier(.3,1.4,.6,1);
+}
+@keyframes popIn{
+  from{opacity:0; transform: scale(.7)}
+  to{opacity:1; transform: scale(1)}
+}
+.modal-card .glyph{
+  font-size:3rem;
+  margin-bottom:8px;
+  filter: drop-shadow(0 0 20px var(--hc));
+  animation: float 2s ease-in-out infinite;
+}
+@keyframes float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-6px)}
+}
+.modal-card h2{
+  font-family:'Cinzel', serif;
+  font-size:.9rem;
+  letter-spacing:.2em;
+  color:var(--text-dim);
+  font-weight:600;
+  margin-bottom:10px;
+}
+.modal-card .title-name{
+  font-family:'Cinzel', serif;
+  font-size:1.7rem;
+  color:var(--hc);
+  margin-bottom:6px;
+  text-shadow: 0 0 20px var(--hc);
+}
+.modal-card .title-house{
+  font-size:.85rem;
+  color:var(--text-dim);
+  margin-bottom:16px;
+}
+.modal-card button{
+  background: var(--hc);
+  color:#000;
+  border:none;
+  padding:12px 32px;
+  border-radius:12px;
+  font-family:'Cinzel', serif;
+  font-weight:700;
+  letter-spacing:.15em;
+  cursor:pointer;
+  box-shadow: 0 0 20px var(--hc);
+}
+
+/* Toast */
+.toast{
+  position:fixed;
+  bottom:100px;left:50%;
+  transform:translateX(-50%);
+  background: rgba(12,9,22,0.95);
+  border:1px solid var(--accent);
+  color: var(--text);
+  padding:10px 18px;
+  border-radius:12px;
+  font-size:.88rem;
+  z-index:200;
+  opacity:0;
+  pointer-events:none;
+  transition: opacity .25s ease, transform .25s ease;
+  box-shadow: 0 4px 20px var(--accent-soft);
+}
+.toast.show{opacity:1; transform: translateX(-50%) translateY(-4px)}
+
+/* Tiny helpers */
+.mt{margin-top:10px}
+.row-gap > *{margin-bottom:8px}
+.small{font-size:.8rem; color:var(--text-mute)}
+.center{text-align:center}
+
+/* Responsive */
+@media (max-width: 420px){
+  .brand h1{font-size:1.45rem}
+  .house-emoji{font-size:1.2rem}
+  .house-pts{font-size:1rem}
+  .house-name{font-size:.62rem}
+  .preset-grid{grid-template-columns: repeat(2, 1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- Background effects -->
+<div class="top-glow"></div>
+<canvas id="particles"></canvas>
+
+<main class="app">
+
+  <!-- Brand -->
+  <div class="brand">
+    <h1>Disciplina</h1>
+    <div class="sub">自律魔典 · HOGWARTS EDITION</div>
+  </div>
+
+  <!-- ============ Home page ============ -->
+  <section class="page active" id="page-home">
+    <!-- Mentor card -->
+    <div class="card">
+      <div class="mentor">
+        <div class="mentor-avatar" id="mentor-avatar-home"></div>
+        <div class="mentor-body">
+          <div class="mentor-name">PROF. SEVERUS</div>
+          <div class="mentor-line" id="mentor-line">——</div>
+        </div>
+      </div>
+      <div id="scolding-box"></div>
+    </div>
+
+    <!-- House points -->
+    <div class="card">
+      <div class="card-title">四院積分</div>
+      <div class="house-row" id="house-row"></div>
+    </div>
+
+    <!-- Daily quote -->
+    <div class="card">
+      <div class="quote" id="daily-quote">——</div>
+    </div>
+
+    <!-- Day tabs -->
+    <div class="day-tabs">
+      <button class="day-tab" data-day="morning" onclick="switchDayTab('morning')">🌅 早晨宣告</button>
+      <button class="day-tab" data-day="evening" onclick="switchDayTab('evening')">🌙 晚間回報</button>
+    </div>
+
+    <!-- Morning panel -->
+    <div class="card" id="morning-panel">
+      <div class="card-title">從任務庫勾選今日修煉</div>
+      <div id="morning-list"></div>
+      <button class="btn" id="declare-btn" onclick="declareMorning()">🪄 立誓修煉</button>
+    </div>
+
+    <!-- Evening panel -->
+    <div class="card" id="evening-panel" style="display:none">
+      <div class="card-title">今日已宣告任務</div>
+      <div id="evening-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ Library page ============ -->
+  <section class="page" id="page-library">
+    <div class="card">
+      <div class="card-title">預設任務 — 一鍵加入</div>
+      <div class="house-tabs" id="preset-tabs"></div>
+      <div class="preset-grid" id="preset-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">新增自訂任務</div>
+      <div class="form-row">
+        <select class="select" id="custom-house">
+          <option value="gryffindor">🦁 葛來芬多</option>
+          <option value="hufflepuff">🦡 赫夫帕夫</option>
+          <option value="slytherin">🐍 斯萊哲林</option>
+          <option value="ravenclaw">🦅 雷文克勞</option>
+        </select>
+        <select class="select" id="custom-pts">
+          <option value="5">5 分</option>
+          <option value="10" selected>10 分</option>
+          <option value="15">15 分</option>
+          <option value="20">20 分</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <input class="input" id="custom-name" placeholder="例：凌晨 6 點跑步 5 公里" maxlength="28" style="flex:2.5">
+        <input class="input" id="custom-icon" placeholder="🔥" maxlength="2" style="flex:.6">
+      </div>
+      <button class="btn ghost" onclick="addCustomTask()">＋ 加入任務庫</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">我的任務庫</div>
+      <div id="library-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ Report page ============ -->
+  <section class="page" id="page-report">
+    <div class="card">
+      <div class="card-title">本週修煉熱力圖</div>
+      <div class="heatmap" id="heatmap"></div>
+      <p class="small center mt">✦ 全部完成　· 數字 部分完成　✗ 未完成</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">本週統計</div>
+      <div class="stats-grid" id="stats"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">四院積分排行榜</div>
+      <div class="leaderboard" id="leaderboard"></div>
+    </div>
+  </section>
+
+  <!-- ============ Settings page ============ -->
+  <section class="page" id="page-settings">
+    <div class="card">
+      <div class="card-title">導師頭像</div>
+      <div class="setting-row">
+        <div class="upload-preview" id="mentor-avatar-settings"></div>
+        <div class="setting-label">
+          PROF. SEVERUS
+          <div class="setting-desc">上傳 Gemini 生成的頭像，儲存於本機 localStorage</div>
+        </div>
+      </div>
+      <input type="file" class="file-input" id="avatar-file" accept="image/*" onchange="uploadAvatar(event)">
+      <div class="form-row">
+        <button class="btn ghost" onclick="document.getElementById('avatar-file').click()">📷 上傳圖片</button>
+        <button class="btn ghost" onclick="resetAvatar()">↺ 恢復預設</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">關於</div>
+      <p class="small" style="line-height:1.75">
+        Disciplina · 自律魔典 v1.0<br>
+        純前端單檔 App · 離線可用 · 資料保存於本機<br>
+        主題：霍格華茲四大學院 × 個人自律打卡<br>
+        導師：PROF. SEVERUS · 毒舌但一針見血
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="color:#ff8888">危險區域</div>
+      <p class="small" style="margin-bottom:10px">清除所有資料，回到初始狀態（不可復原）</p>
+      <button class="btn danger" onclick="clearAllData()">🗑 清除所有資料</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- Bottom nav -->
+<nav class="nav">
+  <button class="nav-btn active" data-page="home" onclick="switchPage('home')">
+    <span class="nav-icon">📜</span><span>魔典</span>
+  </button>
+  <button class="nav-btn" data-page="library" onclick="switchPage('library')">
+    <span class="nav-icon">⚗️</span><span>任務庫</span>
+  </button>
+  <button class="nav-btn" data-page="report" onclick="switchPage('report')">
+    <span class="nav-icon">🔮</span><span>週報</span>
+  </button>
+  <button class="nav-btn" data-page="settings" onclick="switchPage('settings')">
+    <span class="nav-icon">⚙️</span><span>設定</span>
+  </button>
+</nav>
+
+<!-- Level-up modal -->
+<div class="modal" id="levelup-modal">
+  <div class="modal-card">
+    <div class="glyph" id="levelup-glyph">✨</div>
+    <h2>稱號晉升</h2>
+    <div class="title-name" id="levelup-title">——</div>
+    <div class="title-house" id="levelup-house">——</div>
+    <button onclick="closeLevelUp()">繼續修煉</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   Disciplina — JS logic
+============================================================ */
+
+/* ---------- Constants ---------- */
+const STORAGE_KEY = 'disciplina_v1';
+
+const HOUSES = {
+  gryffindor: { name:'葛來芬多', emoji:'🦁', color:'#ff6b35', glow:'rgba(255,107,53,0.5)', soft:'rgba(255,107,53,0.2)', aspect:'行動力' },
+  hufflepuff: { name:'赫夫帕夫', emoji:'🦡', color:'#f5c518', glow:'rgba(245,197,24,0.5)', soft:'rgba(245,197,24,0.2)', aspect:'一致性' },
+  slytherin:  { name:'斯萊哲林', emoji:'🐍', color:'#2ecc71', glow:'rgba(46,204,113,0.5)', soft:'rgba(46,204,113,0.2)', aspect:'野心執行' },
+  ravenclaw:  { name:'雷文克勞', emoji:'🦅', color:'#4da6ff', glow:'rgba(77,166,255,0.5)', soft:'rgba(77,166,255,0.2)', aspect:'反思成長' },
+};
+const HOUSE_ORDER = ['gryffindor','hufflepuff','slytherin','ravenclaw'];
+
+const DEFAULT_TASKS = [
+  // Gryffindor — 行動力
+  { name:'運動訓練',    icon:'💪', pts:10, house:'gryffindor' },
+  { name:'健康飲食',    icon:'🥗', pts:5,  house:'gryffindor' },
+  { name:'戒癮挑戰',    icon:'🛡️', pts:15, house:'gryffindor' },
+  { name:'寫論文',      icon:'📝', pts:15, house:'gryffindor' },
+  // Hufflepuff — 一致性
+  { name:'感恩練習',    icon:'🙏', pts:5,  house:'hufflepuff' },
+  { name:'打拳冥想',    icon:'🧘', pts:10, house:'hufflepuff' },
+  { name:'覆盤觀心書',  icon:'📖', pts:10, house:'hufflepuff' },
+  { name:'聯繫家人',    icon:'💌', pts:5,  house:'hufflepuff' },
+  // Slytherin — 野心執行
+  { name:'AI 學習技能', icon:'🤖', pts:15, house:'slytherin' },
+  { name:'財務計畫',    icon:'💰', pts:10, house:'slytherin' },
+  { name:'接案/職涯',   icon:'🎯', pts:15, house:'slytherin' },
+  { name:'命理研究',    icon:'🔮', pts:5,  house:'slytherin' },
+  // Ravenclaw — 反思成長
+  { name:'閱讀思考',    icon:'📚', pts:10, house:'ravenclaw' },
+  { name:'寫作',        icon:'✍️', pts:10, house:'ravenclaw' },
+  { name:'自媒體輸出',  icon:'🎨', pts:15, house:'ravenclaw' },
+  { name:'商業邏輯',    icon:'💡', pts:10, house:'ravenclaw' },
+];
+
+const TITLES = {
+  gryffindor: [
+    { pts:0,   name:'新生' },
+    { pts:30,  name:'勇氣見習' },
+    { pts:80,  name:'葛院鬥士' },
+    { pts:150, name:'菲尼克斯勇士' },
+    { pts:250, name:'獅心王者' },
+  ],
+  hufflepuff: [
+    { pts:0,   name:'新生' },
+    { pts:30,  name:'勤奮見習' },
+    { pts:80,  name:'赫院耕者' },
+    { pts:150, name:'金獾傳人' },
+    { pts:250, name:'不倒翁王者' },
+  ],
+  slytherin: [
+    { pts:0,   name:'新生' },
+    { pts:30,  name:'野心見習' },
+    { pts:80,  name:'蛇院謀士' },
+    { pts:150, name:'綠銀精英' },
+    { pts:250, name:'蛇王霸主' },
+  ],
+  ravenclaw: [
+    { pts:0,   name:'新生' },
+    { pts:30,  name:'智慧見習' },
+    { pts:80,  name:'鷹院學者' },
+    { pts:150, name:'雷文傳人' },
+    { pts:250, name:'智慧之冠' },
+  ],
+};
+
+const DAILY_QUOTES = [
+  '魔杖不會選擇平庸之輩。',
+  '自律者，方能駕馭時間之河。',
+  '真正的勇氣，是每日的堅持。',
+  '不是你的能力，而是你的選擇，定義了你是誰。',
+  '當黑夜降臨，星辰才顯得明亮。',
+  '每一個小咒語，都在改寫命運。',
+  '堅持不是本能，而是一門訓練出的魔法。',
+  '你今日的選擇，是明日命運的禮物。',
+  '沉默的紀律，勝過喧囂的誓言。',
+  '預言握在你手中，不在星辰之上。',
+];
+
+const MENTOR_MORNING_LINES = [
+  '黎明已至，別再像個哈比人那樣賴床。宣告今日的修煉吧。',
+  '又一個嶄新的日子——可別再浪費了。勾選任務，簽下你的誓言。',
+  '早晨的時間最寶貴，而你通常把它浪費在猶豫上。選擇。承諾。執行。',
+  '我預期你今天會讓我失望——請用行動證明我是錯的。',
+  '你的晨光如此珍貴，別把它浪費在虛榮上。立誓吧。',
+  '黎明會見證一切。你的誓言、你的懶惰、你的藉口。',
+];
+
+const MENTOR_EVENING_LINES = [
+  '夜色降臨。檢視你的修煉——你究竟完成了多少？',
+  '現在是結算的時刻。打勾或保持沉默，兩者都說明了你是誰。',
+  '一日已盡。告訴我——你的誓言，今日兌現了幾項？',
+  '夜幕低垂，真相無所遁形。逐一核對你承諾的每一項。',
+  '勝利者不靠宣告，而靠晚上的這份打卡。',
+  '星光會照亮你的堅持——也會照亮你的放棄。',
+];
+
+const SCOLDINGS = [
+  '昨天你宣告了『{tasks}』，卻一項都沒有完成。我不生氣——我只是對你徹底失去了期待。',
+  '又一次空口宣告。『{tasks}』這些承諾，如同你的魔法一樣——毫無價值。',
+  '我見過最徒勞的努力，莫過於你昨晚的宣誓。『{tasks}』，全數落空。',
+  '扣分？不。你本就是從零開始的人。昨天你沒完成：『{tasks}』。',
+  '顯然，立下誓言對你而言如同喝水一般輕鬆，履行它卻如同魔法般困難。昨日未竟：『{tasks}』。',
+  '我曾以為你只是愚鈍，現在我意識到你還是個空話者。『{tasks}』——一項未成。',
+];
+
+/* ---------- Default mentor SVG ---------- */
+const DEFAULT_MENTOR_SVG = `
+<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bgG" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1a1530"/>
+      <stop offset="100%" stop-color="#06040d"/>
+    </radialGradient>
+    <linearGradient id="hairG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a1e"/>
+      <stop offset="100%" stop-color="#0a0a0d"/>
+    </linearGradient>
+  </defs>
+  <rect width="80" height="80" fill="url(#bgG)"/>
+  <!-- candle glow -->
+  <circle cx="66" cy="20" r="6" fill="#f5a45b" opacity="0.3"/>
+  <!-- robe shoulders -->
+  <path d="M10 78 Q20 58 40 60 Q60 58 70 78 Z" fill="#0a0a0d"/>
+  <path d="M10 78 Q20 58 40 60 Q60 58 70 78 Z" fill="none" stroke="#2a252a" stroke-width="0.5"/>
+  <!-- high collar -->
+  <path d="M32 62 L40 55 L48 62" fill="none" stroke="#2a252a" stroke-width="1"/>
+  <!-- face -->
+  <ellipse cx="40" cy="40" rx="14" ry="17" fill="#dcd0c4"/>
+  <!-- long hair -->
+  <path d="M26 30 Q22 40 24 55 L28 58 L28 40 Q30 34 32 30 Z" fill="url(#hairG)"/>
+  <path d="M54 30 Q58 40 56 55 L52 58 L52 40 Q50 34 48 30 Z" fill="url(#hairG)"/>
+  <path d="M26 28 Q40 18 54 28 L52 34 Q40 28 28 34 Z" fill="url(#hairG)"/>
+  <!-- brows -->
+  <path d="M32 36 Q35 34 38 36" stroke="#1a1a1e" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+  <path d="M42 36 Q45 34 48 36" stroke="#1a1a1e" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+  <!-- eyes (cold & sharp) -->
+  <ellipse cx="35" cy="40" rx="1.5" ry="1" fill="#1a1a1e"/>
+  <ellipse cx="45" cy="40" rx="1.5" ry="1" fill="#1a1a1e"/>
+  <!-- nose -->
+  <path d="M40 42 L39 47 L41 47" stroke="#9a8a7a" stroke-width="0.6" fill="none"/>
+  <!-- thin sneer lips -->
+  <path d="M36 51 Q40 50 44 51" stroke="#6b4040" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+</svg>`;
+
+/* ---------- State ---------- */
+let state = loadState();
+let currentPage = 'home';
+let currentDayTab = getDefaultTab();
+let currentLibraryHouse = 'gryffindor';
+let pendingDeclarations = new Set(); // taskIds selected in morning before declaring
+
+function defaultState(){
+  // Seed some default tasks so first-run is useful
+  const seedTasks = DEFAULT_TASKS.slice(0, 4).map((t,i)=>({
+    id: 'seed_'+i,
+    name: t.name, icon: t.icon, pts: t.pts, house: t.house,
+    createdAt: todayKey(),
+  }));
+  return {
+    tasks: seedTasks,
+    declarations: {},
+    completions: {},
+    housePoints: { gryffindor:0, hufflepuff:0, slytherin:0, ravenclaw:0 },
+    mentorImage: null,
+    selectedHouse: 'gryffindor',
+    lastTitles: { gryffindor:'新生', hufflepuff:'新生', slytherin:'新生', ravenclaw:'新生' },
+  };
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    const base = defaultState();
+    return {
+      ...base, ...parsed,
+      housePoints: { ...base.housePoints, ...(parsed.housePoints||{}) },
+      lastTitles: { ...base.lastTitles, ...(parsed.lastTitles||{}) },
+    };
+  }catch(e){
+    console.warn('load state failed', e);
+    return defaultState();
+  }
+}
+
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){
+    toast('儲存失敗：localStorage 已滿');
+    console.error(e);
+  }
+}
+
+/* ---------- Date utils ---------- */
+function todayKey(){ return dateKey(new Date()); }
+function dateKey(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+function yesterdayKey(){
+  const d = new Date(); d.setDate(d.getDate()-1);
+  return dateKey(d);
+}
+
+/* ---------- Theme ---------- */
+function getLeadingHouse(){
+  let lead = 'gryffindor', max = -1;
+  for(const h of HOUSE_ORDER){
+    const p = state.housePoints[h] || 0;
+    if(p > max){ max = p; lead = h; }
+  }
+  return lead;
+}
+
+function updateTheme(){
+  const lead = getLeadingHouse();
+  const h = HOUSES[lead];
+  const root = document.documentElement;
+  root.style.setProperty('--accent', h.color);
+  root.style.setProperty('--accent-soft', h.soft);
+  root.style.setProperty('--accent-glow', h.glow);
+  state.selectedHouse = lead;
+  if(window.__particleColor !== undefined) window.__particleColor = h.color;
+}
+
+/* ---------- Helpers ---------- */
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(window.__toastT);
+  window.__toastT = setTimeout(()=> el.classList.remove('show'), 2200);
+}
+
+function getTitleByPts(house, pts){
+  const arr = TITLES[house];
+  let cur = arr[0];
+  for(const t of arr){ if(pts >= t.pts) cur = t; }
+  return cur.name;
+}
+
+function getNextTitle(house, pts){
+  const arr = TITLES[house];
+  for(const t of arr){ if(pts < t.pts) return t; }
+  return null;
+}
+
+function getDefaultTab(){
+  const h = new Date().getHours();
+  return (h >= 5 && h < 12) ? 'morning' : 'evening';
+}
+
+/* ---------- Mentor avatar ---------- */
+function renderMentorAvatars(){
+  const html = state.mentorImage
+    ? `<img src="${state.mentorImage}" alt="mentor">`
+    : DEFAULT_MENTOR_SVG;
+  const a = document.getElementById('mentor-avatar-home');
+  const b = document.getElementById('mentor-avatar-settings');
+  if(a) a.innerHTML = html;
+  if(b) b.innerHTML = html;
+}
+
+/* ---------- Home: mentor line & quote ---------- */
+function pickFromList(list){
+  const idx = Math.floor(Math.random() * list.length);
+  return list[idx];
+}
+
+function renderMentorLine(){
+  const line = currentDayTab === 'morning'
+    ? pickFromList(MENTOR_MORNING_LINES)
+    : pickFromList(MENTOR_EVENING_LINES);
+  document.getElementById('mentor-line').textContent = line;
+}
+
+function renderDailyQuote(){
+  // Seed by date so it stays stable in a single day
+  const today = todayKey();
+  let seed = 0;
+  for(const c of today) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
+  const q = DAILY_QUOTES[seed % DAILY_QUOTES.length];
+  document.getElementById('daily-quote').textContent = q;
+}
+
+/* ---------- Home: house row ---------- */
+function renderHouseRow(){
+  const lead = getLeadingHouse();
+  const maxPts = Math.max(...Object.values(state.housePoints), 1);
+  const el = document.getElementById('house-row');
+  el.innerHTML = HOUSE_ORDER.map(h => {
+    const pts = state.housePoints[h] || 0;
+    const title = getTitleByPts(h, pts);
+    const pct = Math.min(100, (pts / maxPts) * 100);
+    return `
+      <div class="house-cell ${h===lead ? 'leading' : ''}" style="--hc:${HOUSES[h].color}">
+        <div class="crown">👑</div>
+        <div class="house-emoji">${HOUSES[h].emoji}</div>
+        <div class="house-name">${HOUSES[h].name}</div>
+        <div class="house-pts">${pts}</div>
+        <div class="house-rank">${title}</div>
+        <div class="house-bar"><div class="house-bar-fill" style="width:${pct}%"></div></div>
+      </div>`;
+  }).join('');
+}
+
+/* ---------- Home: morning panel ---------- */
+function renderMorningPanel(){
+  const today = todayKey();
+  const alreadyDeclared = state.declarations[today] || null;
+  const list = document.getElementById('morning-list');
+  const btn = document.getElementById('declare-btn');
+
+  if(alreadyDeclared){
+    // Already declared today — show declared tasks read-only
+    list.innerHTML = alreadyDeclared.length
+      ? alreadyDeclared.map(id => {
+          const t = state.tasks.find(x => x.id===id);
+          if(!t) return '';
+          return taskRowHTML(t, false, false, false);
+        }).join('')
+      : emptyHTML('🌟', '今日未宣告任何任務', '前往「晚間回報」或明天再宣告');
+    btn.disabled = true;
+    btn.textContent = '✓ 今日誓言已立下';
+    return;
+  }
+
+  if(state.tasks.length === 0){
+    list.innerHTML = emptyHTML('⚗️', '任務庫空空如也', '前往「任務庫」加入你的第一個任務');
+    btn.disabled = true;
+    btn.textContent = '請先建立任務';
+    return;
+  }
+
+  // Render by house group
+  const grouped = groupTasksByHouse(state.tasks);
+  list.innerHTML = HOUSE_ORDER.map(h => {
+    if(!grouped[h] || !grouped[h].length) return '';
+    return `
+      <div style="font-size:.72rem;color:${HOUSES[h].color};letter-spacing:.1em;margin:10px 0 4px">
+        ${HOUSES[h].emoji} ${HOUSES[h].name}
+      </div>
+      ${grouped[h].map(t => taskRowHTML(t, pendingDeclarations.has(t.id), true, false)).join('')}
+    `;
+  }).join('');
+
+  btn.disabled = pendingDeclarations.size === 0;
+  btn.textContent = pendingDeclarations.size === 0
+    ? '🪄 請先勾選任務'
+    : `🪄 立誓修煉（${pendingDeclarations.size} 項）`;
+}
+
+function groupTasksByHouse(tasks){
+  const g = {};
+  for(const t of tasks){
+    (g[t.house] = g[t.house] || []).push(t);
+  }
+  return g;
+}
+
+function taskRowHTML(t, checked, isMorning, isEvening){
+  const hc = HOUSES[t.house].color;
+  const clickFn = isMorning
+    ? `toggleDeclare('${t.id}')`
+    : isEvening ? `toggleTask('${t.id}')` : '';
+  const checkChar = checked ? '✓' : '';
+  return `
+    <div class="task-row ${checked?'checked':''}" style="--hc:${hc}" ${clickFn?`onclick="${clickFn}"`:''}>
+      <div class="checkbox">${checkChar}</div>
+      <div class="task-icon">${t.icon || '✨'}</div>
+      <div class="task-body">
+        <div class="task-name">${escapeHTML(t.name)}</div>
+        <div class="task-meta">${HOUSES[t.house].emoji} ${HOUSES[t.house].name}</div>
+      </div>
+      <div class="task-pts">+${t.pts}</div>
+    </div>`;
+}
+
+function emptyHTML(emoji, title, desc){
+  return `<div class="empty"><span class="emoji">${emoji}</span>${escapeHTML(title)}<br><span class="small">${escapeHTML(desc||'')}</span></div>`;
+}
+
+function escapeHTML(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- Home: evening panel ---------- */
+function renderEveningPanel(){
+  renderScoldingBox();
+  const today = todayKey();
+  const declared = state.declarations[today];
+  const list = document.getElementById('evening-list');
+
+  if(!declared || !declared.length){
+    list.innerHTML = emptyHTML('🌅', '今日尚未宣告任務', '前往早晨宣告，先立下誓言再來回報');
+    return;
+  }
+
+  const completions = state.completions[today] || {};
+  list.innerHTML = declared.map(id => {
+    const t = state.tasks.find(x => x.id === id);
+    if(!t) return '';
+    return taskRowHTML(t, !!completions[id], false, true);
+  }).join('');
+}
+
+function renderScoldingBox(){
+  const box = document.getElementById('scolding-box');
+  const y = yesterdayKey();
+  const declared = state.declarations[y];
+  if(!declared || !declared.length){ box.innerHTML=''; return; }
+  const completions = state.completions[y] || {};
+  const missed = declared
+    .map(id => state.tasks.find(t => t.id === id))
+    .filter(t => t && !completions[t.id]);
+  if(missed.length === 0){ box.innerHTML=''; return; }
+
+  const names = missed.map(t => t.name).join('、');
+  const tmpl = pickFromList(SCOLDINGS);
+  const text = tmpl.replace('{tasks}', names);
+  box.innerHTML = `<div class="mentor-line scolding">${escapeHTML(text)}</div>`;
+}
+
+/* ---------- Library ---------- */
+function renderLibraryPage(){
+  renderPresetTabs();
+  renderPresetGrid();
+  renderLibraryList();
+}
+
+function renderPresetTabs(){
+  const el = document.getElementById('preset-tabs');
+  el.innerHTML = HOUSE_ORDER.map(h =>
+    `<button class="house-chip ${h===currentLibraryHouse?'active':''}"
+       style="--hc:${HOUSES[h].color}"
+       onclick="switchLibraryHouse('${h}')">
+       ${HOUSES[h].emoji} ${HOUSES[h].name}
+     </button>`
+  ).join('');
+}
+
+function switchLibraryHouse(h){
+  currentLibraryHouse = h;
+  renderPresetTabs();
+  renderPresetGrid();
+}
+
+function renderPresetGrid(){
+  const el = document.getElementById('preset-grid');
+  const presets = DEFAULT_TASKS.filter(t => t.house === currentLibraryHouse);
+  const existing = new Set(state.tasks.map(t => t.name));
+  el.innerHTML = presets.map(t => {
+    const added = existing.has(t.name);
+    return `
+      <div class="preset-chip ${added?'added':''}"
+        style="--hc:${HOUSES[t.house].color}"
+        onclick="addPresetTask('${encodeURIComponent(JSON.stringify(t))}')">
+        <span class="emo">${t.icon}</span>
+        <span>${escapeHTML(t.name)}</span>
+        <span class="pts">+${t.pts}</span>
+      </div>`;
+  }).join('');
+}
+
+function renderLibraryList(){
+  const el = document.getElementById('library-list');
+  if(state.tasks.length === 0){
+    el.innerHTML = emptyHTML('⚗️', '任務庫空空如也', '從上方預設任務或自訂任務開始');
+    return;
+  }
+  const grouped = groupTasksByHouse(state.tasks);
+  el.innerHTML = HOUSE_ORDER.map(h => {
+    if(!grouped[h] || !grouped[h].length) return '';
+    return `
+      <div style="font-size:.72rem;color:${HOUSES[h].color};letter-spacing:.1em;margin:10px 0 4px">
+        ${HOUSES[h].emoji} ${HOUSES[h].name}
+      </div>
+      ${grouped[h].map(t => `
+        <div class="task-row" style="--hc:${HOUSES[h].color}">
+          <div class="task-icon">${t.icon || '✨'}</div>
+          <div class="task-body">
+            <div class="task-name">${escapeHTML(t.name)}</div>
+            <div class="task-meta">+${t.pts} 分</div>
+          </div>
+          <button class="task-del" onclick="deleteTask('${t.id}')">✕</button>
+        </div>
+      `).join('')}
+    `;
+  }).join('');
+}
+
+/* ---------- Report ---------- */
+function renderReportPage(){
+  renderHeatmap();
+  renderStats();
+  renderLeaderboard();
+}
+
+function renderHeatmap(){
+  const el = document.getElementById('heatmap');
+  const today = new Date();
+  const cells = [];
+  const weekDays = ['日','一','二','三','四','五','六'];
+  for(let i=6; i>=0; i--){
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = dateKey(d);
+    const declared = state.declarations[key] || [];
+    const completions = state.completions[key] || {};
+    const done = declared.filter(id => completions[id]).length;
+    const total = declared.length;
+    let cls = '', icon = '—';
+    const isToday = key === todayKey();
+    if(total === 0){
+      cls = ''; icon = '—';
+    } else if(done === total){
+      cls = 'full'; icon = '✦';
+    } else if(done === 0){
+      cls = 'fail'; icon = '✗';
+    } else {
+      cls = 'part'; icon = `${done}/${total}`;
+    }
+    cells.push(`
+      <div class="heatmap-cell ${cls} ${isToday?'today':''}">
+        <div class="day">${weekDays[d.getDay()]}</div>
+        <div class="icon">${icon}</div>
+      </div>`);
+  }
+  el.innerHTML = cells.join('');
+}
+
+function renderStats(){
+  const el = document.getElementById('stats');
+  const today = new Date();
+  let doneSum = 0, totalSum = 0, weekPts = 0, streak = 0, maxStreak = 0;
+  // Walk back up to 30 days to find streak, but display week stats for 7
+  for(let i=0; i<7; i++){
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = dateKey(d);
+    const declared = state.declarations[key] || [];
+    const completions = state.completions[key] || {};
+    totalSum += declared.length;
+    for(const id of declared){
+      if(completions[id]){
+        doneSum++;
+        const t = state.tasks.find(x => x.id===id);
+        if(t) weekPts += t.pts;
+      }
+    }
+  }
+  // Streak — consecutive days where everything declared was completed (starting from today/yesterday)
+  const start = new Date(today);
+  for(let i=0; i<60; i++){
+    const d = new Date(start);
+    d.setDate(d.getDate() - i);
+    const key = dateKey(d);
+    const declared = state.declarations[key] || [];
+    if(declared.length === 0){
+      // Today with no declaration: skip (don't break streak)
+      if(i === 0) continue;
+      break;
+    }
+    const completions = state.completions[key] || {};
+    const allDone = declared.every(id => completions[id]);
+    if(allDone){ streak++; maxStreak = Math.max(maxStreak, streak); }
+    else break;
+  }
+  const rate = totalSum === 0 ? 0 : Math.round(doneSum / totalSum * 100);
+  el.innerHTML = `
+    <div class="stat"><div class="stat-val">${rate}%</div><div class="stat-lbl">完成率</div></div>
+    <div class="stat"><div class="stat-val">${streak}</div><div class="stat-lbl">連續天</div></div>
+    <div class="stat"><div class="stat-val">${weekPts}</div><div class="stat-lbl">本週積分</div></div>
+  `;
+}
+
+function renderLeaderboard(){
+  const el = document.getElementById('leaderboard');
+  const items = HOUSE_ORDER.map(h => ({
+    key:h, name: HOUSES[h].name, emo: HOUSES[h].emoji, color: HOUSES[h].color,
+    pts: state.housePoints[h] || 0
+  })).sort((a,b) => b.pts - a.pts);
+  const max = Math.max(...items.map(i => i.pts), 1);
+  el.innerHTML = items.map((it, idx) => {
+    const crown = idx === 0 ? '👑' : `#${idx+1}`;
+    const pct = Math.round(it.pts / max * 100);
+    const title = getTitleByPts(it.key, it.pts);
+    return `
+      <div class="lb-row" style="--hc:${it.color}">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="lb-rank">${crown}</span>
+            <span class="lb-emo">${it.emo}</span>
+            <span class="lb-name">${it.name} · <span class="small">${title}</span></span>
+            <span class="lb-pts">${it.pts}</span>
+          </div>
+          <div class="lb-bar"><div class="lb-bar-fill" style="width:${pct}%"></div></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ---------- Navigation / tabs ---------- */
+function switchPage(name){
+  currentPage = name;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.page === name));
+  if(name === 'home'){ renderHome(); }
+  else if(name === 'library'){ renderLibraryPage(); }
+  else if(name === 'report'){ renderReportPage(); }
+  else if(name === 'settings'){ renderMentorAvatars(); }
+}
+
+function switchDayTab(tab){
+  currentDayTab = tab;
+  document.querySelectorAll('.day-tab').forEach(t => t.classList.toggle('active', t.dataset.day === tab));
+  document.getElementById('morning-panel').style.display = tab === 'morning' ? '' : 'none';
+  document.getElementById('evening-panel').style.display = tab === 'evening' ? '' : 'none';
+  renderMentorLine();
+  if(tab === 'morning') renderMorningPanel();
+  else renderEveningPanel();
+}
+
+/* ---------- Home renderer ---------- */
+function renderHome(){
+  renderMentorAvatars();
+  renderMentorLine();
+  renderHouseRow();
+  renderDailyQuote();
+
+  // Sync morning pending selections with what's already declared
+  const today = todayKey();
+  if(state.declarations[today]){
+    pendingDeclarations = new Set(state.declarations[today]);
+  }
+
+  // Activate the correct day-tab UI
+  switchDayTab(currentDayTab);
+}
+
+/* ---------- Morning: toggle & declare ---------- */
+function toggleDeclare(id){
+  const today = todayKey();
+  if(state.declarations[today]){
+    toast('今日已立下誓言，無法再修改');
+    return;
+  }
+  if(pendingDeclarations.has(id)) pendingDeclarations.delete(id);
+  else pendingDeclarations.add(id);
+  renderMorningPanel();
+}
+
+function declareMorning(){
+  const today = todayKey();
+  if(state.declarations[today]){ toast('今日已宣告'); return; }
+  if(pendingDeclarations.size === 0){ toast('請至少勾選一項任務'); return; }
+  state.declarations[today] = Array.from(pendingDeclarations);
+  state.completions[today] = state.completions[today] || {};
+  saveState();
+  toast('誓言已立下，勿負今日魔法');
+  renderMorningPanel();
+}
+
+/* ---------- Evening: toggle completion ---------- */
+function toggleTask(id){
+  const today = todayKey();
+  const declared = state.declarations[today] || [];
+  if(!declared.includes(id)){
+    toast('此任務未在今日宣告中');
+    return;
+  }
+  const t = state.tasks.find(x => x.id === id);
+  if(!t) return;
+  state.completions[today] = state.completions[today] || {};
+  const wasDone = !!state.completions[today][id];
+
+  if(wasDone){
+    // Uncheck: subtract points
+    delete state.completions[today][id];
+    state.housePoints[t.house] = Math.max(0, (state.housePoints[t.house] || 0) - t.pts);
+  } else {
+    state.completions[today][id] = true;
+    const before = state.housePoints[t.house] || 0;
+    const after = before + t.pts;
+    state.housePoints[t.house] = after;
+    checkLevelUp(t.house, before, after);
+  }
+  saveState();
+  updateTheme();
+  renderHouseRow();
+  renderEveningPanel();
+}
+
+function checkLevelUp(house, before, after){
+  const prevTitle = getTitleByPts(house, before);
+  const newTitle = getTitleByPts(house, after);
+  if(prevTitle !== newTitle){
+    state.lastTitles[house] = newTitle;
+    showLevelUp(house, newTitle);
+  }
+}
+
+/* ---------- Library: preset & custom ---------- */
+function addPresetTask(encoded){
+  const t = JSON.parse(decodeURIComponent(encoded));
+  if(state.tasks.some(x => x.name === t.name)){
+    toast('任務已存在');
+    return;
+  }
+  state.tasks.push({
+    id: 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    name: t.name, icon: t.icon, pts: t.pts, house: t.house,
+    createdAt: todayKey(),
+  });
+  saveState();
+  renderLibraryPage();
+  toast(`已加入：${t.name}`);
+}
+
+function addCustomTask(){
+  const name = document.getElementById('custom-name').value.trim();
+  const icon = document.getElementById('custom-icon').value.trim() || '✨';
+  const house = document.getElementById('custom-house').value;
+  const pts = parseInt(document.getElementById('custom-pts').value, 10);
+  if(!name){ toast('請輸入任務名稱'); return; }
+  if(state.tasks.some(t => t.name === name)){ toast('同名任務已存在'); return; }
+  state.tasks.push({
+    id: 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    name, icon, pts, house,
+    createdAt: todayKey(),
+  });
+  saveState();
+  document.getElementById('custom-name').value = '';
+  document.getElementById('custom-icon').value = '';
+  renderLibraryPage();
+  toast(`已加入：${name}`);
+}
+
+function deleteTask(id){
+  if(!confirm('確定刪除此任務？（過往紀錄不變）')) return;
+  state.tasks = state.tasks.filter(t => t.id !== id);
+  saveState();
+  renderLibraryPage();
+  toast('已刪除');
+}
+
+/* ---------- Settings ---------- */
+function uploadAvatar(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  if(file.size > 800*1024){
+    toast('圖片過大（建議小於 800KB）');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    state.mentorImage = e.target.result;
+    saveState();
+    renderMentorAvatars();
+    toast('導師頭像已更新');
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetAvatar(){
+  state.mentorImage = null;
+  saveState();
+  renderMentorAvatars();
+  toast('已恢復預設頭像');
+}
+
+function clearAllData(){
+  if(!confirm('確定要清除所有資料？此操作不可復原。')) return;
+  if(!confirm('請再次確認——所有任務、積分、紀錄都將消失。')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = loadState();
+  pendingDeclarations = new Set();
+  updateTheme();
+  renderHome();
+  toast('所有資料已清除');
+}
+
+/* ---------- Level-up modal ---------- */
+function showLevelUp(house, title){
+  const h = HOUSES[house];
+  const modal = document.getElementById('levelup-modal');
+  modal.querySelector('.modal-card').style.setProperty('--hc', h.color);
+  document.getElementById('levelup-glyph').textContent = h.emoji;
+  document.getElementById('levelup-title').textContent = title;
+  document.getElementById('levelup-house').textContent = `${h.name} · ${h.aspect}`;
+  document.getElementById('levelup-title').style.color = h.color;
+  document.getElementById('levelup-title').style.textShadow = `0 0 20px ${h.color}`;
+  modal.classList.add('show');
+}
+
+function closeLevelUp(){
+  document.getElementById('levelup-modal').classList.remove('show');
+}
+
+/* ---------- Particles ---------- */
+function initParticles(){
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let dpr = window.devicePixelRatio || 1;
+  let w, h;
+  const particles = [];
+  const N = 28;
+
+  function resize(){
+    w = window.innerWidth; h = window.innerHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function hexToRgb(hex){
+    const m = hex.replace('#','');
+    const bigint = parseInt(m, 16);
+    return { r:(bigint>>16)&255, g:(bigint>>8)&255, b:bigint&255 };
+  }
+
+  function seed(){
+    particles.length = 0;
+    for(let i=0; i<N; i++){
+      particles.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: -Math.random() * 0.3 - 0.05,
+        r: Math.random() * 1.6 + 0.6,
+        a: Math.random() * 0.5 + 0.2,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
+  window.__particleColor = HOUSES[getLeadingHouse()].color;
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    const { r, g, b } = hexToRgb(window.__particleColor);
+    for(const p of particles){
+      p.x += p.vx;
+      p.y += p.vy;
+      p.phase += 0.02;
+      if(p.y < -10){ p.y = h + 10; p.x = Math.random() * w; }
+      if(p.x < -10) p.x = w + 10;
+      if(p.x > w + 10) p.x = -10;
+      const flicker = 0.65 + Math.sin(p.phase) * 0.35;
+      ctx.beginPath();
+      const alpha = p.a * flicker;
+      ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+      ctx.shadowColor = `rgba(${r},${g},${b},${alpha})`;
+      ctx.shadowBlur = 8;
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  seed();
+  draw();
+  window.addEventListener('resize', () => { resize(); seed(); });
+}
+
+/* ---------- Boot ---------- */
+function boot(){
+  updateTheme();
+  initParticles();
+  renderHome();
+
+  // Auto-switch day tab every 5 minutes in case user keeps the page open
+  setInterval(() => {
+    const expected = getDefaultTab();
+    // Only auto-flip when user is on home page and hasn't manually overridden recently
+    // Simpler: just respect whatever is currently active; don't force.
+    // (Could add a "pinned" flag later.)
+    void expected;
+  }, 5 * 60 * 1000);
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>
+
+
