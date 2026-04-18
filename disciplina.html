@@ -824,6 +824,41 @@ body::before{
   box-shadow: 0 0 8px currentColor;
 }
 
+/* Monthly top */
+.mtop-row{
+  display:flex; align-items:center; gap:10px;
+  padding: 8px 10px;
+  margin: 6px 0;
+  background: var(--surface-2);
+  border:1px solid var(--border);
+  border-left:3px solid var(--hc);
+  border-radius: 10px;
+}
+.mtop-rank{
+  font-family:'Cinzel', serif;
+  font-size:.85rem;
+  color: var(--text-mute);
+  width:22px; text-align:center; font-weight:700;
+}
+.mtop-row:nth-child(1) .mtop-rank{ color:gold }
+.mtop-row:nth-child(2) .mtop-rank{ color:#c0c0c0 }
+.mtop-row:nth-child(3) .mtop-rank{ color:#cd7f32 }
+.mtop-icon{ font-size:1.1rem }
+.mtop-name{ flex:1; color: var(--text); font-size:.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.mtop-count{
+  font-family:'Cinzel', serif;
+  font-size:.85rem;
+  color: var(--hc);
+  font-weight:700;
+}
+.mtop-bar{
+  height:3px; border-radius:2px;
+  background: rgba(255,255,255,0.05);
+  margin-top:6px;
+  overflow:hidden;
+}
+.mtop-bar-fill{ height:100%; background: var(--hc); box-shadow: 0 0 6px var(--hc) }
+
 /* Journal */
 .journal-item{
   padding:10px 12px;
@@ -864,6 +899,41 @@ body::before{
 }
 .upload-preview img, .upload-preview svg{width:100%; height:100%; object-fit:cover; display:block}
 .file-input{display:none}
+
+/* Toggle switch */
+.switch{
+  position:relative;
+  display:inline-block;
+  width:44px; height:24px;
+  flex-shrink:0;
+}
+.switch input{ opacity:0; width:0; height:0 }
+.switch-slider{
+  position:absolute; cursor:pointer;
+  top:0;left:0;right:0;bottom:0;
+  background: rgba(255,255,255,0.08);
+  border:1px solid var(--border-strong);
+  border-radius:14px;
+  transition: .25s;
+}
+.switch-slider::before{
+  content:'';
+  position:absolute;
+  height:18px; width:18px;
+  left:2px; top:2px;
+  background: var(--text-mute);
+  border-radius:50%;
+  transition: .25s;
+}
+.switch input:checked + .switch-slider{
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  border-color: var(--accent);
+}
+.switch input:checked + .switch-slider::before{
+  transform: translateX(20px);
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
 
 /* Bottom nav */
 .nav{
@@ -1004,6 +1074,99 @@ body::before{
 @keyframes haloPulse{
   0%{transform:scale(.8); opacity:.9}
   100%{transform:scale(1.6); opacity:0}
+}
+
+/* Onboarding overlay */
+.onboard{
+  position:fixed; inset:0;
+  z-index:150;
+  display:none;
+  background:
+    radial-gradient(800px 500px at 50% -10%, rgba(255,107,53,0.25), transparent 70%),
+    radial-gradient(700px 500px at 10% 100%, rgba(77,166,255,0.2), transparent 70%),
+    radial-gradient(700px 500px at 100% 80%, rgba(46,204,113,0.15), transparent 70%),
+    linear-gradient(180deg, #060410 0%, #0a0814 100%);
+  overflow-y:auto;
+  padding:24px 18px;
+  align-items:center;
+  justify-content:center;
+}
+.onboard.show{display:flex}
+.onboard-stars{
+  position:absolute; inset:0;
+  pointer-events:none;
+  background-image:
+    radial-gradient(1.2px 1.2px at 15% 25%, #fff 50%, transparent),
+    radial-gradient(1px 1px at 70% 18%, #fff 50%, transparent),
+    radial-gradient(1.5px 1.5px at 45% 60%, #fff 50%, transparent),
+    radial-gradient(1px 1px at 88% 75%, #fff 50%, transparent),
+    radial-gradient(1.2px 1.2px at 30% 88%, #fff 50%, transparent);
+  opacity:.5;
+  animation: twinkle 5s ease-in-out infinite;
+}
+.onboard-card{
+  position:relative;
+  max-width:460px;
+  width:100%;
+  background: linear-gradient(160deg, rgba(30,24,50,0.92), rgba(12,9,22,0.95));
+  border:1px solid var(--border-strong);
+  border-radius:22px;
+  padding:28px 22px 22px;
+  text-align:center;
+  box-shadow: 0 20px 80px rgba(0,0,0,.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: popIn .6s cubic-bezier(.3,1.4,.6,1);
+}
+.onboard-card .hat{
+  font-size:3.2rem;
+  display:inline-block;
+  animation: hatFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 6px 18px rgba(255,107,53,.35));
+}
+@keyframes hatFloat{
+  0%,100%{ transform: translateY(0) rotate(-3deg) }
+  50%{ transform: translateY(-6px) rotate(3deg) }
+}
+.onboard-title{
+  font-family:'Cinzel', serif;
+  font-size:1.4rem;
+  letter-spacing:.2em;
+  margin:8px 0 10px;
+  background: linear-gradient(135deg,#fff,#ff6b35);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.onboard-lead{
+  font-size:.92rem;
+  line-height:1.75;
+  color: var(--text);
+  margin-bottom:16px;
+}
+.onboard-houses{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:8px;
+  margin:4px 0 14px;
+}
+.oh{
+  background: rgba(10,8,20,0.55);
+  border:1px solid var(--border);
+  border-top:3px solid var(--hc);
+  border-radius:12px;
+  padding:10px 4px;
+  text-align:center;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--hc) 15%, transparent);
+}
+.oh-emo{ font-size:1.3rem }
+.oh-name{ font-size:.72rem; color: var(--hc); letter-spacing:.06em; margin-top:2px }
+.oh-aspect{ font-size:.62rem; color: var(--text-mute); margin-top:1px }
+.onboard-sub{
+  font-size:.82rem;
+  color: var(--text-dim);
+  line-height:1.7;
+  margin-bottom:14px;
 }
 
 /* Toast */
@@ -1167,6 +1330,11 @@ body::before{
     </div>
 
     <div class="card">
+      <div class="card-title">月度反思 · 最常修煉</div>
+      <div id="monthly-top"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title">成就徽章 <span class="small" id="badge-count" style="color:var(--text-mute);letter-spacing:0;margin-left:4px"></span></div>
       <div class="badge-grid" id="badge-grid"></div>
     </div>
@@ -1192,6 +1360,20 @@ body::before{
       <div class="form-row">
         <button class="btn ghost" onclick="document.getElementById('avatar-file').click()">📷 上傳圖片</button>
         <button class="btn ghost" onclick="resetAvatar()">↺ 恢復預設</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">音效</div>
+      <div class="setting-row">
+        <div class="setting-label">
+          魔法音效
+          <div class="setting-desc">打勾、宣告、升級時播放合成聲（Web Audio，無外部檔）</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="mute-toggle" onchange="toggleMute(this.checked)">
+          <span class="switch-slider"></span>
+        </label>
       </div>
     </div>
 
@@ -1248,6 +1430,31 @@ body::before{
     <div class="title-name" id="levelup-title">——</div>
     <div class="title-house" id="levelup-house">——</div>
     <button onclick="closeLevelUp()">繼續修煉</button>
+  </div>
+</div>
+
+<!-- Sorting-hat onboarding -->
+<div class="onboard" id="onboard">
+  <div class="onboard-stars"></div>
+  <div class="onboard-card">
+    <div class="hat" aria-hidden="true">🎩</div>
+    <h2 class="onboard-title">分院帽之誓</h2>
+    <p class="onboard-lead">
+      歡迎來到 <b>Disciplina · 自律魔典</b>。<br>
+      這裡沒有捷徑，也沒有鳳凰來救你。<br>
+      你的每一個誓言，都會被看見。
+    </p>
+    <div class="onboard-houses">
+      <div class="oh" style="--hc:#ff6b35"><div class="oh-emo">🦁</div><div class="oh-name">葛來芬多</div><div class="oh-aspect">行動力</div></div>
+      <div class="oh" style="--hc:#f5c518"><div class="oh-emo">🦡</div><div class="oh-name">赫夫帕夫</div><div class="oh-aspect">一致性</div></div>
+      <div class="oh" style="--hc:#2ecc71"><div class="oh-emo">🐍</div><div class="oh-name">斯萊哲林</div><div class="oh-aspect">野心執行</div></div>
+      <div class="oh" style="--hc:#4da6ff"><div class="oh-emo">🦅</div><div class="oh-name">雷文克勞</div><div class="oh-aspect">反思成長</div></div>
+    </div>
+    <p class="onboard-sub">
+      四院不是標籤，而是你自律的四個面向。<br>
+      任務歸屬哪一院，就是在鍛鍊哪一項。
+    </p>
+    <button class="btn" onclick="closeOnboard()">🪄 立下我的第一個誓言</button>
   </div>
 </div>
 
@@ -1466,6 +1673,8 @@ function defaultState(){
     selectedHouse: 'gryffindor',
     lastTitles: { gryffindor:'新生', hufflepuff:'新生', slytherin:'新生', ravenclaw:'新生' },
     achievements: {}, // id -> ISO unlock timestamp
+    onboarded: false,
+    muted: true,
   };
 }
 
@@ -1857,6 +2066,7 @@ function triggerRedFlash(){
   const flash = document.createElement('div');
   flash.className = 'red-flash';
   document.body.appendChild(flash);
+  sfxScold();
   setTimeout(() => flash.remove(), 950);
 }
 
@@ -1952,8 +2162,49 @@ function renderReportPage(){
   renderStats();
   renderTrendChart();
   renderLeaderboard();
+  renderMonthlyTop();
   renderBadges();
   renderJournal();
+}
+
+function renderMonthlyTop(){
+  const el = document.getElementById('monthly-top');
+  if(!el) return;
+  const today = new Date();
+  const counts = {};
+  for(let i=0; i<30; i++){
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const comp = state.completions[dateKey(d)] || {};
+    for(const [id, done] of Object.entries(comp)){
+      if(done) counts[id] = (counts[id] || 0) + 1;
+    }
+  }
+  const ranked = Object.entries(counts)
+    .map(([id, c]) => ({ id, c, task: state.tasks.find(t => t.id === id) }))
+    .filter(r => r.task)
+    .sort((a,b) => b.c - a.c)
+    .slice(0, 8);
+  if(ranked.length === 0){
+    el.innerHTML = emptyHTML('📊', '本月尚無完成紀錄', '完成幾項任務後再來看排行');
+    return;
+  }
+  const max = ranked[0].c;
+  el.innerHTML = ranked.map((r, idx) => {
+    const hc = HOUSES[r.task.house].color;
+    const pct = Math.round(r.c / max * 100);
+    return `
+      <div class="mtop-row" style="--hc:${hc}">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="mtop-rank">#${idx+1}</div>
+            <div class="mtop-icon">${r.task.icon || '✨'}</div>
+            <div class="mtop-name">${escapeHTML(r.task.name)}</div>
+            <div class="mtop-count">${r.c}×</div>
+          </div>
+          <div class="mtop-bar"><div class="mtop-bar-fill" style="width:${pct}%"></div></div>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 function renderTrendChart(){
@@ -2279,7 +2530,11 @@ function switchPage(name){
   if(name === 'home'){ renderHome(); }
   else if(name === 'library'){ renderLibraryPage(); }
   else if(name === 'report'){ renderReportPage(); }
-  else if(name === 'settings'){ renderMentorAvatars(); }
+  else if(name === 'settings'){
+    renderMentorAvatars();
+    const mt = document.getElementById('mute-toggle');
+    if(mt) mt.checked = !state.muted;
+  }
 }
 
 function switchDayTab(tab){
@@ -2329,6 +2584,7 @@ function declareMorning(){
   state.completions[today] = state.completions[today] || {};
   saveState();
   checkAchievements();
+  sfxDeclare();
   toast('誓言已立下，勿負今日魔法');
   renderMorningPanel();
 }
@@ -2350,11 +2606,13 @@ function toggleTask(id){
     // Uncheck: subtract points
     delete state.completions[today][id];
     state.housePoints[t.house] = Math.max(0, (state.housePoints[t.house] || 0) - t.pts);
+    sfxUncheck();
   } else {
     state.completions[today][id] = true;
     const before = state.housePoints[t.house] || 0;
     const after = before + t.pts;
     state.housePoints[t.house] = after;
+    sfxCheck();
     checkLevelUp(t.house, before, after);
   }
   saveState();
@@ -2370,6 +2628,7 @@ function checkLevelUp(house, before, after){
   if(prevTitle !== newTitle){
     state.lastTitles[house] = newTitle;
     showLevelUp(house, newTitle);
+    sfxLevelup();
   }
 }
 
@@ -2544,6 +2803,75 @@ function closeLevelUp(){
   document.getElementById('levelup-modal').classList.remove('show');
 }
 
+/* ---------- Sound FX (Web Audio) ---------- */
+let _audioCtx = null;
+function getAudio(){
+  if(state.muted) return null;
+  if(!_audioCtx){
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e){ return null; }
+  }
+  if(_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+
+function tone({ freq = 440, dur = 0.12, type = 'sine', vol = 0.15, at = 0, attack = 0.005, decay = 0.08 }){
+  const ctx = getAudio(); if(!ctx) return;
+  const t0 = ctx.currentTime + at;
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(vol, t0 + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + decay);
+  osc.connect(g).connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + dur + decay + 0.02);
+}
+
+function sfxCheck(){
+  tone({ freq: 880, dur:0.06, type:'triangle', vol:0.12 });
+  tone({ freq: 1320, dur:0.08, type:'sine', vol:0.08, at:0.04 });
+}
+function sfxUncheck(){
+  tone({ freq: 440, dur:0.08, type:'sine', vol:0.1 });
+}
+function sfxDeclare(){
+  // Ascending arpeggio
+  const base = 523.25;
+  [0, 4, 7, 12].forEach((semi, i) => {
+    const f = base * Math.pow(2, semi/12);
+    tone({ freq:f, dur:0.12, type:'triangle', vol:0.1, at: i * 0.06 });
+  });
+}
+function sfxLevelup(){
+  const base = 523.25;
+  [0, 4, 7, 12, 16].forEach((semi, i) => {
+    const f = base * Math.pow(2, semi/12);
+    tone({ freq:f, dur:0.18, type:'sawtooth', vol:0.08, at: i * 0.08 });
+    tone({ freq:f*2, dur:0.22, type:'sine', vol:0.05, at: i * 0.08 });
+  });
+}
+function sfxScold(){
+  tone({ freq: 220, dur:0.25, type:'sawtooth', vol:0.06 });
+  tone({ freq: 180, dur:0.3, type:'sawtooth', vol:0.06, at:0.1 });
+}
+
+function toggleMute(on){
+  // on === true means sound enabled
+  state.muted = !on;
+  saveState();
+  if(on){
+    // Play a quick test tone so user knows it's on
+    getAudio();
+    sfxCheck();
+    toast('音效已開啟');
+  } else {
+    toast('音效已關閉');
+  }
+}
+
 /* ---------- Particles ---------- */
 function initParticles(){
   const canvas = document.getElementById('particles');
@@ -2638,12 +2966,26 @@ function injectManifest(){
 }
 
 /* ---------- Boot ---------- */
+function maybeShowOnboard(){
+  if(!state.onboarded){
+    document.getElementById('onboard').classList.add('show');
+  }
+}
+
+function closeOnboard(){
+  state.onboarded = true;
+  saveState();
+  document.getElementById('onboard').classList.remove('show');
+  sfxDeclare();
+}
+
 function boot(){
   injectManifest();
   updateTheme();
   initParticles();
   checkAchievements();
   renderHome();
+  maybeShowOnboard();
 
   // Auto-switch day tab every 5 minutes in case user keeps the page open
   setInterval(() => {
