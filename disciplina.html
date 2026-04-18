@@ -886,6 +886,50 @@ body::before{
   margin-top:2px;
 }
 
+/* Weekly challenge */
+.challenge-title{
+  font-family:'Cinzel', serif;
+  font-size:1.05rem;
+  color: var(--text);
+  letter-spacing:.05em;
+  margin-bottom:4px;
+}
+.challenge-desc{
+  color: var(--text-dim);
+  font-size:.85rem;
+  line-height:1.6;
+  margin-bottom:8px;
+}
+.challenge-prog{
+  display:flex; justify-content:space-between;
+  font-size:.78rem; color: var(--text-mute);
+  font-family:'Cinzel', serif;
+  margin-bottom:4px;
+}
+.challenge-bar{
+  height:8px; border-radius:4px;
+  background: rgba(255,255,255,0.06);
+  overflow:hidden;
+}
+.challenge-fill{
+  height:100%;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 50%, #fff));
+  box-shadow: 0 0 10px var(--accent-soft);
+  transition: width .5s ease;
+}
+.challenge-card.done{
+  position:relative;
+  overflow:hidden;
+}
+.challenge-card.done::after{
+  content:'✓';
+  position:absolute;
+  top:14px; right:16px;
+  font-size:1.4rem;
+  color: var(--accent);
+  filter: drop-shadow(0 0 8px var(--accent));
+}
+
 /* Monthly top */
 .mtop-row{
   display:flex; align-items:center; gap:10px;
@@ -961,6 +1005,127 @@ body::before{
 }
 .upload-preview img, .upload-preview svg{width:100%; height:100%; object-fit:cover; display:block}
 .file-input{display:none}
+
+/* Chat */
+.chat-open-btn{
+  flex-shrink:0;
+  width:36px; height:36px;
+  border-radius:50%;
+  background: var(--surface-2);
+  border:1px solid var(--border-strong);
+  color: var(--text-dim);
+  font-size:1rem;
+  cursor:pointer;
+  transition: all .2s ease;
+}
+.chat-open-btn:hover{
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.chat{
+  position:fixed; inset:0;
+  z-index:140;
+  display:none;
+}
+.chat.show{ display:block; animation: fadeIn .25s ease }
+.chat-backdrop{
+  position:absolute; inset:0;
+  background: rgba(4,2,10,0.7);
+  backdrop-filter: blur(6px);
+}
+.chat-panel{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  max-width: 720px;
+  margin: 0 auto;
+  height: 80vh;
+  background: linear-gradient(180deg, rgba(22,18,36,0.96), rgba(12,9,22,0.98));
+  border-top: 1px solid var(--accent);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -20px 60px rgba(0,0,0,.6), 0 0 40px var(--accent-soft);
+  display:flex; flex-direction:column;
+  overflow:hidden;
+  animation: chatSlide .3s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes chatSlide{ from{ transform: translateY(40px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+.chat-header{
+  display:flex; align-items:center; gap:10px;
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.chat-avatar{
+  width:44px; height:44px; border-radius:50%;
+  overflow:hidden;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 16px var(--accent-glow);
+  flex-shrink:0;
+}
+.chat-avatar img, .chat-avatar svg{ width:100%; height:100%; object-fit:cover; display:block }
+.chat-name{
+  font-family:'Cinzel', serif;
+  letter-spacing:.08em;
+  color: var(--accent);
+  font-size:.92rem;
+}
+.chat-sub{ font-size:.72rem; color: var(--text-mute); margin-top:2px }
+.chat-close{
+  background:transparent; border:none;
+  color: var(--text-mute);
+  font-size:1rem; cursor:pointer;
+  width:32px; height:32px; border-radius:8px;
+}
+.chat-close:hover{ background: rgba(255,255,255,0.05); color: var(--text) }
+.chat-body{
+  flex:1;
+  overflow-y:auto;
+  padding:14px 16px;
+  display:flex; flex-direction:column; gap:10px;
+}
+.msg{
+  max-width: 82%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  line-height: 1.55;
+  font-size: .92rem;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.msg.you{
+  align-self:flex-end;
+  background: color-mix(in srgb, var(--accent) 28%, #1a1530);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--text);
+  border-bottom-right-radius: 4px;
+}
+.msg.mentor{
+  align-self:flex-start;
+  background: rgba(10,8,20,0.6);
+  border:1px solid var(--border);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+.msg.mentor::before{
+  content: '';
+  display:inline-block;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.msg.typing{
+  opacity: .7;
+  font-style: italic;
+}
+.chat-input{
+  display:flex; gap:8px;
+  padding:12px;
+  border-top:1px solid var(--border);
+  flex-shrink:0;
+}
+.chat-input .input{ flex:1; margin:0 }
 
 /* iOS install banner */
 .ios-banner{
@@ -1327,11 +1492,12 @@ body::before{
     <!-- Mentor card -->
     <div class="card">
       <div class="mentor">
-        <div class="mentor-avatar" id="mentor-avatar-home"></div>
+        <div class="mentor-avatar" id="mentor-avatar-home" onclick="openChat()" style="cursor:pointer"></div>
         <div class="mentor-body">
           <div class="mentor-name">PROF. SEVERUS</div>
           <div class="mentor-line" id="mentor-line">——</div>
         </div>
+        <button class="chat-open-btn" onclick="openChat()" aria-label="與導師對話">💬</button>
       </div>
       <div id="scolding-box"></div>
     </div>
@@ -1340,6 +1506,12 @@ body::before{
     <div class="card">
       <div class="card-title">四院積分</div>
       <div class="house-row" id="house-row"></div>
+    </div>
+
+    <!-- Weekly challenge -->
+    <div class="card" id="challenge-card" style="display:none">
+      <div class="card-title">本週挑戰</div>
+      <div id="challenge-body"></div>
     </div>
 
     <!-- Daily quote -->
@@ -1442,6 +1614,7 @@ body::before{
     <div class="card">
       <div class="card-title">四院積分排行榜</div>
       <div class="leaderboard" id="leaderboard"></div>
+      <button class="btn ghost" onclick="generateWeeklyCard()" style="margin-top:12px">🗓 產生本週總結卡</button>
     </div>
 
     <div class="card">
@@ -1557,6 +1730,26 @@ body::before{
     <div class="title-name" id="levelup-title">——</div>
     <div class="title-house" id="levelup-house">——</div>
     <button onclick="closeLevelUp()">繼續修煉</button>
+  </div>
+</div>
+
+<!-- Mentor chat -->
+<div class="chat" id="chat">
+  <div class="chat-backdrop" onclick="closeChat()"></div>
+  <div class="chat-panel">
+    <div class="chat-header">
+      <div class="chat-avatar" id="chat-avatar"></div>
+      <div style="flex:1">
+        <div class="chat-name" id="chat-name">PROF. SEVERUS</div>
+        <div class="chat-sub" id="chat-sub">自律魔典 · 導師對話</div>
+      </div>
+      <button class="chat-close" onclick="closeChat()" aria-label="關閉">✕</button>
+    </div>
+    <div class="chat-body" id="chat-body"></div>
+    <form class="chat-input" onsubmit="sendChat(event)">
+      <input id="chat-text" class="input" placeholder="請教導師一些事…（例：今天沒動力）" maxlength="200" autocomplete="off">
+      <button class="btn" type="submit" style="width:auto; padding:10px 16px; margin:0">送出</button>
+    </form>
   </div>
 </div>
 
@@ -2011,6 +2204,7 @@ function defaultState(){
     onboarded: false,
     muted: true,
     mentor: 'severus',
+    weeklyChallenge: null,
   };
 }
 
@@ -2374,7 +2568,7 @@ function saveNote(id, value){
   else state.notes[today][id] = value;
   // Debounce save
   clearTimeout(window.__noteT);
-  window.__noteT = setTimeout(() => { saveState(); checkAchievements(); }, 400);
+  window.__noteT = setTimeout(() => { saveState(); checkAchievements(); renderChallenge(); }, 400);
 }
 
 function renderScoldingBox(){
@@ -2636,7 +2830,8 @@ function renderBadges(){
   const grid = document.getElementById('badge-grid');
   const count = document.getElementById('badge-count');
   if(!grid) return;
-  const unlocked = Object.keys(state.achievements || {}).length;
+  const validIds = new Set(ACHIEVEMENTS.map(a => a.id));
+  const unlocked = Object.keys(state.achievements || {}).filter(k => validIds.has(k)).length;
   count.textContent = `· 已解鎖 ${unlocked} / ${ACHIEVEMENTS.length}`;
   grid.innerHTML = ACHIEVEMENTS.map(a => {
     const when = state.achievements?.[a.id];
@@ -2927,6 +3122,7 @@ function renderHome(){
   renderMentorLine();
   renderHouseRow();
   renderDailyQuote();
+  renderChallenge();
 
   // Sync morning pending selections with what's already declared
   const today = todayKey();
@@ -2936,6 +3132,139 @@ function renderHome(){
 
   // Activate the correct day-tab UI
   switchDayTab(currentDayTab);
+}
+
+/* ---------- Weekly challenge ---------- */
+function isoWeekKey(d){
+  d = d ? new Date(d) : new Date();
+  // ISO week: Monday start
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
+  return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2,'0')}`;
+}
+
+function weekStartMonday(d){
+  d = d ? new Date(d) : new Date();
+  const day = d.getDay() || 7;
+  const start = new Date(d);
+  start.setHours(0,0,0,0);
+  start.setDate(start.getDate() - (day - 1));
+  return start;
+}
+
+function ensureWeeklyChallenge(){
+  const nowKey = isoWeekKey();
+  const c = state.weeklyChallenge;
+  if(c && c.weekKey === nowKey) return c;
+  // Generate a new challenge for this week
+  const choices = [];
+  // house_points — pick a house user has tasks in, target 30
+  const housesWithTasks = HOUSE_ORDER.filter(h => state.tasks.some(t => t.house === h));
+  for(const h of housesWithTasks){
+    choices.push({ type:'house_points', house:h, target: 30, label:`${HOUSES[h].emoji} ${HOUSES[h].name}本週累積 30 分` });
+  }
+  // task_repeat — pick a task, target 3
+  if(state.tasks.length){
+    const sample = state.tasks[Math.floor(Math.random() * state.tasks.length)];
+    choices.push({ type:'task_repeat', taskId: sample.id, taskName: sample.name, target: 3,
+      label: `完成 ${sample.icon||'✨'} ${sample.name} 共 3 次` });
+  }
+  // notes — 3 journal entries
+  choices.push({ type:'notes', target: 3, label: '本週寫下 3 篇修煉日誌' });
+  // streak — 3-day all-done streak within the week
+  choices.push({ type:'streak', target: 3, label: '本週內達成 3 天全項完成' });
+
+  const pick = choices[Math.floor(Math.random() * choices.length)];
+  state.weeklyChallenge = {
+    weekKey: nowKey,
+    type: pick.type,
+    target: pick.target,
+    label: pick.label,
+    taskId: pick.taskId || null,
+    taskName: pick.taskName || null,
+    house: pick.house || null,
+    progress: 0,
+    completed: false,
+    startedAt: todayKey(),
+  };
+  saveState();
+  return state.weeklyChallenge;
+}
+
+function computeChallengeProgress(c){
+  if(!c) return 0;
+  const start = weekStartMonday();
+  const startKey = dateKey(start);
+  const today = todayKey();
+  let p = 0;
+  if(c.type === 'house_points'){
+    for(const [dk, comp] of Object.entries(state.completions || {})){
+      if(dk < startKey || dk > today) continue;
+      for(const [taskId, done] of Object.entries(comp)){
+        if(!done) continue;
+        const t = state.tasks.find(x => x.id === taskId);
+        if(t && t.house === c.house) p += t.pts;
+      }
+    }
+  } else if(c.type === 'task_repeat'){
+    for(const [dk, comp] of Object.entries(state.completions || {})){
+      if(dk < startKey || dk > today) continue;
+      if(comp[c.taskId]) p += 1;
+    }
+  } else if(c.type === 'notes'){
+    for(const [dk, m] of Object.entries(state.notes || {})){
+      if(dk < startKey || dk > today) continue;
+      for(const v of Object.values(m || {})) if(v && v.trim()) p += 1;
+    }
+  } else if(c.type === 'streak'){
+    // Count consecutive fully-done days this week up to today
+    let cur = 0, max = 0;
+    for(let d = new Date(start); d <= new Date(); d.setDate(d.getDate()+1)){
+      const k = dateKey(d);
+      const decl = state.declarations[k] || [];
+      if(decl.length === 0){ cur = 0; continue; }
+      const comp = state.completions[k] || {};
+      const all = decl.every(id => comp[id]);
+      cur = all ? cur+1 : 0;
+      if(cur > max) max = cur;
+    }
+    p = max;
+  }
+  return p;
+}
+
+function renderChallenge(){
+  const c = ensureWeeklyChallenge();
+  const card = document.getElementById('challenge-card');
+  const body = document.getElementById('challenge-body');
+  if(!card || !body) return;
+  const progress = Math.min(c.target, computeChallengeProgress(c));
+  if(progress !== c.progress){
+    c.progress = progress;
+    if(!c.completed && progress >= c.target){
+      c.completed = true;
+      unlock('weekly_' + c.weekKey);
+      // Add a named, readable achievement entry too
+      state.achievements['weekly_' + c.weekKey] = todayKey();
+      toast('🏅 本週挑戰達成！');
+      sfxLevelup();
+    }
+    saveState();
+  }
+  card.style.display = '';
+  const pct = Math.round(progress / c.target * 100);
+  card.classList.toggle('done', !!c.completed);
+  body.innerHTML = `
+    <div class="challenge-title">${escapeHTML(c.label)}</div>
+    <div class="challenge-desc">${c.completed ? '已達成本週挑戰 🎉' : '每週一自動更新，達成解鎖週徽章。'}</div>
+    <div class="challenge-prog">
+      <span>進度</span><span>${progress} / ${c.target}</span>
+    </div>
+    <div class="challenge-bar"><div class="challenge-fill" style="width:${pct}%"></div></div>
+  `;
 }
 
 /* ---------- Morning: toggle & declare ---------- */
@@ -2994,6 +3323,7 @@ function toggleTask(id){
   updateTheme();
   renderHouseRow();
   renderEveningPanel();
+  renderChallenge();
 }
 
 function checkLevelUp(house, before, after){
@@ -3495,6 +3825,196 @@ async function generateShareCard(){
   document.getElementById('share-modal').classList.add('show');
 }
 
+async function generateWeeklyCard(){
+  const canvas = document.getElementById('share-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  try {
+    if(document.fonts && document.fonts.load){
+      await Promise.all([
+        document.fonts.load('700 56px Cinzel'),
+        document.fonts.load('500 22px Cinzel'),
+        document.fonts.load('700 72px Cinzel'),
+        document.fonts.load('700 36px Cinzel'),
+        document.fonts.load('500 22px "Noto Sans TC"'),
+        document.fonts.load('500 18px "Noto Sans TC"'),
+      ]);
+      await document.fonts.ready;
+    }
+  } catch(e){}
+
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, '#120d20');
+  g.addColorStop(0.5, '#0a0814');
+  g.addColorStop(1, '#06040d');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  const lead = getLeadingHouse();
+  const leadColor = HOUSES[lead].color;
+  const glow = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, W * 0.7);
+  glow.addColorStop(0, leadColor + '55');
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+
+  for(let i=0; i<70; i++){
+    const x = Math.random()*W, y = Math.random()*H;
+    const r = Math.random()*1.6 + 0.4;
+    ctx.globalAlpha = 0.25 + Math.random()*0.4;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  const cjk = '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif';
+  const cinzel = '"Cinzel", "Times New Roman", serif';
+
+  // Title
+  ctx.fillStyle = '#e8e4f5';
+  ctx.font = `700 56px ${cinzel}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('WEEKLY REPORT', W/2, 120);
+  ctx.fillStyle = '#6c638a';
+  ctx.font = `500 22px ${cinzel}`;
+  ctx.fillText('DISCIPLINA · 週度修煉卷軸', W/2, 160);
+
+  // Date range
+  const end = new Date();
+  const start = new Date(end); start.setDate(start.getDate() - 6);
+  const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
+  ctx.fillStyle = leadColor;
+  ctx.font = `600 28px ${cjk}`;
+  ctx.fillText(`${fmt(start)} — ${fmt(end)}`, W/2, 210);
+
+  // Weekly stats
+  let totalDone = 0, totalDecl = 0, weekPts = 0;
+  const dailyCounts = [];
+  for(let i=6; i>=0; i--){
+    const d = new Date(end); d.setDate(d.getDate()-i);
+    const k = dateKey(d);
+    const decl = state.declarations[k] || [];
+    const comp = state.completions[k] || {};
+    totalDecl += decl.length;
+    let dayDone = 0;
+    for(const id of decl){
+      if(comp[id]){
+        dayDone++;
+        const t = state.tasks.find(x => x.id === id);
+        if(t) weekPts += t.pts;
+      }
+    }
+    totalDone += dayDone;
+    dailyCounts.push({ declared: decl.length, done: dayDone, label: `${d.getMonth()+1}/${d.getDate()}`, wd: ['日','一','二','三','四','五','六'][d.getDay()] });
+  }
+  const rate = totalDecl ? Math.round(totalDone/totalDecl*100) : 0;
+
+  // Completion ring
+  const cx = W/2, cy = 370, rr = 120;
+  ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 14; ctx.stroke();
+  if(totalDecl > 0){
+    ctx.beginPath();
+    ctx.arc(cx, cy, rr, -Math.PI/2, -Math.PI/2 + (totalDone/totalDecl) * Math.PI*2);
+    ctx.strokeStyle = leadColor; ctx.lineWidth = 14; ctx.lineCap = 'round'; ctx.stroke();
+  }
+  ctx.fillStyle = '#fff';
+  ctx.font = `700 72px ${cinzel}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`${rate}%`, cx, cy + 4);
+  ctx.fillStyle = '#a59dc2';
+  ctx.font = `500 20px ${cjk}`;
+  ctx.fillText('本週完成率', cx, cy + 44);
+
+  // Heatmap row
+  const hmTop = 540;
+  const cellW = 98, gap = 6;
+  const hmStartX = (W - (cellW*7 + gap*6)) / 2;
+  for(let i=0; i<7; i++){
+    const x = hmStartX + i*(cellW+gap);
+    const c = dailyCounts[i];
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.strokeStyle = 'rgba(200,180,255,0.18)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, x, hmTop, cellW, cellW, 14);
+    ctx.fill(); ctx.stroke();
+    let mark = '—', color = '#6c638a';
+    if(c.declared > 0){
+      if(c.done === c.declared){ mark = '✦'; color = leadColor; }
+      else if(c.done === 0){ mark = '✗'; color = '#ff6666'; }
+      else { mark = `${c.done}/${c.declared}`; color = '#f5c518'; }
+    }
+    ctx.fillStyle = '#6c638a';
+    ctx.font = `500 18px ${cjk}`;
+    ctx.fillText(c.wd, x + cellW/2, hmTop + 26);
+    ctx.fillStyle = color;
+    ctx.font = `700 30px ${cinzel}`;
+    ctx.fillText(mark, x + cellW/2, hmTop + cellW/2 + 18);
+    ctx.fillStyle = '#6c638a';
+    ctx.font = `500 14px ${cjk}`;
+    ctx.fillText(c.label, x + cellW/2, hmTop + cellW - 10);
+  }
+
+  // Key stats row
+  const totalPts = HOUSE_ORDER.reduce((s,h)=>s+(state.housePoints[h]||0),0);
+  const streak = computeCurrentStreak();
+  const yLine = 720;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fff';
+  ctx.font = `700 44px ${cinzel}`;
+  ctx.fillText(`⚡ ${weekPts}`, W*0.25, yLine);
+  ctx.fillText(`🔥 ${streak}`, W*0.5,  yLine);
+  ctx.fillText(`💯 ${totalPts}`, W*0.75, yLine);
+  ctx.fillStyle = '#a59dc2';
+  ctx.font = `500 20px ${cjk}`;
+  ctx.fillText('本週積分', W*0.25, yLine + 32);
+  ctx.fillText('連續天數', W*0.5,  yLine + 32);
+  ctx.fillText('累積總分', W*0.75, yLine + 32);
+
+  // House row
+  const top = 820;
+  const boxW = 190, boxH = 160;
+  const startX = (W - (boxW*4 + 16*3)) / 2;
+  for(let i=0; i<HOUSE_ORDER.length; i++){
+    const h = HOUSE_ORDER[i];
+    const x = startX + i * (boxW + 16);
+    const c = HOUSES[h].color;
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.strokeStyle = c + '88';
+    ctx.lineWidth = 2;
+    roundRect(ctx, x, top, boxW, boxH, 16);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = `400 40px system-ui, "Apple Color Emoji", "Segoe UI Emoji"`;
+    ctx.fillText(HOUSES[h].emoji, x + boxW/2, top + 52);
+    ctx.fillStyle = c;
+    ctx.font = `500 18px ${cjk}`;
+    ctx.fillText(HOUSES[h].name, x + boxW/2, top + 82);
+    ctx.fillStyle = c;
+    ctx.font = `700 36px ${cinzel}`;
+    ctx.fillText(String(state.housePoints[h] || 0), x + boxW/2, top + 128);
+  }
+
+  // Weekly challenge line
+  const c = state.weeklyChallenge;
+  ctx.fillStyle = c && c.completed ? '#2ecc71' : '#a59dc2';
+  ctx.font = `500 20px ${cjk}`;
+  const chLine = c
+    ? (c.completed ? `✓ ${c.label}` : `${c.label} · ${c.progress}/${c.target}`)
+    : '—';
+  ctx.fillText(chLine, W/2, H - 140);
+
+  ctx.fillStyle = '#6c638a';
+  ctx.font = `500 20px ${cjk}`;
+  ctx.fillText(`「每一週，都是新的宣誓」 — ${currentMentor().name}`, W/2, H - 90);
+  ctx.font = `500 18px ${cinzel}`;
+  ctx.fillStyle = leadColor;
+  ctx.fillText('disciplina.futurestarai.com', W/2, H - 50);
+
+  document.getElementById('share-modal').classList.add('show');
+}
+
 function roundRect(ctx, x, y, w, h, r){
   ctx.beginPath();
   ctx.moveTo(x+r, y);
@@ -3704,6 +4224,8 @@ function initShortcuts(){
       const lvl = document.getElementById('levelup-modal');
       const sh  = document.getElementById('share-modal');
       const ob  = document.getElementById('onboard');
+      const ch  = document.getElementById('chat');
+      if(ch && ch.classList.contains('show')){ closeChat(); return; }
       if(ob && ob.classList.contains('show')){ closeOnboard(); return; }
       if(lvl && lvl.classList.contains('show')){ closeLevelUp(); return; }
       if(sh  && sh.classList.contains('show')){  closeShareCard(); return; }
@@ -3749,6 +4271,159 @@ function initShortcuts(){
     if(dx < 0) switchDayTab('evening');
     else switchDayTab('morning');
   }, { passive: true });
+}
+
+/* ---------- Mentor chat ---------- */
+const chatLog = [];
+
+function openChat(){
+  const el = document.getElementById('chat');
+  const av = document.getElementById('chat-avatar');
+  av.innerHTML = state.mentorImage ? `<img src="${state.mentorImage}">` : DEFAULT_MENTOR_SVG;
+  document.getElementById('chat-name').textContent = currentMentor().name;
+  document.getElementById('chat-sub').textContent = currentMentor().title;
+  el.classList.add('show');
+  if(chatLog.length === 0){
+    appendMsg('mentor', pickFromList(currentMentor().morning));
+  } else {
+    redrawChat();
+  }
+  setTimeout(() => document.getElementById('chat-text').focus(), 200);
+}
+
+function closeChat(){
+  document.getElementById('chat').classList.remove('show');
+}
+
+function appendMsg(role, text){
+  chatLog.push({ role, text });
+  const body = document.getElementById('chat-body');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+function redrawChat(){
+  const body = document.getElementById('chat-body');
+  body.innerHTML = '';
+  for(const m of chatLog){
+    const div = document.createElement('div');
+    div.className = 'msg ' + m.role;
+    div.textContent = m.text;
+    body.appendChild(div);
+  }
+  body.scrollTop = body.scrollHeight;
+}
+
+function buildChatContext(){
+  const today = todayKey();
+  const decl = state.declarations[today] || [];
+  const comp = state.completions[today] || {};
+  const done = decl.filter(id => comp[id]).length;
+  const tasksDecl = decl.map(id => state.tasks.find(t => t.id===id)).filter(Boolean)
+    .map(t => `${t.name}${comp[t.id]?'(已完成)':''}`);
+  const lead = getLeadingHouse();
+  const totalPts = HOUSE_ORDER.reduce((s,h)=>s+(state.housePoints[h]||0),0);
+  const streak = computeCurrentStreak();
+  return {
+    mentor: state.mentor,
+    mentorName: currentMentor().name,
+    today, done, total: decl.length,
+    tasks: tasksDecl,
+    leadingHouse: HOUSES[lead].name,
+    totalPts, streak,
+    housePoints: state.housePoints,
+  };
+}
+
+function ruleBasedReply(text){
+  const m = currentMentor();
+  const t = text.toLowerCase();
+  const ctx = buildChatContext();
+  // Context-first replies
+  if(/(今天|今日).*(做了|完成).*(什麼|幾)/.test(text) || /^(我|)今天完成/.test(text)){
+    return `今日你宣告 ${ctx.total} 項，已完成 ${ctx.done} 項；累積總分 ${ctx.totalPts}、連續天數 ${ctx.streak}。${ctx.total===0?'還沒宣告？先去立誓吧。':''}`;
+  }
+  if(/(不想|沒動力|累|懶|提不起)/.test(text)){
+    return ({
+      severus:'累不是藉口。把最小版本做掉：五分鐘的那一項。',
+      dumbledore:'請對自己溫柔——但也請做一件最小、最可行的事。一件就好。',
+      mcgonagall:'請不要用「累」敷衍我。五分鐘的行動，比一小時的抱怨更有效。',
+      hermione:'研究顯示最難的是開始的那 2 分鐘！先設計一個迷你版本試試。',
+    })[state.mentor];
+  }
+  if(/(做不到|失敗|撐不住|放棄)/.test(text)){
+    return ({
+      severus:'你放棄的那一刻，就是你過去半途而廢的歷史再重演一次。選擇不同的結果。',
+      dumbledore:'失敗不是終點。今晚的你，仍然可以重新開始。',
+      mcgonagall:'請寫下你為何做不到——具體寫。寫下了，才有機會改善。',
+      hermione:'退一步，把目標縮小到你確定做得到的尺寸，然後逐漸加量！',
+    })[state.mentor];
+  }
+  if(/(拖延|拖)/.test(text)){
+    return '拖延通常源於目標太大或不夠具體。把今天的第一項切成 5 分鐘可完成的版本。';
+  }
+  if(/(焦慮|壓力|害怕|緊張)/.test(text)){
+    return ({
+      severus:'焦慮是對未來幻想的稅金。把它換成對今日的執行力。',
+      dumbledore:'焦慮通常是未來在敲你的門。呼吸三次，然後只處理今天。',
+      mcgonagall:'別讓情緒替你決定行動。先做一件具體的事，情緒自然會讓開。',
+      hermione:'深呼吸 4-7-8 法試試！然後做那個最小版本的任務。',
+    })[state.mentor];
+  }
+  if(/(你好|hi|哈囉|嗨)/i.test(text)){
+    return `${m.name} 在此。${pickFromList(m.morning)}`;
+  }
+  if(/(再見|掰掰|晚安|bye)/i.test(text)){
+    return pickFromList(m.evening);
+  }
+  // Fallback — pick any line from current mentor
+  const pool = [...m.morning, ...m.evening];
+  return pickFromList(pool);
+}
+
+async function sendChat(e){
+  e.preventDefault();
+  const inp = document.getElementById('chat-text');
+  const text = inp.value.trim();
+  if(!text) return;
+  inp.value = '';
+  appendMsg('you', text);
+
+  // typing indicator
+  const body = document.getElementById('chat-body');
+  const typing = document.createElement('div');
+  typing.className = 'msg mentor typing';
+  typing.textContent = currentMentor().name.split(' ')[0] + ' 正在回覆……';
+  body.appendChild(typing);
+  body.scrollTop = body.scrollHeight;
+
+  let reply = null;
+  const endpoint = window.DISCIPLINA_AI_ENDPOINT;
+  if(endpoint){
+    try {
+      const ctx = buildChatContext();
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          message: text,
+          mentor: state.mentor,
+          context: ctx,
+          history: chatLog.slice(-10),
+        }),
+      });
+      if(res.ok){
+        const data = await res.json();
+        reply = data.reply || data.text || data.content || null;
+      }
+    } catch(err){ console.warn('AI endpoint failed, fallback to local', err); }
+  }
+  if(!reply) reply = ruleBasedReply(text);
+  typing.remove();
+  appendMsg('mentor', reply);
 }
 
 /* ---------- Boot ---------- */
