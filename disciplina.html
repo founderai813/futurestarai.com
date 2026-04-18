@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0a0814">
 <title>Disciplina — 自律魔典</title>
+<meta name="description" content="Disciplina · 自律魔典 — 霍格華茲四大學院主題個人自律打卡，搭配石內卜風格 AI 導師。">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Disciplina">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23120d20'/%3E%3Cstop offset='1' stop-color='%23000'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='180' height='180' rx='40' fill='url(%23g)'/%3E%3Ctext x='90' y='118' text-anchor='middle' font-family='serif' font-weight='700' font-size='96' fill='%23ff6b35'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23120d20'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='serif' font-weight='700' font-size='36' fill='%23ff6b35'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
+<link id="manifest-link" rel="manifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -450,6 +458,36 @@ body::before{
   line-height:1.7;
 }
 .empty .emoji{font-size:2rem; display:block; margin-bottom:6px; opacity:.6}
+
+/* Collapsible house group */
+.group{
+  margin-top:10px;
+}
+.group-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 4px;
+  cursor:pointer;
+  user-select:none;
+  font-size:.72rem;
+  letter-spacing:.12em;
+  color: var(--hc);
+  border-bottom:1px dashed color-mix(in srgb, var(--hc) 30%, transparent);
+}
+.group-head .chevron{
+  margin-left:auto;
+  font-size:.8rem;
+  transition: transform .25s ease;
+  color: var(--text-mute);
+}
+.group.collapsed .chevron{ transform: rotate(-90deg) }
+.group.collapsed .group-body{ display:none }
+.group-count{
+  font-size:.7rem;
+  color: var(--text-mute);
+  letter-spacing: 0;
+}
 
 /* Library page - house filter chips */
 .house-tabs{
@@ -985,9 +1023,19 @@ body::before{
     </div>
 
     <div class="card">
+      <div class="card-title">備份與還原</div>
+      <p class="small" style="margin-bottom:10px">localStorage 不跨裝置同步。定期匯出 JSON 以防資料遺失。</p>
+      <div class="form-row">
+        <button class="btn ghost" onclick="exportData()">⬇ 匯出備份</button>
+        <button class="btn ghost" onclick="document.getElementById('import-file').click()">⬆ 匯入備份</button>
+      </div>
+      <input type="file" id="import-file" class="file-input" accept="application/json,.json" onchange="importData(event)">
+    </div>
+
+    <div class="card">
       <div class="card-title">關於</div>
       <p class="small" style="line-height:1.75">
-        Disciplina · 自律魔典 v1.0<br>
+        Disciplina · 自律魔典 v1.2<br>
         純前端單檔 App · 離線可用 · 資料保存於本機<br>
         主題：霍格華茲四大學院 × 個人自律打卡<br>
         導師：PROF. SEVERUS · 毒舌但一針見血
@@ -1376,15 +1424,23 @@ function renderMorningPanel(){
     return;
   }
 
-  // Render by house group
+  // Render by house group (collapsible)
   const grouped = groupTasksByHouse(state.tasks);
   list.innerHTML = HOUSE_ORDER.map(h => {
     if(!grouped[h] || !grouped[h].length) return '';
+    const collapsed = collapsedGroups.morning.has(h);
+    const picked = grouped[h].filter(t => pendingDeclarations.has(t.id)).length;
     return `
-      <div style="font-size:.72rem;color:${HOUSES[h].color};letter-spacing:.1em;margin:10px 0 4px">
-        ${HOUSES[h].emoji} ${HOUSES[h].name}
+      <div class="group ${collapsed?'collapsed':''}" style="--hc:${HOUSES[h].color}">
+        <div class="group-head" onclick="toggleGroup('morning','${h}')">
+          <span>${HOUSES[h].emoji} ${HOUSES[h].name}</span>
+          <span class="group-count">· ${picked}/${grouped[h].length} 已選</span>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="group-body">
+          ${grouped[h].map(t => taskRowHTML(t, pendingDeclarations.has(t.id), true, false)).join('')}
+        </div>
       </div>
-      ${grouped[h].map(t => taskRowHTML(t, pendingDeclarations.has(t.id), true, false)).join('')}
     `;
   }).join('');
 
@@ -1522,6 +1578,15 @@ function renderPresetGrid(){
   }).join('');
 }
 
+const collapsedGroups = { library: new Set(), morning: new Set() };
+
+function toggleGroup(scope, house){
+  const set = collapsedGroups[scope];
+  if(set.has(house)) set.delete(house); else set.add(house);
+  if(scope === 'library') renderLibraryList();
+  else renderMorningPanel();
+}
+
 function renderLibraryList(){
   const el = document.getElementById('library-list');
   if(state.tasks.length === 0){
@@ -1531,20 +1596,27 @@ function renderLibraryList(){
   const grouped = groupTasksByHouse(state.tasks);
   el.innerHTML = HOUSE_ORDER.map(h => {
     if(!grouped[h] || !grouped[h].length) return '';
+    const collapsed = collapsedGroups.library.has(h);
     return `
-      <div style="font-size:.72rem;color:${HOUSES[h].color};letter-spacing:.1em;margin:10px 0 4px">
-        ${HOUSES[h].emoji} ${HOUSES[h].name}
-      </div>
-      ${grouped[h].map(t => `
-        <div class="task-row" style="--hc:${HOUSES[h].color}">
-          <div class="task-icon">${t.icon || '✨'}</div>
-          <div class="task-body">
-            <div class="task-name">${escapeHTML(t.name)}</div>
-            <div class="task-meta">+${t.pts} 分</div>
-          </div>
-          <button class="task-del" onclick="deleteTask('${t.id}')">✕</button>
+      <div class="group ${collapsed?'collapsed':''}" style="--hc:${HOUSES[h].color}">
+        <div class="group-head" onclick="toggleGroup('library','${h}')">
+          <span>${HOUSES[h].emoji} ${HOUSES[h].name}</span>
+          <span class="group-count">· ${grouped[h].length} 項</span>
+          <span class="chevron">▾</span>
         </div>
-      `).join('')}
+        <div class="group-body">
+          ${grouped[h].map(t => `
+            <div class="task-row" style="--hc:${HOUSES[h].color}">
+              <div class="task-icon">${t.icon || '✨'}</div>
+              <div class="task-body">
+                <div class="task-name">${escapeHTML(t.name)}</div>
+                <div class="task-meta">+${t.pts} 分</div>
+              </div>
+              <button class="task-del" onclick="deleteTask('${t.id}')">✕</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
     `;
   }).join('');
 }
@@ -1844,6 +1916,56 @@ function resetAvatar(){
   toast('已恢復預設頭像');
 }
 
+function exportData(){
+  const payload = {
+    app: 'disciplina',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: state,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `disciplina-backup-${todayKey()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('備份已下載');
+}
+
+function importData(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      const d = parsed && parsed.data ? parsed.data : parsed;
+      if(!d || !d.housePoints || !Array.isArray(d.tasks)){
+        toast('檔案格式不正確');
+        return;
+      }
+      if(!confirm('匯入將覆蓋目前所有資料，確定繼續？')) return;
+      state = { ...defaultState(), ...d,
+        housePoints: { ...defaultState().housePoints, ...d.housePoints },
+        lastTitles: { ...defaultState().lastTitles, ...(d.lastTitles||{}) },
+      };
+      saveState();
+      pendingDeclarations = new Set();
+      updateTheme();
+      switchPage('home');
+      toast('資料已還原');
+    } catch(err){
+      console.error(err);
+      toast('匯入失敗：無效的 JSON');
+    }
+    ev.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
 function clearAllData(){
   if(!confirm('確定要清除所有資料？此操作不可復原。')) return;
   if(!confirm('請再次確認——所有任務、積分、紀錄都將消失。')) return;
@@ -1965,8 +2087,33 @@ function initParticles(){
   window.addEventListener('resize', () => { resize(); seed(); });
 }
 
+/* ---------- PWA manifest (inline data URL) ---------- */
+function injectManifest(){
+  const iconSvg192 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="42" fill="#120d20"/><text x="96" y="126" text-anchor="middle" font-family="serif" font-weight="700" font-size="104" fill="#ff6b35">✦</text></svg>`;
+  const iconSvg512 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#120d20"/><text x="256" y="336" text-anchor="middle" font-family="serif" font-weight="700" font-size="276" fill="#ff6b35">✦</text></svg>`;
+  const manifest = {
+    name: 'Disciplina — 自律魔典',
+    short_name: 'Disciplina',
+    description: '霍格華茲四大學院主題的個人自律打卡 App',
+    start_url: './disciplina.html',
+    scope: './',
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#0a0814',
+    theme_color: '#0a0814',
+    icons: [
+      { src: 'data:image/svg+xml;utf8,' + encodeURIComponent(iconSvg192), sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+      { src: 'data:image/svg+xml;utf8,' + encodeURIComponent(iconSvg512), sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
+    ],
+  };
+  const url = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+  const link = document.getElementById('manifest-link');
+  if(link) link.href = url;
+}
+
 /* ---------- Boot ---------- */
 function boot(){
+  injectManifest();
   updateTheme();
   initParticles();
   renderHome();
