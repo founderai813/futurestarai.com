@@ -51,6 +51,40 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 
+/* High-contrast mode */
+body.hc{
+  --border: rgba(200,180,255,0.35);
+  --border-strong: rgba(200,180,255,0.55);
+  --text-dim: #d6d0ea;
+  --text-mute: #9c95b8;
+}
+body.hc .card{ border-width: 2px }
+body.hc .task-row{ border-width: 2px; border-left-width: 5px }
+body.hc .house-cell{ border-width: 2px }
+body.hc .nav-btn.active{ outline: 2px solid var(--accent); outline-offset: 1px }
+body.hc .group-head{ border-bottom-style: solid; border-bottom-width: 2px }
+body.hc .heatmap-cell.full::before{
+  content:'✓';
+  font-weight:700;
+  color:#fff;
+  text-shadow: 0 0 4px rgba(0,0,0,.6);
+}
+body.hc .heatmap-cell.fail::before{
+  content:'×';
+  font-weight:700;
+  color:#fff;
+}
+body.hc .house-cell .crown{ opacity:1; content:'★' }
+body.hc .leading::after{
+  content: 'LEAD';
+  position:absolute;
+  bottom:2px; right:4px;
+  font-size:.55rem;
+  font-family:'Cinzel', serif;
+  color: var(--hc);
+  letter-spacing:.08em;
+}
+
 body{
   font-family:'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
   background:
@@ -1671,6 +1705,31 @@ body::before{
     </div>
 
     <div class="card">
+      <div class="card-title">輔助設定</div>
+      <div class="setting-row">
+        <div class="setting-label">
+          高對比模式
+          <div class="setting-desc">加強邊框與對比，便於色弱/低光環境辨識</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="hc-toggle" onchange="toggleHighContrast(this.checked)">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          保存對話紀錄
+          <div class="setting-desc">啟用後最近 ${''+40} 則對話會存在本機（不同步雲端）</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="chat-persist-toggle" onchange="toggleChatPersist(this.checked)">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <button class="btn ghost" onclick="clearChatLog()" style="margin-top:8px">🧹 清空對話紀錄</button>
+    </div>
+
+    <div class="card">
       <div class="card-title">備份與還原</div>
       <p class="small" style="margin-bottom:10px">localStorage 不跨裝置同步。定期匯出 JSON 以防資料遺失。</p>
       <div class="form-row">
@@ -2205,6 +2264,9 @@ function defaultState(){
     muted: true,
     mentor: 'severus',
     weeklyChallenge: null,
+    chatPersist: false,
+    chatLog: [],
+    highContrast: false,
   };
 }
 
@@ -3090,6 +3152,10 @@ function switchPage(name, opts){
     renderQuotaInfo();
     const mt = document.getElementById('mute-toggle');
     if(mt) mt.checked = !state.muted;
+    const hc = document.getElementById('hc-toggle');
+    if(hc) hc.checked = !!state.highContrast;
+    const cp = document.getElementById('chat-persist-toggle');
+    if(cp) cp.checked = !!state.chatPersist;
   }
   if(!(opts && opts.fromHash)){
     const want = '#' + name;
@@ -4100,6 +4166,35 @@ function sfxScold(){
   tone({ freq: 180, dur:0.3, type:'sawtooth', vol:0.06, at:0.1 });
 }
 
+function toggleHighContrast(on){
+  state.highContrast = !!on;
+  saveState();
+  document.body.classList.toggle('hc', !!on);
+  toast(on ? '已開啟高對比' : '已關閉高對比');
+}
+
+function toggleChatPersist(on){
+  state.chatPersist = !!on;
+  if(on){
+    state.chatLog = chatLog.slice(-CHAT_MAX);
+  } else {
+    state.chatLog = [];
+  }
+  saveState();
+  toast(on ? '對話將保存在本機' : '對話將僅留在當前分頁');
+}
+
+function clearChatLog(){
+  if(!confirm('清空所有對話紀錄？')) return;
+  chatLog = [];
+  state.chatLog = [];
+  saveState();
+  if(document.getElementById('chat').classList.contains('show')){
+    document.getElementById('chat-body').innerHTML = '';
+  }
+  toast('對話紀錄已清空');
+}
+
 function toggleMute(on){
   // on === true means sound enabled
   state.muted = !on;
@@ -4274,7 +4369,24 @@ function initShortcuts(){
 }
 
 /* ---------- Mentor chat ---------- */
-const chatLog = [];
+let chatLog = [];
+const CHAT_MAX = 40;
+
+function loadChatLog(){
+  if(state.chatPersist && Array.isArray(state.chatLog)){
+    chatLog = state.chatLog.slice(-CHAT_MAX);
+  } else {
+    chatLog = [];
+  }
+}
+
+function persistChat(){
+  if(chatLog.length > CHAT_MAX) chatLog = chatLog.slice(-CHAT_MAX);
+  if(state.chatPersist){
+    state.chatLog = chatLog;
+    saveState();
+  }
+}
 
 function openChat(){
   const el = document.getElementById('chat');
@@ -4283,8 +4395,10 @@ function openChat(){
   document.getElementById('chat-name').textContent = currentMentor().name;
   document.getElementById('chat-sub').textContent = currentMentor().title;
   el.classList.add('show');
+  loadChatLog();
   if(chatLog.length === 0){
     appendMsg('mentor', pickFromList(currentMentor().morning));
+    persistChat();
   } else {
     redrawChat();
   }
@@ -4401,7 +4515,7 @@ async function sendChat(e){
   body.scrollTop = body.scrollHeight;
 
   let reply = null;
-  const endpoint = window.DISCIPLINA_AI_ENDPOINT;
+  const endpoint = getAiEndpoint();
   if(endpoint){
     try {
       const ctx = buildChatContext();
@@ -4424,6 +4538,23 @@ async function sendChat(e){
   if(!reply) reply = ruleBasedReply(text);
   typing.remove();
   appendMsg('mentor', reply);
+  persistChat();
+}
+
+function getAiEndpoint(){
+  // Priority: explicit window var > localStorage > URL ?ai= (saved to storage)
+  if(window.DISCIPLINA_AI_ENDPOINT) return window.DISCIPLINA_AI_ENDPOINT;
+  try {
+    const url = new URL(location.href);
+    const q = url.searchParams.get('ai');
+    if(q){
+      localStorage.setItem('disciplina_ai_endpoint', q);
+      url.searchParams.delete('ai');
+      history.replaceState(null, '', url.toString());
+      return q;
+    }
+  } catch(e){}
+  return localStorage.getItem('disciplina_ai_endpoint') || null;
 }
 
 /* ---------- Boot ---------- */
@@ -4463,6 +4594,7 @@ function closeOnboard(){
 
 function boot(){
   injectManifest();
+  if(state.highContrast) document.body.classList.add('hc');
   updateTheme();
   initParticles();
   checkAchievements();

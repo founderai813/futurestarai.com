@@ -1,0 +1,10 @@
+name = "disciplina-proxy"
+main = "disciplina-proxy.js"
+compatibility_date = "2025-01-01"
+
+# Optional: override default model
+# [vars]
+# MODEL = "claude-sonnet-4-6"
+
+# Secret must be set via:
+#   wrangler secret put ANTHROPIC_API_KEY
