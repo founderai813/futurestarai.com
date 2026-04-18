@@ -835,6 +835,57 @@ body::before{
   box-shadow: 0 0 8px currentColor;
 }
 
+/* Quota bar */
+.quota-bar{
+  height:8px;
+  border-radius:4px;
+  background: rgba(255,255,255,0.06);
+  overflow:hidden;
+  margin:6px 0;
+}
+.quota-fill{
+  height:100%;
+  background: linear-gradient(90deg, #4da6ff, var(--accent));
+  transition: width .4s ease;
+}
+.quota-fill.warn{ background: linear-gradient(90deg, #f5c518, #ff6b35) }
+.quota-fill.danger{ background: linear-gradient(90deg, #ff6b35, #ff4d4d) }
+.quota-row{
+  display:flex; justify-content:space-between;
+  font-size:.78rem; color: var(--text-dim);
+}
+
+/* Mentor picker */
+.mentor-picker{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap:8px;
+}
+.mentor-card-pick{
+  background: var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px 12px;
+  cursor:pointer;
+  transition: all .2s ease;
+}
+.mentor-card-pick.on{
+  border-color: var(--accent);
+  box-shadow: 0 0 14px var(--accent-soft);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+}
+.mentor-card-pick .mn-name{
+  font-family:'Cinzel', serif;
+  font-size:.8rem;
+  letter-spacing:.08em;
+  color: var(--text);
+}
+.mentor-card-pick .mn-title{
+  font-size:.72rem;
+  color: var(--text-mute);
+  margin-top:2px;
+}
+
 /* Monthly top */
 .mtop-row{
   display:flex; align-items:center; gap:10px;
@@ -1412,10 +1463,15 @@ body::before{
   <!-- ============ Settings page ============ -->
   <section class="page" id="page-settings">
     <div class="card">
+      <div class="card-title">導師選擇</div>
+      <div id="mentor-picker" class="mentor-picker"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title">導師頭像</div>
       <div class="setting-row">
         <div class="upload-preview" id="mentor-avatar-settings"></div>
-        <div class="setting-label">
+        <div class="setting-label" id="mentor-settings-label">
           PROF. SEVERUS
           <div class="setting-desc">上傳 Gemini 生成的頭像，儲存於本機 localStorage</div>
         </div>
@@ -1460,6 +1516,12 @@ body::before{
         主題：霍格華茲四大學院 × 個人自律打卡<br>
         導師：PROF. SEVERUS · 毒舌但一針見血
       </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">儲存容量</div>
+      <div id="quota-info"></div>
+      <button class="btn ghost" onclick="archiveOld()" style="margin-top:8px">📦 歸檔 90 天前紀錄</button>
     </div>
 
     <div class="card">
@@ -1708,6 +1770,181 @@ const SCOLDINGS = [
   '勇氣不是宣告，勇氣是完成。你昨日只做了一半。未竟：『{tasks}』。',
 ];
 
+const MENTORS = {
+  severus: {
+    name: 'PROF. SEVERUS',
+    title: '石內卜 · 毒舌但一針見血',
+    morning: MENTOR_MORNING_LINES,
+    evening: MENTOR_EVENING_LINES,
+    scold:   SCOLDINGS,
+  },
+  dumbledore: {
+    name: 'PROF. DUMBLEDORE',
+    title: '鄧不利多 · 溫柔睿智',
+    morning: [
+      '早安，年輕的巫師。請記得——做出選擇，比擁有才能更重要。',
+      '又是新的一天。你不必完美，但請務必誠實地面對今日。',
+      '魔法不在於宣告有多漂亮，而在於你真的去做。',
+      '光明可以在最黑暗的時刻找到，只要一個人記得打開燈。',
+      '請對自己溫柔——但也請對自己負責。',
+      '每個早晨都是重新開始的機會，不要浪費它。',
+      '比起結果，我更在意你願不願意再試一次。',
+      '你的潛能如同魔法，使用後才會被看見。',
+      '別忘了，真正的勇氣，是向自己承諾的那一刻。',
+      '今天想做的事，寫下來。寫下來的，就有機會成真。',
+      '別把今天交給命運——命運常常比你更懶惰。',
+      '誠實地立誓，比漂亮地立誓更有力量。',
+      '當你選擇紀律，你就是在選擇未來的自由。',
+      '微小的一步，也是朝著星光前進。',
+      '早晨的咖啡香，是魔法世界給認真生活之人的獎勵。',
+    ],
+    evening: [
+      '夜幕低垂。今晚不是要你評判自己，而是要你認真回顧。',
+      '不論今日如何，請感謝自己嘗試過的每一刻。',
+      '回顧，是為了更好地繼續。',
+      '未完成的，請不必自責。明日仍有光。',
+      '請允許自己不完美——那是成長真正的起點。',
+      '你今日的選擇，終將匯聚成你這個人。',
+      '睡前請對自己說一句：「我在路上。」',
+      '今晚沒做完的事，請溫柔地放回心上。',
+      '真正的勝利，不是打勾，而是持續回來檢視。',
+      '願你帶著今日的一點點進步入眠。',
+      '夜風會替你帶走昨日的疲憊——但請把紀律留下。',
+      '你的每一步都被星辰紀錄著，不必向任何人證明。',
+      '紀律的溫柔，在於明日仍願意再來一次。',
+      '請不要用完美折磨自己，請用持續感動自己。',
+      '願你今晚的夢，比今晨的誓言更堅定。',
+    ],
+    scold: [
+      '昨天你宣告了『{tasks}』——我不責怪你，但我仍相信你明日會再試一次。',
+      '未完成的『{tasks}』正看著你。不是羞辱，是邀請。',
+      '我們都有失言的時候——重要的是，明日你是否還敢再立誓？『{tasks}』未竟。',
+      '請把昨日未完成的『{tasks}』當作老師，不是法官。',
+      '未兌現的『{tasks}』——不代表你差，只代表你還在學習自律的節奏。',
+      '昨日你許下的『{tasks}』還在等你。請用溫柔，而非罪惡感，去完成它。',
+      '『{tasks}』——它只是昨日被耽擱了。你可以今晚就把它重新拾起。',
+      '每一個未竟的誓言，都是明日的種子。『{tasks}』。',
+      '請原諒昨日的自己，然後不要再讓他失望。未完成：『{tasks}』。',
+      '我並不失望——我只是希望你記得今晨的自己。未達：『{tasks}』。',
+      '昨夜你沒做完的『{tasks}』，今晨不必用藉口為它蓋墳。',
+      '『{tasks}』未完——這不是你人生的判詞，只是今日的練習。',
+      '不完美的昨日，是為了成為完整的明日。『{tasks}』。',
+      '容我提醒你：『{tasks}』還在那裡，靜靜地等你回頭。',
+      '請帶著同理心面對昨日的自己——然後立下更實際的今日誓言。未竟：『{tasks}』。',
+    ],
+  },
+  mcgonagall: {
+    name: 'PROF. McGONAGALL',
+    title: '麥教授 · 嚴厲而關懷',
+    morning: [
+      '早安。請不要浪費今日的晨光——它不會回來。',
+      '宣告你的任務，然後好好執行。這是基本。',
+      '我對你有期待，但期待沒有意義——請用行動回應它。',
+      '早晨的紀律，決定了一整天的格調。',
+      '不要和我談靈感——談承諾。',
+      '請現在、立刻、馬上勾選你今日的任務。',
+      '每一天都從選擇開始，而不是從抱怨開始。',
+      '你不缺才能，你缺的只是坐下來、打開清單的三十秒。',
+      '別讓我在晚餐時間聽到「我忘了」。',
+      '今天想做的事——寫下來。真寫不出來，就抄別人的。',
+      '我不管你昨天如何，今天請給我交代。',
+      '請記得，紀律是格蘭芬多也需要學的一門課。',
+      '晨光不等人，別讓它把你看扁。',
+      '立誓並不困難，難的是你願不願意為它守時。',
+      '開始吧——這句話我已經說第三次了。',
+    ],
+    evening: [
+      '請告訴我，你今日的誓言兌現了多少？逐一點清。',
+      '一天的紀律，看晚上這份清單最誠實。',
+      '別偷懶也別說謊。每一項請認真回報。',
+      '做到的請立刻打勾，沒做到的請承認。',
+      '我不接受「我盡力了」——我只看結果。',
+      '今日的打卡，是明日的基石。',
+      '請先把今日處理完，再去規劃明日。順序不能顛倒。',
+      '紀律本身，比你以為的更值得慶祝。',
+      '睡前花五分鐘誠實面對自己——這是你該學會的技能。',
+      '打卡的態度，比打卡的項目更能說明你是誰。',
+      '該記錄的請記錄，該反省的請反省。',
+      '沒做完的，不要放任——寫下為什麼，明天補上。',
+      '進步永遠不會在完美的那一天出現，會在你誠實檢視的那一天。',
+      '請不要把「累」當成萬用藉口——每個人都累。',
+      '晚安——但先把打卡做完再說晚安。',
+    ],
+    scold: [
+      '昨日你宣告了『{tasks}』——結果呢？我等著聽你的解釋。',
+      '『{tasks}』未完成。請不要用「太忙」當藉口，每個人都忙。',
+      '我對你很失望，但更失望的是你自己。未竟：『{tasks}』。',
+      '格蘭芬多不會因為你未完成『{tasks}』而扣分——會的是你的自尊。',
+      '昨夜的誓言，今晨的灰燼。『{tasks}』全部未達。',
+      '請不要再讓我重複糾正你。未完成：『{tasks}』。',
+      '我要求很簡單：做了就打勾。你連這個都辦不到？『{tasks}』。',
+      '『{tasks}』還在清單上——請不要假裝看不到。',
+      '今晚不是在責備你，是在提醒你：你可以做得更好。『{tasks}』。',
+      '昨日未兌現的『{tasks}』——請寫下三個具體的補救方案。',
+      '紀律從不是天賦，是選擇。而你昨天做了錯的選擇。未竟：『{tasks}』。',
+      '我見過更糟的學生，但我不會因此對你降低標準。『{tasks}』。',
+      '請把昨日未完成的『{tasks}』記在床頭，每晚看一眼。',
+      '如果昨日是練習，那今日請展現成果。昨日未竟：『{tasks}』。',
+      '紀律的失守，往往始於一句「今天先算了」。『{tasks}』。',
+    ],
+  },
+  hermione: {
+    name: 'HERMIONE GRANGER',
+    title: '赫敏 · 學霸式加油型',
+    morning: [
+      '早安！我看了你的任務清單——很棒的規劃喔！',
+      '研究顯示，寫下目標的人達成率是沒寫的 3 倍，所以趕快勾起來！',
+      '我幫你加油！一個一個任務慢慢來，別緊張。',
+      '今天也要記得：進度比完美重要！',
+      '別忘了補充水分！（對，我連這都在乎。）',
+      '魔法咒語念對只需要一次，習慣養成需要每天練。',
+      '每個小任務，都是你成為更好自己的一章節。',
+      '我的建議是：把最不想做的放第一個。真的有效。',
+      '我已經幫你查好資料了——自律能提升幸福感 38% 耶！',
+      '早餐記得吃，血糖穩才有意思志力！',
+      '別把自己逼太緊，但也別對自己太鬆。',
+      '你比你以為的還厲害——只是需要多一點耐心。',
+      '建議早上先做 5 分鐘最小版本的任務，很容易就上手了！',
+      '「微小持續」勝過「激烈偶爾」——相信我，我做過實驗。',
+      '我們一起加油好嗎？Today is a good day to be disciplined！',
+    ],
+    evening: [
+      '辛苦了一天！來看看你今天完成了多少吧！',
+      '不論多少都值得記錄——過程本身就是成就。',
+      '記得寫一點筆記，未來的你會感謝今天的你！',
+      '如果沒全部達成也沒關係，關鍵是「下一次」。',
+      '我超級推薦睡前寫下三件感謝的事，真的有效！',
+      '今日完成的請誠實打勾——你值得這份肯定。',
+      '研究指出，固定時間回顧，效果會大幅提升。',
+      '你比昨天更進步了嗎？哪怕一點點都算！',
+      '別忘了好好休息，睡眠品質也是自律的一部分。',
+      '我做過統計，打勾時腦內啡會大量分泌——所以盡情打吧！',
+      '把今天的反省整理好，明日才有清晰的方向。',
+      '你知道嗎？持續 21 天就會形成習慣——你離目標更近了！',
+      '挑一個最有成就感的項目，告訴自己「我做得很棒」！',
+      '把未完成的挪到明天，並想一下為什麼——這才是真覆盤。',
+      '晚安之前，記得給自己一個微笑。',
+    ],
+    scold: [
+      '嗯……我看了一下，你昨天的『{tasks}』沒完成耶。要不要看看為什麼？',
+      '我不會罵你啦，但我們來想想『{tasks}』為什麼做不到。',
+      '欸欸，『{tasks}』空了一整排喔，今天補起來吧！',
+      '我研究過，連續未達成會降低自我效能感——所以今晚請一定補上『{tasks}』。',
+      '『{tasks}』沒打勾沒關係，但要寫下你之所以沒做的真正原因。',
+      '別用「沒時間」敷衍我，我幫你規劃過，24 小時夠的。未完成：『{tasks}』。',
+      '我替你查了資料：這些『{tasks}』其實只需要各 5 分鐘——今天就試試。',
+      '我相信你做得到，只是昨天用錯順序了。未竟：『{tasks}』。',
+      '不用自責，但請採取行動——這是我讀過所有書裡最一致的建議。『{tasks}』。',
+      '『{tasks}』未完成不是末日，只是一個待辦事項被延後。',
+      '別把「累」當萬能藉口——我才是那個需要擔心時間的人！未竟：『{tasks}』。',
+      '我們來訂一個更小的版本——一半也好。『{tasks}』。',
+      '連羅恩都能每天做到兩項——你一定也可以！未竟：『{tasks}』。',
+      '數據顯示：昨天沒做的，越快補上成本越低。請現在處理『{tasks}』。',
+      '請把『{tasks}』重新排進今晚——我會幫你加油（雖然只是語音上）！',
+    ],
+  },
+};
+
 /* ---------- Default mentor SVG ---------- */
 const DEFAULT_MENTOR_SVG = `
 <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
@@ -1773,6 +2010,7 @@ function defaultState(){
     achievements: {}, // id -> ISO unlock timestamp
     onboarded: false,
     muted: true,
+    mentor: 'severus',
   };
 }
 
@@ -1882,11 +2120,16 @@ function pickFromList(list){
   return list[idx];
 }
 
+function currentMentor(){
+  return MENTORS[state.mentor] || MENTORS.severus;
+}
+
 function renderMentorLine(){
-  const line = currentDayTab === 'morning'
-    ? pickFromList(MENTOR_MORNING_LINES)
-    : pickFromList(MENTOR_EVENING_LINES);
-  document.getElementById('mentor-line').textContent = line;
+  const m = currentMentor();
+  const pool = currentDayTab === 'morning' ? m.morning : m.evening;
+  document.getElementById('mentor-line').textContent = pickFromList(pool);
+  const nameEl = document.querySelector('.mentor-name');
+  if(nameEl) nameEl.textContent = m.name;
 }
 
 function renderDailyQuote(){
@@ -2146,7 +2389,7 @@ function renderScoldingBox(){
   if(missed.length === 0){ box.innerHTML=''; return; }
 
   const names = missed.map(t => t.name).join('、');
-  const tmpl = pickFromList(SCOLDINGS);
+  const tmpl = pickFromList(currentMentor().scold);
   const text = tmpl.replace('{tasks}', names);
   box.innerHTML = `<div class="mentor-line scolding">${escapeHTML(text)}</div>`;
 
@@ -2635,7 +2878,10 @@ function renderLeaderboard(){
 }
 
 /* ---------- Navigation / tabs ---------- */
-function switchPage(name){
+const VALID_PAGES = ['home','library','report','settings'];
+
+function switchPage(name, opts){
+  if(!VALID_PAGES.includes(name)) name = 'home';
   currentPage = name;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
@@ -2645,9 +2891,24 @@ function switchPage(name){
   else if(name === 'report'){ renderReportPage(); }
   else if(name === 'settings'){
     renderMentorAvatars();
+    renderMentorPicker();
+    renderQuotaInfo();
     const mt = document.getElementById('mute-toggle');
     if(mt) mt.checked = !state.muted;
   }
+  if(!(opts && opts.fromHash)){
+    const want = '#' + name;
+    if(location.hash !== want){
+      try { history.replaceState(null, '', want); } catch(e){ location.hash = want; }
+    }
+  }
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+function routeFromHash(){
+  const h = (location.hash || '').replace(/^#/, '').split('/')[0];
+  const target = VALID_PAGES.includes(h) ? h : 'home';
+  if(target !== currentPage) switchPage(target, { fromHash: true });
 }
 
 function switchDayTab(tab){
@@ -2807,6 +3068,31 @@ function uploadAvatar(ev){
   reader.readAsDataURL(file);
 }
 
+function renderMentorPicker(){
+  const el = document.getElementById('mentor-picker');
+  if(!el) return;
+  el.innerHTML = Object.entries(MENTORS).map(([key, m]) => `
+    <div class="mentor-card-pick ${state.mentor===key?'on':''}" onclick="selectMentor('${key}')">
+      <div class="mn-name">${m.name}</div>
+      <div class="mn-title">${m.title}</div>
+    </div>
+  `).join('');
+  const lbl = document.getElementById('mentor-settings-label');
+  if(lbl){
+    const m = currentMentor();
+    lbl.firstChild.textContent = m.name;
+  }
+}
+
+function selectMentor(key){
+  if(!MENTORS[key]) return;
+  state.mentor = key;
+  saveState();
+  renderMentorPicker();
+  renderMentorLine();
+  toast('導師已切換：' + MENTORS[key].name);
+}
+
 function resetAvatar(){
   state.mentorImage = null;
   saveState();
@@ -2933,6 +3219,74 @@ function importData(ev){
     ev.target.value = '';
   };
   reader.readAsText(file);
+}
+
+function estimateStorageBytes(){
+  // Rough estimate: sum length of all localStorage keys/values * 2 (UTF-16)
+  let bytes = 0;
+  try {
+    for(let i=0; i<localStorage.length; i++){
+      const k = localStorage.key(i);
+      const v = localStorage.getItem(k) || '';
+      bytes += (k.length + v.length) * 2;
+    }
+  } catch(e){}
+  return bytes;
+}
+
+function formatBytes(n){
+  if(n < 1024) return n + ' B';
+  if(n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1024 / 1024).toFixed(2) + ' MB';
+}
+
+function renderQuotaInfo(){
+  const el = document.getElementById('quota-info');
+  if(!el) return;
+  const used = estimateStorageBytes();
+  const LIMIT = 5 * 1024 * 1024;
+  const pct = Math.min(100, (used / LIMIT) * 100);
+  let cls = '';
+  if(pct >= 80) cls = 'danger';
+  else if(pct >= 50) cls = 'warn';
+  const dates = new Set([
+    ...Object.keys(state.declarations || {}),
+    ...Object.keys(state.completions || {}),
+    ...Object.keys(state.notes || {}),
+  ]);
+  el.innerHTML = `
+    <div class="quota-row"><span>已使用</span><span>${formatBytes(used)} / ~5 MB</span></div>
+    <div class="quota-bar"><div class="quota-fill ${cls}" style="width:${pct.toFixed(1)}%"></div></div>
+    <div class="quota-row"><span>紀錄天數</span><span>${dates.size} 天</span></div>
+    ${pct >= 80 ? '<p class="small" style="color:#ff8888;margin-top:6px">容量接近上限，建議歸檔舊紀錄或匯出備份。</p>' : ''}
+  `;
+}
+
+function archiveOld(){
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  const cutoffKey = dateKey(cutoff);
+
+  const countToTrim = (obj) => Object.keys(obj || {}).filter(k => k < cutoffKey).length;
+  const trimD = countToTrim(state.declarations);
+  const trimC = countToTrim(state.completions);
+  const trimN = countToTrim(state.notes);
+  const total = trimD + trimC + trimN;
+  if(total === 0){ toast('目前沒有 90 天前的紀錄'); return; }
+  if(!confirm(`即將歸檔（刪除）${cutoffKey} 之前的紀錄：\n· 宣告 ${trimD} 天\n· 完成 ${trimC} 天\n· 筆記 ${trimN} 天\n\n建議先匯出備份。是否繼續？`)) return;
+
+  const trim = (obj) => {
+    if(!obj) return {};
+    const out = {};
+    for(const [k, v] of Object.entries(obj)){ if(k >= cutoffKey) out[k] = v; }
+    return out;
+  };
+  state.declarations = trim(state.declarations);
+  state.completions  = trim(state.completions);
+  state.notes        = trim(state.notes);
+  saveState();
+  renderQuotaInfo();
+  toast('已歸檔舊紀錄');
 }
 
 function clearAllData(){
@@ -3437,7 +3791,17 @@ function boot(){
   updateTheme();
   initParticles();
   checkAchievements();
-  renderHome();
+
+  // Initial route from hash
+  const initial = (location.hash || '').replace(/^#/, '').split('/')[0];
+  if(VALID_PAGES.includes(initial) && initial !== 'home'){
+    switchPage(initial, { fromHash: true });
+  } else {
+    renderHome();
+  }
+
+  window.addEventListener('hashchange', routeFromHash);
+
   maybeShowOnboard();
   maybeShowIosInstall();
   initShortcuts();
