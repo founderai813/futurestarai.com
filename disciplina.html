@@ -15,7 +15,9 @@
 <link id="manifest-link" rel="manifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" onload="window.__fontsLink=true">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet"></noscript>
 <style>
 /* ============================================================
    Disciplina — 自律魔典
@@ -565,6 +567,15 @@ body::before{
 }
 .qa-chip:hover{ color: var(--text); border-color: var(--accent) }
 .qa-chip.on{ border-style:solid; color: var(--text) }
+
+/* Library toolbar */
+.lib-toolbar{
+  display:flex;
+  gap:8px;
+  margin-bottom:8px;
+}
+.lib-search{flex:1.6}
+.lib-filter{flex:1}
 
 /* Collapsible house group */
 .group{
@@ -1340,6 +1351,16 @@ body::before{
 
     <div class="card">
       <div class="card-title">我的任務庫</div>
+      <div class="lib-toolbar">
+        <input class="input lib-search" id="lib-search" placeholder="搜尋任務名稱或圖示" oninput="renderLibraryList()">
+        <select class="select lib-filter" id="lib-filter" onchange="renderLibraryList()">
+          <option value="all">全部學院</option>
+          <option value="gryffindor">🦁 葛來芬多</option>
+          <option value="hufflepuff">🦡 赫夫帕夫</option>
+          <option value="slytherin">🐍 斯萊哲林</option>
+          <option value="ravenclaw">🦅 雷文克勞</option>
+        </select>
+      </div>
       <div id="library-list"></div>
     </div>
   </section>
@@ -2203,7 +2224,22 @@ function renderLibraryList(){
     el.innerHTML = emptyHTML('⚗️', '任務庫空空如也', '從上方預設任務或自訂任務開始');
     return;
   }
-  const grouped = groupTasksByHouse(state.tasks);
+  const search = (document.getElementById('lib-search')?.value || '').trim().toLowerCase();
+  const filter = document.getElementById('lib-filter')?.value || 'all';
+
+  let tasks = state.tasks;
+  if(filter !== 'all') tasks = tasks.filter(t => t.house === filter);
+  if(search) tasks = tasks.filter(t =>
+    t.name.toLowerCase().includes(search)
+    || (t.icon || '').toLowerCase().includes(search)
+  );
+
+  if(tasks.length === 0){
+    el.innerHTML = emptyHTML('🔍', '沒有符合條件的任務', '試試清除搜尋或切換學院');
+    return;
+  }
+
+  const grouped = groupTasksByHouse(tasks);
   el.innerHTML = HOUSE_ORDER.map(h => {
     if(!grouped[h] || !grouped[h].length) return '';
     const collapsed = collapsedGroups.library.has(h);
@@ -2957,7 +2993,23 @@ async function generateShareCard(){
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
 
-  try { await (document.fonts && document.fonts.ready); } catch(e){}
+  // Preheat fonts so first generation isn't ugly
+  try {
+    if(document.fonts && document.fonts.load){
+      await Promise.all([
+        document.fonts.load('700 56px Cinzel'),
+        document.fonts.load('500 22px Cinzel'),
+        document.fonts.load('700 80px Cinzel'),
+        document.fonts.load('700 38px Cinzel'),
+        document.fonts.load('700 44px Cinzel'),
+        document.fonts.load('500 22px "Noto Sans TC"'),
+        document.fonts.load('600 26px "Noto Sans TC"'),
+        document.fonts.load('500 18px "Noto Sans TC"'),
+        document.fonts.load('500 20px "Noto Sans TC"'),
+      ]);
+      await document.fonts.ready;
+    }
+  } catch(e){}
 
   // Background
   const g = ctx.createLinearGradient(0, 0, W, H);
@@ -3281,6 +3333,70 @@ function injectManifest(){
   if(link) link.href = url;
 }
 
+/* ---------- Shortcuts: keyboard + swipe ---------- */
+function initShortcuts(){
+  // Ignore typing in inputs
+  function isTyping(){
+    const el = document.activeElement;
+    if(!el) return false;
+    const tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
+  }
+
+  // Keyboard
+  document.addEventListener('keydown', e => {
+    // Esc closes any open modal
+    if(e.key === 'Escape'){
+      const lvl = document.getElementById('levelup-modal');
+      const sh  = document.getElementById('share-modal');
+      const ob  = document.getElementById('onboard');
+      if(ob && ob.classList.contains('show')){ closeOnboard(); return; }
+      if(lvl && lvl.classList.contains('show')){ closeLevelUp(); return; }
+      if(sh  && sh.classList.contains('show')){  closeShareCard(); return; }
+    }
+    if(isTyping()) return;
+    if(e.metaKey || e.ctrlKey || e.altKey) return;
+
+    // Number keys → pages
+    const pages = { '1':'home', '2':'library', '3':'report', '4':'settings' };
+    if(pages[e.key]){ switchPage(pages[e.key]); e.preventDefault(); return; }
+
+    // M / E → day tab on home
+    if(currentPage === 'home'){
+      if(e.key === 'm' || e.key === 'M'){ switchDayTab('morning'); e.preventDefault(); }
+      else if(e.key === 'e' || e.key === 'E'){ switchDayTab('evening'); e.preventDefault(); }
+    }
+  });
+
+  // Touch swipe on home page (left/right between morning/evening)
+  let sx = 0, sy = 0, t0 = 0, swiping = false;
+  const home = document.getElementById('page-home');
+  if(!home) return;
+  home.addEventListener('touchstart', e => {
+    if(e.touches.length !== 1) return;
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+    t0 = Date.now();
+    swiping = true;
+  }, { passive: true });
+  home.addEventListener('touchend', e => {
+    if(!swiping) return;
+    swiping = false;
+    if(currentPage !== 'home') return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - sx;
+    const dy = t.clientY - sy;
+    const dt = Date.now() - t0;
+    if(dt > 500) return;
+    if(Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+    // Don't hijack swipes that started inside textarea (notes)
+    const target = e.target.closest('textarea, .note-wrap, .modal');
+    if(target) return;
+    if(dx < 0) switchDayTab('evening');
+    else switchDayTab('morning');
+  }, { passive: true });
+}
+
 /* ---------- Boot ---------- */
 function maybeShowOnboard(){
   if(!state.onboarded){
@@ -3324,6 +3440,7 @@ function boot(){
   renderHome();
   maybeShowOnboard();
   maybeShowIosInstall();
+  initShortcuts();
 
   // Auto-switch day tab every 5 minutes in case user keeps the page open
   setInterval(() => {
