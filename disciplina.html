@@ -46,6 +46,31 @@
   --hufflepuff: #f5c518;
   --slytherin: #2ecc71;
   --ravenclaw: #4da6ff;
+
+  /* Seasonal tint (defaults = spring) */
+  --season-a: rgba(46,204,113,0.16);
+  --season-b: rgba(123,80,220,0.14);
+  --season-c: rgba(255,107,53,0.08);
+}
+body.season-spring{
+  --season-a: rgba(46,204,113,0.18);
+  --season-b: rgba(123,80,220,0.12);
+  --season-c: rgba(245,197,24,0.08);
+}
+body.season-summer{
+  --season-a: rgba(255,107,53,0.18);
+  --season-b: rgba(245,197,24,0.15);
+  --season-c: rgba(77,166,255,0.08);
+}
+body.season-autumn{
+  --season-a: rgba(245,197,24,0.18);
+  --season-b: rgba(255,107,53,0.14);
+  --season-c: rgba(123,80,220,0.08);
+}
+body.season-winter{
+  --season-a: rgba(77,166,255,0.2);
+  --season-b: rgba(123,80,220,0.18);
+  --season-c: rgba(46,204,113,0.06);
 }
 
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -123,15 +148,16 @@ body.hc .leading::after{
 body{
   font-family:'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
   background:
-    radial-gradient(1200px 800px at 10% -10%, rgba(123,80,220,0.18), transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, rgba(77,166,255,0.12), transparent 60%),
-    radial-gradient(700px 500px at 50% 120%, rgba(255,107,53,0.1), transparent 60%),
+    radial-gradient(1200px 800px at 10% -10%, var(--season-a), transparent 60%),
+    radial-gradient(900px 700px at 110% 10%, var(--season-b), transparent 60%),
+    radial-gradient(700px 500px at 50% 120%, var(--season-c), transparent 60%),
     linear-gradient(180deg, #090612 0%, #0a0814 50%, #0b0a1a 100%);
   color:var(--text);
   min-height:100vh;
   overflow-x:hidden;
   position:relative;
   padding-bottom:84px;
+  transition: background 1s ease;
 }
 
 /* Starry twinkle */
@@ -931,6 +957,51 @@ body::before{
   box-shadow: 0 0 8px currentColor;
 }
 
+/* Changelog */
+.cl-entry{
+  margin:10px 0;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border:1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+}
+.cl-head{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  margin-bottom:6px;
+}
+.cl-ver{
+  font-family:'Cinzel', serif;
+  font-size:.85rem;
+  font-weight:700;
+  color: var(--accent);
+  letter-spacing:.08em;
+}
+.cl-date{
+  font-size:.7rem;
+  color: var(--text-mute);
+  font-family:'Cinzel', serif;
+}
+.cl-list{
+  list-style: none;
+  padding:0; margin:0;
+}
+.cl-list li{
+  font-size:.82rem;
+  line-height:1.65;
+  color: var(--text-dim);
+  padding: 2px 0 2px 12px;
+  position:relative;
+}
+.cl-list li::before{
+  content:'·';
+  position:absolute;
+  left:2px; top:2px;
+  color: var(--accent);
+}
+
 /* Quota bar */
 .quota-bar{
   height:8px;
@@ -1012,6 +1083,39 @@ body::before{
 .flashback .fb-empty{
   color: var(--text-dim);
   font-style: italic;
+}
+
+/* Monthly goal */
+.goal-row{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px;
+  margin:6px 0;
+  background: var(--surface-2);
+  border:1px solid var(--border);
+  border-left:3px solid var(--hc);
+  border-radius:12px;
+}
+.goal-main{ flex:1; min-width:0 }
+.goal-name{ color: var(--text); font-size:.9rem; margin-bottom:4px; display:flex; align-items:center; gap:6px }
+.goal-name .g-count{
+  margin-left:auto;
+  font-family:'Cinzel', serif;
+  color: var(--hc);
+  font-weight:700;
+  font-size:.85rem;
+}
+.goal-bar{
+  height:6px; border-radius:3px;
+  background: rgba(255,255,255,0.05);
+  overflow:hidden;
+}
+.goal-bar-fill{ height:100%; background: var(--hc); box-shadow: 0 0 8px var(--hc); transition: width .5s ease }
+.goal-row.done::after{
+  content:'✓';
+  flex-shrink:0;
+  color: var(--hc);
+  font-weight:700;
+  filter: drop-shadow(0 0 6px var(--hc));
 }
 
 /* Weekly challenge */
@@ -1757,6 +1861,12 @@ body::before{
       <div id="challenge-body"></div>
     </div>
 
+    <!-- Monthly goals -->
+    <div class="card" id="goals-card" style="display:none">
+      <div class="card-title">本月目標</div>
+      <div id="goals-list"></div>
+    </div>
+
     <!-- Daily quote -->
     <div class="card">
       <div class="quote" id="daily-quote">——</div>
@@ -1814,6 +1924,23 @@ body::before{
         <input class="input" id="custom-icon" placeholder="🔥" maxlength="2" style="flex:.6">
       </div>
       <button class="btn ghost" onclick="addCustomTask()">＋ 加入任務庫</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">本月目標</div>
+      <p class="small" style="margin-bottom:8px">設定本月想達成的累積目標（月底自動結算，不跨月）。</p>
+      <div class="form-row">
+        <select class="select" id="goal-kind" onchange="renderGoalFormTargets()">
+          <option value="task">任務達成次數</option>
+          <option value="house">學院積分累積</option>
+        </select>
+        <input class="input" id="goal-target" type="number" min="1" max="999" value="10" style="flex:0.6">
+      </div>
+      <div class="form-row">
+        <select class="select" id="goal-ref" style="flex:2.5"></select>
+        <button class="btn ghost" onclick="addGoal()" style="flex:1; margin-top:0">＋ 加入目標</button>
+      </div>
+      <div id="goals-admin-list" style="margin-top:8px"></div>
     </div>
 
     <div class="card">
@@ -1996,11 +2123,16 @@ body::before{
     <div class="card">
       <div class="card-title">關於</div>
       <p class="small" style="line-height:1.75">
-        Disciplina · 自律魔典 v1.2<br>
+        Disciplina · 自律魔典 v1.13<br>
         純前端單檔 App · 離線可用 · 資料保存於本機<br>
         主題：霍格華茲四大學院 × 個人自律打卡<br>
-        導師：PROF. SEVERUS · 毒舌但一針見血
+        導師：4 位可切換
       </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">版本更新紀錄</div>
+      <div id="changelog"></div>
     </div>
 
     <div class="card">
@@ -2257,6 +2389,79 @@ const MENTOR_EVENING_LINES = [
   '今晚沒打勾的部分，就是明天石內卜會盯著你的地方。',
   '願你在關燈前，至少能對著今日說一句：「我盡力了。」',
   '宣告只需勇氣，兌現才需品格。哪一項是你的？',
+];
+
+const CHANGELOG = [
+  { version:'v1.13', date:'2026-04-18', items:[
+    '月度大目標系統（任務次數 / 學院積分，月底自動結算）',
+    '依節氣微調背景配色（春綠、夏橙、秋金、冬藍）',
+    '版本更新紀錄頁面',
+  ]},
+  { version:'v1.12', date:'2026-04-18', items:[
+    '本機時間提醒（Notification API，需分頁開啟）',
+    '魔法氣氛音（Web Audio 合成墊音，可切換）',
+    '隱私模式：模糊任務名稱與筆記（快捷鍵 P）',
+  ]},
+  { version:'v1.11', date:'2026-04-18', items:[
+    '任務上下箭頭排序（同院內調整）',
+    '立誓羊皮紙儀式彈窗（含導師金句簽署）',
+    '一週回憶卡片：顯示 7/14/30 天前的修煉',
+  ]},
+  { version:'v1.10', date:'2026-04-18', items:[
+    'Cloudflare Worker AI Proxy 範本（worker/）與部署文件',
+    '對話紀錄保存開關（最近 40 則）',
+    '高對比模式（色弱/低光友善）',
+  ]},
+  { version:'v1.9', date:'2026-04-18', items:[
+    '本週挑戰（四種隨機模式 + 徽章解鎖）',
+    '本週總結卡（7 日熱力圖 + 積分 + 四院 PNG）',
+    '導師對話框（規則式回應 + AI 端點 hook）',
+  ]},
+  { version:'v1.8', date:'2026-04-18', items:[
+    '多導師系統：石內卜/鄧不利多/麥教授/赫敏',
+    'localStorage 容量監控 + 歸檔 90 天前紀錄',
+    'Hash 路由（#library/#report/#settings）',
+  ]},
+  { version:'v1.7', date:'2026-04-18', items:[
+    '鍵盤快捷（1-4/M/E/Esc）+ 觸控左右滑切早晚 Tab',
+    'Google Fonts 預載與戰報卡字體預熱',
+    '任務庫搜尋與學院篩選',
+  ]},
+  { version:'v1.6', date:'2026-04-18', items:[
+    '匯出修煉日誌 Markdown',
+    '今日戰報 PNG 分享卡（Canvas）',
+    'iOS 加入主畫面引導橫幅',
+  ]},
+  { version:'v1.5', date:'2026-04-18', items:[
+    '首次開啟分院帽歡迎頁',
+    '月度反思最常修煉排行',
+    'Web Audio 合成音效（打勾/宣告/升級/懲戒）',
+  ]},
+  { version:'v1.4', date:'2026-04-18', items:[
+    '週報修煉日誌卡片',
+    '成就徽章系統（9 個里程碑）',
+    '四院 30 日累積積分趨勢折線圖（純 SVG）',
+  ]},
+  { version:'v1.3', date:'2026-04-17', items:[
+    '晚間每項任務可寫筆記（自動保存）',
+    '早晨快捷：沿用昨日 / 全選本院 / 清空',
+    '石內卜台詞擴充至各 15 條',
+  ]},
+  { version:'v1.2', date:'2026-04-17', items:[
+    'JSON 備份與還原',
+    '任務庫與早晨宣告依學院折疊',
+    'PWA inline manifest（可加入主畫面）',
+  ]},
+  { version:'v1.1', date:'2026-04-17', items:[
+    '7/30 天熱力圖切換',
+    '懲戒台詞震動 + 紅光閃屏',
+    '稱號晉升粒子爆炸動畫',
+  ]},
+  { version:'v1.0', date:'2026-04-17', items:[
+    '四院積分與動態主題色',
+    '早晨宣告 / 晚間回報流程',
+    '任務庫、週報、石內卜懲戒、稱號晉升',
+  ]},
 ];
 
 const ACHIEVEMENTS = [
@@ -2537,6 +2742,7 @@ function defaultState(){
     reminder: { enabled: false, morning: '07:00', evening: '22:00', lastMorning: '', lastEvening: '' },
     ambient: false,
     privacy: false,
+    goals: [], // [{id, kind:'task'|'house', ref, target, month:'YYYY-MM', name}]
   };
 }
 
@@ -2977,6 +3183,8 @@ function triggerRedFlash(){
 function renderLibraryPage(){
   renderPresetTabs();
   renderPresetGrid();
+  renderGoalFormTargets();
+  renderGoalAdmin();
   renderLibraryList();
 }
 
@@ -3460,6 +3668,7 @@ function switchPage(name, opts){
     renderMentorAvatars();
     renderMentorPicker();
     renderQuotaInfo();
+    renderChangelog();
     const mt = document.getElementById('mute-toggle');
     if(mt) mt.checked = !state.muted;
     const hc = document.getElementById('hc-toggle');
@@ -3510,6 +3719,7 @@ function renderHome(){
   renderHouseRow();
   renderDailyQuote();
   renderChallenge();
+  renderGoals();
 
   // Sync morning pending selections with what's already declared
   const today = todayKey();
@@ -3519,6 +3729,133 @@ function renderHome(){
 
   // Activate the correct day-tab UI
   switchDayTab(currentDayTab);
+}
+
+/* ---------- Monthly goals ---------- */
+function currentMonthKey(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function pruneGoals(){
+  // Keep only goals for the current month
+  const m = currentMonthKey();
+  const before = state.goals?.length || 0;
+  state.goals = (state.goals || []).filter(g => g.month === m);
+  if(before !== state.goals.length) saveState();
+}
+
+function addGoal(){
+  const kind = document.getElementById('goal-kind').value;
+  const ref = document.getElementById('goal-ref').value;
+  const target = parseInt(document.getElementById('goal-target').value, 10);
+  if(!target || target < 1){ toast('請輸入有效目標值'); return; }
+  if(!ref){ toast('請選擇任務或學院'); return; }
+  let name = '';
+  if(kind === 'task'){
+    const t = state.tasks.find(x => x.id === ref);
+    if(!t){ toast('找不到該任務'); return; }
+    name = `${t.icon||'✨'} ${t.name} · ${target} 次`;
+  } else {
+    if(!HOUSES[ref]){ toast('無此學院'); return; }
+    name = `${HOUSES[ref].emoji} ${HOUSES[ref].name} · 累積 ${target} 分`;
+  }
+  state.goals = state.goals || [];
+  state.goals.push({
+    id: 'goal_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    kind, ref, target, name,
+    month: currentMonthKey(),
+  });
+  saveState();
+  renderGoalAdmin();
+  renderGoals();
+  toast('目標已新增');
+}
+
+function deleteGoal(id){
+  state.goals = (state.goals || []).filter(g => g.id !== id);
+  saveState();
+  renderGoalAdmin();
+  renderGoals();
+}
+
+function computeGoalProgress(g){
+  // Progress within current month only
+  const m = currentMonthKey();
+  let p = 0;
+  for(const [dk, comp] of Object.entries(state.completions || {})){
+    if(!dk.startsWith(m)) continue;
+    for(const [taskId, done] of Object.entries(comp || {})){
+      if(!done) continue;
+      if(g.kind === 'task' && taskId === g.ref) p += 1;
+      if(g.kind === 'house'){
+        const t = state.tasks.find(x => x.id === taskId);
+        if(t && t.house === g.ref) p += t.pts;
+      }
+    }
+  }
+  return p;
+}
+
+function renderGoalFormTargets(){
+  const kind = document.getElementById('goal-kind').value;
+  const ref = document.getElementById('goal-ref');
+  if(!ref) return;
+  if(kind === 'task'){
+    if(state.tasks.length === 0){
+      ref.innerHTML = '<option value="">（請先建立任務）</option>';
+    } else {
+      ref.innerHTML = state.tasks.map(t => `<option value="${t.id}">${t.icon||'✨'} ${escapeHTML(t.name)}（${HOUSES[t.house].name}）</option>`).join('');
+    }
+  } else {
+    ref.innerHTML = HOUSE_ORDER.map(h => `<option value="${h}">${HOUSES[h].emoji} ${HOUSES[h].name}</option>`).join('');
+  }
+}
+
+function renderGoalAdmin(){
+  const el = document.getElementById('goals-admin-list');
+  if(!el) return;
+  pruneGoals();
+  if(!state.goals || state.goals.length === 0){
+    el.innerHTML = `<div class="small" style="color:var(--text-mute);padding:6px 2px">尚未設定本月目標。</div>`;
+    return;
+  }
+  el.innerHTML = state.goals.map(g => {
+    const hc = g.kind === 'house' ? HOUSES[g.ref].color : (state.tasks.find(t=>t.id===g.ref)?.house && HOUSES[state.tasks.find(t=>t.id===g.ref).house].color) || 'var(--accent)';
+    return `
+      <div class="task-row" style="--hc:${hc}">
+        <div class="task-body">
+          <div class="task-name">${escapeHTML(g.name)}</div>
+          <div class="task-meta">${g.month} · 進度 ${computeGoalProgress(g)}/${g.target}</div>
+        </div>
+        <button class="task-del" onclick="deleteGoal('${g.id}')">✕</button>
+      </div>`;
+  }).join('');
+}
+
+function renderGoals(){
+  const card = document.getElementById('goals-card');
+  const list = document.getElementById('goals-list');
+  if(!card || !list) return;
+  pruneGoals();
+  if(!state.goals || state.goals.length === 0){
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+  list.innerHTML = state.goals.map(g => {
+    const progress = computeGoalProgress(g);
+    const hc = g.kind === 'house' ? HOUSES[g.ref].color : (state.tasks.find(t=>t.id===g.ref)?.house && HOUSES[state.tasks.find(t=>t.id===g.ref).house].color) || 'var(--accent)';
+    const pct = Math.min(100, Math.round(progress/g.target*100));
+    const done = progress >= g.target;
+    return `
+      <div class="goal-row ${done?'done':''}" style="--hc:${hc}">
+        <div class="goal-main">
+          <div class="goal-name">${escapeHTML(g.name)}<span class="g-count">${progress}/${g.target}</span></div>
+          <div class="goal-bar"><div class="goal-bar-fill" style="width:${pct}%"></div></div>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 /* ---------- Weekly challenge ---------- */
@@ -3732,6 +4069,7 @@ function toggleTask(id){
   renderHouseRow();
   renderEveningPanel();
   renderChallenge();
+  renderGoals();
 }
 
 function checkLevelUp(house, before, after){
@@ -3974,6 +4312,22 @@ function importData(ev){
     ev.target.value = '';
   };
   reader.readAsText(file);
+}
+
+function renderChangelog(){
+  const el = document.getElementById('changelog');
+  if(!el) return;
+  el.innerHTML = CHANGELOG.map(e => `
+    <div class="cl-entry">
+      <div class="cl-head">
+        <span class="cl-ver">${escapeHTML(e.version)}</span>
+        <span class="cl-date">${escapeHTML(e.date)}</span>
+      </div>
+      <ul class="cl-list">
+        ${e.items.map(x => `<li>${escapeHTML(x)}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
 }
 
 function estimateStorageBytes(){
@@ -5115,8 +5469,20 @@ function closeOnboard(){
   sfxDeclare();
 }
 
+function applySeasonTheme(){
+  const m = new Date().getMonth() + 1;
+  let s = 'spring';
+  if(m >= 3 && m <= 5) s = 'spring';
+  else if(m >= 6 && m <= 8) s = 'summer';
+  else if(m >= 9 && m <= 11) s = 'autumn';
+  else s = 'winter';
+  document.body.classList.remove('season-spring','season-summer','season-autumn','season-winter');
+  document.body.classList.add('season-' + s);
+}
+
 function boot(){
   injectManifest();
+  applySeasonTheme();
   if(state.highContrast) document.body.classList.add('hc');
   if(state.privacy) document.body.classList.add('privacy');
   // Ambient requires a user gesture, so just mark state — will auto-start on first interaction
