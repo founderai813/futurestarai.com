@@ -416,6 +416,45 @@ body::before{
 }
 .task-del:hover{color:#ff6666; background: rgba(255,80,80,0.1)}
 
+/* Task note (evening) */
+.note-btn{
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text-mute);
+  font-size:.78rem;
+  padding:4px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  flex-shrink:0;
+}
+.note-btn.has{color: var(--hc); border-color: var(--hc)}
+.note-wrap{
+  margin:-4px 0 10px;
+  padding: 10px 12px;
+  background: rgba(10,8,20,0.55);
+  border:1px solid var(--border);
+  border-left:3px solid var(--hc, var(--accent));
+  border-radius: 10px;
+  display:none;
+}
+.note-wrap.open{display:block; animation: fadeIn .2s ease}
+.note-wrap textarea{
+  width:100%;
+  min-height: 70px;
+  resize: vertical;
+  background: rgba(10,8,20,0.5);
+  border:1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family:inherit;
+  font-size:.88rem;
+  line-height:1.55;
+  padding:8px 10px;
+  outline:none;
+}
+.note-wrap textarea:focus{border-color: var(--accent)}
+.note-wrap .hint{font-size:.7rem; color:var(--text-mute); margin-top:6px; text-align:right}
+
 /* Buttons */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
@@ -458,6 +497,27 @@ body::before{
   line-height:1.7;
 }
 .empty .emoji{font-size:2rem; display:block; margin-bottom:6px; opacity:.6}
+
+/* Morning quick-action chips */
+.quick-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
+.qa-chip{
+  background: rgba(10,8,20,0.4);
+  border:1px dashed var(--border-strong);
+  color: var(--text-dim);
+  font-size:.76rem;
+  padding:6px 11px;
+  border-radius:18px;
+  cursor:pointer;
+  transition: all .2s ease;
+  font-family:inherit;
+}
+.qa-chip:hover{ color: var(--text); border-color: var(--accent) }
+.qa-chip.on{ border-style:solid; color: var(--text) }
 
 /* Collapsible house group */
 .group{
@@ -933,6 +993,7 @@ body::before{
     <!-- Morning panel -->
     <div class="card" id="morning-panel">
       <div class="card-title">從任務庫勾選今日修煉</div>
+      <div class="quick-actions" id="quick-actions"></div>
       <div id="morning-list"></div>
       <button class="btn" id="declare-btn" onclick="declareMorning()">🪄 立誓修煉</button>
     </div>
@@ -1171,6 +1232,15 @@ const MENTOR_MORNING_LINES = [
   '我預期你今天會讓我失望——請用行動證明我是錯的。',
   '你的晨光如此珍貴，別把它浪費在虛榮上。立誓吧。',
   '黎明會見證一切。你的誓言、你的懶惰、你的藉口。',
+  '咖啡熱了嗎？很好。那就別再躺著思考人生意義，先勾項目。',
+  '晨曦帶來的不是奇蹟，而是選擇權。用掉它，否則它自然會離你而去。',
+  '今天不是你開始偉大的一天，也未必是。但它至少可以不是失敗的一天。',
+  '鳳凰的灰燼也要清理——先從今天一項任務開始。',
+  '你不需要魔法，你只需要踐行。勾選它。',
+  '不要等靈感。靈感是給弱者的藉口——有紀律的人不依賴它。',
+  '請不要再讓我從頭再對你說一次重複的話。你應該比我更清楚自己該做什麼。',
+  '別假裝在思考。你只是還沒準備好面對今日。',
+  '黎明的時間屬於有紀律的靈魂，不屬於還在刷手機的你。',
 ];
 
 const MENTOR_EVENING_LINES = [
@@ -1180,6 +1250,15 @@ const MENTOR_EVENING_LINES = [
   '夜幕低垂，真相無所遁形。逐一核對你承諾的每一項。',
   '勝利者不靠宣告，而靠晚上的這份打卡。',
   '星光會照亮你的堅持——也會照亮你的放棄。',
+  '請在睡前回顧，不是為了感動自己，而是為了不重蹈覆轍。',
+  '別對自己撒謊。打勾的那一項，是不是其實只是敷衍了事？',
+  '一日的結束，正是看清自己的開始。你敢看嗎？',
+  '你不是輸給了別人，是輸給了自己早上的那份驕傲。',
+  '把打勾做完，然後再開始思考明天——這才是成熟的順序。',
+  '霍格華茲不會為不誠實的自我評價頒發學分。',
+  '今晚沒打勾的部分，就是明天石內卜會盯著你的地方。',
+  '願你在關燈前，至少能對著今日說一句：「我盡力了。」',
+  '宣告只需勇氣，兌現才需品格。哪一項是你的？',
 ];
 
 const SCOLDINGS = [
@@ -1189,6 +1268,15 @@ const SCOLDINGS = [
   '扣分？不。你本就是從零開始的人。昨天你沒完成：『{tasks}』。',
   '顯然，立下誓言對你而言如同喝水一般輕鬆，履行它卻如同魔法般困難。昨日未竟：『{tasks}』。',
   '我曾以為你只是愚鈍，現在我意識到你還是個空話者。『{tasks}』——一項未成。',
+  '昨日你向自己低語的那些誓言——『{tasks}』——在今晨已全數蒸發。',
+  '要不要我把昨天那張宣誓單裱起來，紀念一下你的徹底潰敗？未完成：『{tasks}』。',
+  '分院帽替你考慮過人生走向了，它的結論是：你還在準備期。未完成：『{tasks}』。',
+  '你有把誓言做完的魔力——只是似乎不在今日。昨日未兌現：『{tasks}』。',
+  '你宣告的節奏越來越像背誦咒語，執行力卻越來越像麻瓜。未完成：『{tasks}』。',
+  '昨晚的你勇氣可嘉——可惜只存在宣告那一秒。『{tasks}』，未達成。',
+  '我本想給你一次嚴厲的眼神——發現你連被瞪的資格都還沒賺到。未完成：『{tasks}』。',
+  '把昨日未完成的每一項『{tasks}』，當作石內卜記在小本子上的名字。',
+  '勇氣不是宣告，勇氣是完成。你昨日只做了一半。未竟：『{tasks}』。',
 ];
 
 /* ---------- Default mentor SVG ---------- */
@@ -1248,6 +1336,7 @@ function defaultState(){
     tasks: seedTasks,
     declarations: {},
     completions: {},
+    notes: {},
     housePoints: { gryffindor:0, hufflepuff:0, slytherin:0, ravenclaw:0 },
     mentorImage: null,
     selectedHouse: 'gryffindor',
@@ -1263,6 +1352,7 @@ function loadState(){
     const base = defaultState();
     return {
       ...base, ...parsed,
+      notes: parsed.notes || {},
       housePoints: { ...base.housePoints, ...(parsed.housePoints||{}) },
       lastTitles: { ...base.lastTitles, ...(parsed.lastTitles||{}) },
     };
@@ -1402,6 +1492,9 @@ function renderMorningPanel(){
   const alreadyDeclared = state.declarations[today] || null;
   const list = document.getElementById('morning-list');
   const btn = document.getElementById('declare-btn');
+  const qa = document.getElementById('quick-actions');
+
+  if(qa) qa.innerHTML = renderQuickActions(!!alreadyDeclared);
 
   if(alreadyDeclared){
     // Already declared today — show declared tasks read-only
@@ -1450,6 +1543,52 @@ function renderMorningPanel(){
     : `🪄 立誓修煉（${pendingDeclarations.size} 項）`;
 }
 
+function renderQuickActions(declared){
+  if(declared){
+    return `<span class="small" style="color:var(--text-mute)">今日誓言已立下，無法再修改。</span>`;
+  }
+  if(state.tasks.length === 0) return '';
+  const yKey = yesterdayKey();
+  const yList = state.declarations[yKey] || [];
+  const validYesterday = yList.filter(id => state.tasks.some(t => t.id===id)).length;
+  const chips = [];
+  if(validYesterday > 0){
+    chips.push(`<button class="qa-chip" onclick="quickRepeatYesterday()">↻ 沿用昨日（${validYesterday}）</button>`);
+  }
+  for(const h of HOUSE_ORDER){
+    const n = state.tasks.filter(t => t.house === h).length;
+    if(n === 0) continue;
+    chips.push(`<button class="qa-chip" style="color:${HOUSES[h].color}" onclick="quickSelectHouse('${h}')">＋${HOUSES[h].emoji} 全選</button>`);
+  }
+  chips.push(`<button class="qa-chip" onclick="quickClear()">✕ 清空</button>`);
+  return chips.join('');
+}
+
+function quickRepeatYesterday(){
+  const today = todayKey();
+  if(state.declarations[today]){ toast('今日已宣告'); return; }
+  const y = state.declarations[yesterdayKey()] || [];
+  const valid = y.filter(id => state.tasks.some(t => t.id===id));
+  if(valid.length === 0){ toast('昨日沒有宣告紀錄'); return; }
+  pendingDeclarations = new Set(valid);
+  renderMorningPanel();
+}
+
+function quickSelectHouse(h){
+  const today = todayKey();
+  if(state.declarations[today]){ toast('今日已宣告'); return; }
+  const ids = state.tasks.filter(t => t.house === h).map(t => t.id);
+  ids.forEach(id => pendingDeclarations.add(id));
+  renderMorningPanel();
+}
+
+function quickClear(){
+  const today = todayKey();
+  if(state.declarations[today]){ return; }
+  pendingDeclarations.clear();
+  renderMorningPanel();
+}
+
 function groupTasksByHouse(tasks){
   const g = {};
   for(const t of tasks){
@@ -1485,6 +1624,8 @@ function escapeHTML(s){
 }
 
 /* ---------- Home: evening panel ---------- */
+const openNotes = new Set();
+
 function renderEveningPanel(){
   renderScoldingBox();
   const today = todayKey();
@@ -1497,11 +1638,67 @@ function renderEveningPanel(){
   }
 
   const completions = state.completions[today] || {};
+  const notes = (state.notes && state.notes[today]) || {};
+
   list.innerHTML = declared.map(id => {
     const t = state.tasks.find(x => x.id === id);
     if(!t) return '';
-    return taskRowHTML(t, !!completions[id], false, true);
+    const hc = HOUSES[t.house].color;
+    const checked = !!completions[id];
+    const note = notes[id] || '';
+    const isOpen = openNotes.has(id);
+    const hasNote = note.trim().length > 0;
+    return `
+      <div class="task-row ${checked?'checked':''}" style="--hc:${hc}" onclick="toggleTaskFromRow(event, '${t.id}')">
+        <div class="checkbox">${checked ? '✓' : ''}</div>
+        <div class="task-icon">${t.icon || '✨'}</div>
+        <div class="task-body">
+          <div class="task-name">${escapeHTML(t.name)}</div>
+          <div class="task-meta">${HOUSES[t.house].emoji} ${HOUSES[t.house].name}</div>
+        </div>
+        <button class="note-btn ${hasNote?'has':''}" onclick="event.stopPropagation(); toggleNote('${t.id}')">
+          ${hasNote ? '📝' : '＋筆記'}
+        </button>
+        <div class="task-pts">+${t.pts}</div>
+      </div>
+      <div class="note-wrap ${isOpen?'open':''}" style="--hc:${hc}">
+        <textarea maxlength="500" placeholder="寫下今日反思、覆盤、重點……"
+          oninput="saveNote('${t.id}', this.value)">${escapeHTML(note)}</textarea>
+        <div class="hint">自動保存 · 最多 500 字</div>
+      </div>
+    `;
   }).join('');
+}
+
+function toggleTaskFromRow(ev, id){
+  // Avoid toggling when clicking on note textarea area
+  if(ev.target.closest('.note-wrap')) return;
+  toggleTask(id);
+}
+
+function toggleNote(id){
+  if(openNotes.has(id)) openNotes.delete(id); else openNotes.add(id);
+  renderEveningPanel();
+  if(openNotes.has(id)){
+    // Focus the newly opened textarea
+    setTimeout(() => {
+      const nodes = document.querySelectorAll('#evening-list textarea');
+      for(const n of nodes){
+        if(n.getAttribute('oninput')?.includes(id)){ n.focus(); break; }
+      }
+    }, 30);
+  }
+}
+
+function saveNote(id, value){
+  const today = todayKey();
+  state.notes = state.notes || {};
+  state.notes[today] = state.notes[today] || {};
+  if(value.trim().length === 0) delete state.notes[today][id];
+  else state.notes[today][id] = value;
+  // Debounce save
+  clearTimeout(window.__noteT);
+  window.__noteT = setTimeout(saveState, 400);
 }
 
 function renderScoldingBox(){
