@@ -51,6 +51,41 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 
+/* Privacy mode — blur task names, notes, journal text */
+body.privacy .task-name,
+body.privacy .task-meta,
+body.privacy .journal-head .task,
+body.privacy .journal-body,
+body.privacy .parchment-list li span:not(.hs),
+body.privacy .preset-chip span:not(.emo):not(.pts),
+body.privacy .mtop-name,
+body.privacy .note-wrap textarea{
+  filter: blur(5px);
+  transition: filter .3s ease;
+}
+body.privacy .task-name:hover,
+body.privacy .journal-body:hover,
+body.privacy .mtop-name:hover,
+body.privacy .note-wrap textarea:focus{
+  filter: none;
+}
+.privacy-badge{
+  position:fixed;
+  top:12px; right:12px;
+  background: rgba(30,24,50,0.9);
+  color: var(--accent);
+  padding: 5px 10px;
+  font-family:'Cinzel', serif;
+  font-size:.7rem;
+  letter-spacing:.15em;
+  border-radius:18px;
+  border:1px solid var(--accent);
+  z-index: 80;
+  display:none;
+  box-shadow: 0 2px 12px var(--accent-soft);
+}
+body.privacy .privacy-badge{ display:block }
+
 /* High-contrast mode */
 body.hc{
   --border: rgba(200,180,255,0.35);
@@ -1685,6 +1720,7 @@ body::before{
 <!-- Background effects -->
 <div class="top-glow"></div>
 <canvas id="particles"></canvas>
+<div class="privacy-badge">🔒 PRIVACY</div>
 
 <main class="app">
 
@@ -1879,6 +1915,29 @@ body::before{
     </div>
 
     <div class="card">
+      <div class="card-title">每日提醒</div>
+      <p class="small" style="margin-bottom:10px;line-height:1.6">
+        開啟後，在<strong>開啟本頁的狀態下</strong>，系統時間到達以下時刻會送出通知。
+        （純前端，無 Service Worker；關閉分頁則不會提醒。）
+      </p>
+      <div class="setting-row">
+        <div class="setting-label">啟用提醒<div class="setting-desc">需瀏覽器授權通知權限</div></div>
+        <label class="switch"><input type="checkbox" id="reminder-toggle" onchange="toggleReminder(this.checked)"><span class="switch-slider"></span></label>
+      </div>
+      <div class="form-row">
+        <label class="small" style="flex:1;display:flex;flex-direction:column;gap:4px">
+          <span>🌅 早晨提醒</span>
+          <input class="input" type="time" id="reminder-morning" onchange="setReminderTime('morning', this.value)">
+        </label>
+        <label class="small" style="flex:1;display:flex;flex-direction:column;gap:4px">
+          <span>🌙 晚間提醒</span>
+          <input class="input" type="time" id="reminder-evening" onchange="setReminderTime('evening', this.value)">
+        </label>
+      </div>
+      <div id="reminder-status" class="small" style="margin-top:6px;color:var(--text-mute)"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title">輔助設定</div>
       <div class="setting-row">
         <div class="setting-label">
@@ -1897,6 +1956,26 @@ body::before{
         </div>
         <label class="switch">
           <input type="checkbox" id="chat-persist-toggle" onchange="toggleChatPersist(this.checked)">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          魔法氣氛音
+          <div class="setting-desc">循環播放低音量合成墊音（可搭配背景）</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="ambient-toggle" onchange="toggleAmbient(this.checked)">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          隱私模式
+          <div class="setting-desc">模糊任務名稱與筆記，適合螢幕分享／旁觀時使用（快捷鍵 P）</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="privacy-toggle" onchange="togglePrivacy(this.checked)">
           <span class="switch-slider"></span>
         </label>
       </div>
@@ -2455,6 +2534,9 @@ function defaultState(){
     chatPersist: false,
     chatLog: [],
     highContrast: false,
+    reminder: { enabled: false, morning: '07:00', evening: '22:00', lastMorning: '', lastEvening: '' },
+    ambient: false,
+    privacy: false,
   };
 }
 
@@ -2468,6 +2550,7 @@ function loadState(){
       ...base, ...parsed,
       notes: parsed.notes || {},
       achievements: parsed.achievements || {},
+      reminder: { ...base.reminder, ...(parsed.reminder||{}) },
       housePoints: { ...base.housePoints, ...(parsed.housePoints||{}) },
       lastTitles: { ...base.lastTitles, ...(parsed.lastTitles||{}) },
     };
@@ -3383,6 +3466,17 @@ function switchPage(name, opts){
     if(hc) hc.checked = !!state.highContrast;
     const cp = document.getElementById('chat-persist-toggle');
     if(cp) cp.checked = !!state.chatPersist;
+    const rt = document.getElementById('reminder-toggle');
+    if(rt) rt.checked = !!state.reminder.enabled;
+    const rm = document.getElementById('reminder-morning');
+    if(rm) rm.value = state.reminder.morning || '07:00';
+    const re = document.getElementById('reminder-evening');
+    if(re) re.value = state.reminder.evening || '22:00';
+    renderReminderStatus();
+    const am = document.getElementById('ambient-toggle');
+    if(am) am.checked = !!state.ambient;
+    const pv = document.getElementById('privacy-toggle');
+    if(pv) pv.checked = !!state.privacy;
   }
   if(!(opts && opts.fromHash)){
     const want = '#' + name;
@@ -4431,6 +4525,89 @@ function sfxScold(){
   tone({ freq: 180, dur:0.3, type:'sawtooth', vol:0.06, at:0.1 });
 }
 
+/* ---------- Reminders ---------- */
+async function toggleReminder(on){
+  if(on){
+    if(!('Notification' in window)){
+      toast('此瀏覽器不支援通知');
+      document.getElementById('reminder-toggle').checked = false;
+      return;
+    }
+    let perm = Notification.permission;
+    if(perm === 'default'){
+      perm = await Notification.requestPermission();
+    }
+    if(perm !== 'granted'){
+      toast('未取得通知權限');
+      document.getElementById('reminder-toggle').checked = false;
+      state.reminder.enabled = false;
+      saveState();
+      renderReminderStatus();
+      return;
+    }
+  }
+  state.reminder.enabled = !!on;
+  saveState();
+  renderReminderStatus();
+  toast(on ? '提醒已啟用' : '提醒已關閉');
+}
+
+function setReminderTime(which, value){
+  if(!/^\d{2}:\d{2}$/.test(value)) return;
+  state.reminder[which] = value;
+  saveState();
+  renderReminderStatus();
+}
+
+function renderReminderStatus(){
+  const el = document.getElementById('reminder-status');
+  if(!el) return;
+  const perm = ('Notification' in window) ? Notification.permission : 'n/a';
+  const r = state.reminder;
+  el.textContent = r.enabled
+    ? `狀態：啟用中 · 權限：${perm} · 早晨 ${r.morning} / 晚間 ${r.evening}`
+    : '狀態：未啟用';
+}
+
+function reminderTick(){
+  if(!state.reminder.enabled) return;
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = new Date();
+  const hhmm = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  const today = todayKey();
+  const r = state.reminder;
+  if(hhmm === r.morning && r.lastMorning !== today){
+    r.lastMorning = today;
+    saveState();
+    notify('🌅 晨曦時刻', '立下你今日的誓言，別讓時間替你決定。');
+  }
+  if(hhmm === r.evening && r.lastEvening !== today){
+    r.lastEvening = today;
+    saveState();
+    notify('🌙 夜幕時刻', '該回報今日修煉了——逐一核對你宣告的每一項。');
+  }
+}
+
+function notify(title, body){
+  try {
+    new Notification(title, {
+      body,
+      icon: 'data:image/svg+xml;utf8,' + encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" rx="28" fill="#120d20"/><text x="64" y="88" text-anchor="middle" font-family="serif" font-weight="700" font-size="72" fill="#ff6b35">✦</text></svg>`
+      ),
+    });
+  } catch(e){ console.warn(e); }
+}
+
+function togglePrivacy(on, silent){
+  state.privacy = !!on;
+  saveState();
+  document.body.classList.toggle('privacy', !!on);
+  if(!silent) toast(on ? '🔒 隱私模式已開啟' : '隱私模式已關閉');
+  const el = document.getElementById('privacy-toggle');
+  if(el) el.checked = !!on;
+}
+
 function toggleHighContrast(on){
   state.highContrast = !!on;
   saveState();
@@ -4458,6 +4635,82 @@ function clearChatLog(){
     document.getElementById('chat-body').innerHTML = '';
   }
   toast('對話紀錄已清空');
+}
+
+/* ---------- Ambient pad ---------- */
+let _ambient = null;
+
+function startAmbient(){
+  // Reuse main audio context but do not respect 'muted' (ambient is separate volume)
+  if(!_audioCtx){
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e){ return; }
+  }
+  const ctx = _audioCtx;
+  if(ctx.state === 'suspended') ctx.resume();
+  if(_ambient) return;
+
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(0, ctx.currentTime);
+  master.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 3);
+  master.connect(ctx.destination);
+
+  // Two slow-detuned oscillators + slow LFO → warm pad
+  const roots = [146.83, 220, 293.66]; // D3, A3, D4
+  const oscs = [];
+  for(const f of roots){
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = f;
+    const g = ctx.createGain();
+    g.gain.value = 0.35;
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.07 + Math.random() * 0.06;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.2;
+    lfo.connect(lfoGain).connect(g.gain);
+    osc.connect(g).connect(master);
+    osc.start(); lfo.start();
+    oscs.push({ osc, lfo });
+  }
+  // A gentle filtered noise for sparkle
+  const bufferSize = ctx.sampleRate * 2;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0; i<bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.05;
+  const noise = ctx.createBufferSource();
+  noise.buffer = buffer; noise.loop = true;
+  const bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass'; bp.frequency.value = 1200; bp.Q.value = 8;
+  const ng = ctx.createGain(); ng.gain.value = 0.3;
+  noise.connect(bp).connect(ng).connect(master);
+  noise.start();
+
+  _ambient = { master, oscs, noise };
+}
+
+function stopAmbient(){
+  if(!_ambient) return;
+  const ctx = _audioCtx;
+  const t = ctx.currentTime;
+  _ambient.master.gain.cancelScheduledValues(t);
+  _ambient.master.gain.linearRampToValueAtTime(0, t + 1.5);
+  const amb = _ambient;
+  _ambient = null;
+  setTimeout(() => {
+    try {
+      for(const o of amb.oscs){ o.osc.stop(); o.lfo.stop(); }
+      amb.noise.stop();
+      amb.master.disconnect();
+    } catch(e){}
+  }, 1700);
+}
+
+function toggleAmbient(on){
+  state.ambient = !!on;
+  saveState();
+  if(on){ startAmbient(); toast('氣氛音樂已開啟'); }
+  else { stopAmbient(); toast('氣氛音樂已關閉'); }
 }
 
 function toggleMute(on){
@@ -4604,6 +4857,9 @@ function initShortcuts(){
       if(e.key === 'm' || e.key === 'M'){ switchDayTab('morning'); e.preventDefault(); }
       else if(e.key === 'e' || e.key === 'E'){ switchDayTab('evening'); e.preventDefault(); }
     }
+
+    // P → toggle privacy
+    if(e.key === 'p' || e.key === 'P'){ togglePrivacy(!state.privacy); e.preventDefault(); }
   });
 
   // Touch swipe on home page (left/right between morning/evening)
@@ -4862,6 +5118,12 @@ function closeOnboard(){
 function boot(){
   injectManifest();
   if(state.highContrast) document.body.classList.add('hc');
+  if(state.privacy) document.body.classList.add('privacy');
+  // Ambient requires a user gesture, so just mark state — will auto-start on first interaction
+  if(state.ambient){
+    const tryStart = () => { startAmbient(); window.removeEventListener('pointerdown', tryStart); };
+    window.addEventListener('pointerdown', tryStart, { once: true });
+  }
   updateTheme();
   initParticles();
   checkAchievements();
@@ -4875,6 +5137,10 @@ function boot(){
   }
 
   window.addEventListener('hashchange', routeFromHash);
+
+  // Reminder polling (once per minute)
+  setInterval(reminderTick, 30 * 1000);
+  reminderTick();
 
   maybeShowOnboard();
   maybeShowIosInstall();
