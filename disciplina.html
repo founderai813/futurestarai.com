@@ -900,6 +900,48 @@ body::before{
 .upload-preview img, .upload-preview svg{width:100%; height:100%; object-fit:cover; display:block}
 .file-input{display:none}
 
+/* iOS install banner */
+.ios-banner{
+  position:fixed;
+  left:50%; bottom:90px;
+  transform: translateX(-50%) translateY(16px);
+  width: calc(100% - 28px);
+  max-width: 420px;
+  z-index: 70;
+  opacity:0;
+  pointer-events:none;
+  transition: opacity .3s ease, transform .3s ease;
+}
+.ios-banner.show{
+  opacity:1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events:auto;
+}
+.ios-bubble{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(30,24,50,0.95), rgba(12,9,22,0.95));
+  border:1px solid var(--accent);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px var(--accent-soft);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.ios-body{display:flex; align-items:center; gap:10px; flex:1}
+.ios-close{
+  background:transparent;
+  border:none;
+  color:var(--text-mute);
+  font-size:1rem;
+  cursor:pointer;
+  padding:6px 8px;
+  border-radius:8px;
+  flex-shrink:0;
+}
+.ios-close:hover{color:var(--text); background: rgba(255,255,255,0.05)}
+
 /* Toggle switch */
 .switch{
   position:relative;
@@ -1261,6 +1303,7 @@ body::before{
     <div class="card" id="evening-panel" style="display:none">
       <div class="card-title">今日已宣告任務</div>
       <div id="evening-list"></div>
+      <button class="btn ghost" onclick="generateShareCard()" style="margin-top:10px">📸 產生今日戰報卡</button>
     </div>
   </section>
 
@@ -1385,6 +1428,7 @@ body::before{
         <button class="btn ghost" onclick="document.getElementById('import-file').click()">⬆ 匯入備份</button>
       </div>
       <input type="file" id="import-file" class="file-input" accept="application/json,.json" onchange="importData(event)">
+      <button class="btn ghost" onclick="exportMarkdown()" style="margin-top:8px">📝 匯出修煉日誌（Markdown）</button>
     </div>
 
     <div class="card">
@@ -1430,6 +1474,39 @@ body::before{
     <div class="title-name" id="levelup-title">——</div>
     <div class="title-house" id="levelup-house">——</div>
     <button onclick="closeLevelUp()">繼續修煉</button>
+  </div>
+</div>
+
+<!-- iOS install banner -->
+<div class="ios-banner" id="ios-banner">
+  <div class="ios-bubble">
+    <div class="ios-body">
+      <div style="font-size:1.6rem;flex-shrink:0">📱</div>
+      <div>
+        <div style="font-weight:600;color:var(--text);margin-bottom:2px">加到主畫面，離線也能用</div>
+        <div class="small" style="line-height:1.5">
+          點 Safari 下方
+          <span style="color:var(--accent)">分享</span>
+          按鈕 <b>⬆</b>，選「加入主畫面」
+        </div>
+      </div>
+    </div>
+    <button class="ios-close" onclick="dismissIosBanner()" aria-label="關閉">✕</button>
+  </div>
+</div>
+
+<!-- Share card preview modal -->
+<div class="modal" id="share-modal">
+  <div class="modal-card" style="max-width:400px; padding:18px">
+    <div style="font-family:'Cinzel',serif;font-size:.85rem;letter-spacing:.2em;color:var(--text-dim);margin-bottom:10px">今日戰報</div>
+    <canvas id="share-canvas" width="900" height="1200" style="width:100%;border-radius:14px;background:#0a0814"></canvas>
+    <p class="small" style="margin:10px 0;color:var(--text-mute);line-height:1.5">
+      長按圖片即可儲存／分享，或點下方下載。
+    </p>
+    <div style="display:flex;gap:8px">
+      <button class="btn ghost" onclick="closeShareCard()" style="flex:1">關閉</button>
+      <button class="btn" onclick="downloadShareCard()" style="flex:1">⬇ 下載 PNG</button>
+    </div>
   </div>
 </div>
 
@@ -2720,6 +2797,77 @@ function exportData(){
   toast('備份已下載');
 }
 
+function exportMarkdown(){
+  const notes = state.notes || {};
+  const decl = state.declarations || {};
+  const comp = state.completions || {};
+  const dates = [...new Set([...Object.keys(notes), ...Object.keys(decl)])].sort().reverse();
+  if(dates.length === 0){ toast('目前沒有可匯出的紀錄'); return; }
+
+  const lines = [];
+  lines.push('# 📜 Disciplina · 修煉日誌');
+  lines.push('');
+  lines.push(`_匯出時間：${new Date().toISOString().slice(0,16).replace('T',' ')}_`);
+  lines.push('');
+  lines.push(`## 四院積分`);
+  lines.push('');
+  lines.push('| 學院 | 積分 | 稱號 |');
+  lines.push('| --- | --- | --- |');
+  for(const h of HOUSE_ORDER){
+    const pts = state.housePoints[h] || 0;
+    lines.push(`| ${HOUSES[h].emoji} ${HOUSES[h].name} | ${pts} | ${getTitleByPts(h, pts)} |`);
+  }
+  lines.push('');
+
+  for(const d of dates){
+    lines.push(`## ${d}`);
+    lines.push('');
+    const dDecl = decl[d] || [];
+    const dComp = comp[d] || {};
+    if(dDecl.length){
+      lines.push('**今日宣告：**');
+      for(const id of dDecl){
+        const t = state.tasks.find(x => x.id === id);
+        const name = t ? t.name : '（已刪除任務）';
+        const icon = t ? (t.icon || '✨') : '✨';
+        const house = t ? HOUSES[t.house].emoji : '';
+        const mark = dComp[id] ? '[x]' : '[ ]';
+        lines.push(`- ${mark} ${icon} ${name} ${house}`);
+      }
+      lines.push('');
+    }
+    const dNotes = notes[d] || {};
+    const entries = Object.entries(dNotes).filter(([, v]) => v && v.trim());
+    if(entries.length){
+      lines.push('**修煉筆記：**');
+      lines.push('');
+      for(const [id, txt] of entries){
+        const t = state.tasks.find(x => x.id === id);
+        const name = t ? t.name : '（已刪除任務）';
+        const icon = t ? (t.icon || '✨') : '✨';
+        lines.push(`### ${icon} ${name}`);
+        lines.push('');
+        lines.push(txt.split('\n').map(l => '> ' + l).join('\n'));
+        lines.push('');
+      }
+    }
+    lines.push('---');
+    lines.push('');
+  }
+
+  const md = lines.join('\n');
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `disciplina-journal-${todayKey()}.md`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('Markdown 日誌已下載');
+}
+
 function importData(ev){
   const file = ev.target.files[0];
   if(!file) return;
@@ -2801,6 +2949,174 @@ function showLevelUp(house, title){
 
 function closeLevelUp(){
   document.getElementById('levelup-modal').classList.remove('show');
+}
+
+/* ---------- Share card ---------- */
+async function generateShareCard(){
+  const canvas = document.getElementById('share-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  try { await (document.fonts && document.fonts.ready); } catch(e){}
+
+  // Background
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, '#120d20');
+  g.addColorStop(0.5, '#0a0814');
+  g.addColorStop(1, '#06040d');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // Accent glow
+  const lead = getLeadingHouse();
+  const leadColor = HOUSES[lead].color;
+  const glow = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, W * 0.7);
+  glow.addColorStop(0, leadColor + '55');
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  for(let i=0; i<80; i++){
+    const x = Math.random() * W;
+    const y = Math.random() * H;
+    const r = Math.random() * 1.6 + 0.4;
+    ctx.globalAlpha = 0.3 + Math.random() * 0.5;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  const cjk = '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif';
+  const cinzel = '"Cinzel", "Times New Roman", serif';
+
+  // Brand
+  ctx.fillStyle = '#e8e4f5';
+  ctx.font = `700 56px ${cinzel}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('DISCIPLINA', W/2, 120);
+  ctx.fillStyle = '#6c638a';
+  ctx.font = `500 22px ${cinzel}`;
+  ctx.fillText('自律魔典 · HOGWARTS EDITION', W/2, 160);
+
+  // Date
+  ctx.fillStyle = leadColor;
+  ctx.font = `600 26px ${cjk}`;
+  const today = todayKey();
+  ctx.fillText(today, W/2, 210);
+
+  // Stats
+  const todayDecl = state.declarations[today] || [];
+  const todayComp = state.completions[today] || {};
+  const done = todayDecl.filter(id => todayComp[id]).length;
+  const total = todayDecl.length;
+  const streak = computeCurrentStreak();
+
+  // Big number ring
+  const cx = W/2, cy = 370, rr = 120;
+  ctx.beginPath();
+  ctx.arc(cx, cy, rr, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 14;
+  ctx.stroke();
+  if(total > 0){
+    ctx.beginPath();
+    ctx.arc(cx, cy, rr, -Math.PI/2, -Math.PI/2 + (done/total) * Math.PI*2);
+    ctx.strokeStyle = leadColor;
+    ctx.lineWidth = 14;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+  ctx.fillStyle = '#fff';
+  ctx.font = `700 80px ${cinzel}`;
+  ctx.fillText(`${done}/${total||0}`, cx, cy + 10);
+  ctx.fillStyle = '#a59dc2';
+  ctx.font = `500 22px ${cjk}`;
+  ctx.fillText('今日完成', cx, cy + 50);
+
+  // Streak + total
+  const totalPts = HOUSE_ORDER.reduce((s,h) => s + (state.housePoints[h]||0), 0);
+  ctx.fillStyle = '#fff';
+  ctx.font = `700 44px ${cinzel}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`🔥 ${streak}`, W/2 - 170, 600);
+  ctx.fillText(`💯 ${totalPts}`, W/2 + 170, 600);
+  ctx.fillStyle = '#a59dc2';
+  ctx.font = `500 20px ${cjk}`;
+  ctx.fillText('連續天數', W/2 - 170, 635);
+  ctx.fillText('累積積分', W/2 + 170, 635);
+
+  // House row
+  const top = 720;
+  const boxW = 190, boxH = 160, gap = 16;
+  const startX = (W - (boxW*4 + gap*3)) / 2;
+  for(let i=0; i<HOUSE_ORDER.length; i++){
+    const h = HOUSE_ORDER[i];
+    const x = startX + i * (boxW + gap);
+    const c = HOUSES[h].color;
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.strokeStyle = c + '88';
+    ctx.lineWidth = 2;
+    const r = 16;
+    roundRect(ctx, x, top, boxW, boxH, r);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = `400 40px system-ui, "Apple Color Emoji", "Segoe UI Emoji"`;
+    ctx.fillText(HOUSES[h].emoji, x + boxW/2, top + 52);
+
+    ctx.fillStyle = c;
+    ctx.font = `500 18px ${cjk}`;
+    ctx.fillText(HOUSES[h].name, x + boxW/2, top + 82);
+
+    ctx.fillStyle = c;
+    ctx.font = `700 38px ${cinzel}`;
+    ctx.fillText(String(state.housePoints[h] || 0), x + boxW/2, top + 128);
+  }
+
+  // Footer
+  ctx.fillStyle = '#6c638a';
+  ctx.font = `500 20px ${cjk}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('「宣告只需勇氣，兌現才需品格」 — PROF. SEVERUS', W/2, H - 90);
+  ctx.font = `500 18px ${cinzel}`;
+  ctx.fillStyle = leadColor;
+  ctx.fillText('disciplina.futurestarai.com', W/2, H - 50);
+
+  document.getElementById('share-modal').classList.add('show');
+}
+
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+function downloadShareCard(){
+  const canvas = document.getElementById('share-canvas');
+  canvas.toBlob(blob => {
+    if(!blob){ toast('無法產生圖檔'); return; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `disciplina-${todayKey()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('戰報卡已下載');
+  }, 'image/png');
+}
+
+function closeShareCard(){
+  document.getElementById('share-modal').classList.remove('show');
 }
 
 /* ---------- Sound FX (Web Audio) ---------- */
@@ -2972,6 +3288,27 @@ function maybeShowOnboard(){
   }
 }
 
+function maybeShowIosInstall(){
+  // Only iOS Safari, not already standalone, not dismissed
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+  const standalone = window.navigator.standalone
+    || window.matchMedia('(display-mode: standalone)').matches;
+  if(!isIOS || !isSafari || standalone) return;
+  if(localStorage.getItem('disciplina_ios_dismissed') === '1') return;
+  // Delay a bit so it doesn't clash with onboarding
+  setTimeout(() => {
+    const banner = document.getElementById('ios-banner');
+    if(banner) banner.classList.add('show');
+  }, state.onboarded ? 1500 : 4000);
+}
+
+function dismissIosBanner(){
+  document.getElementById('ios-banner').classList.remove('show');
+  localStorage.setItem('disciplina_ios_dismissed', '1');
+}
+
 function closeOnboard(){
   state.onboarded = true;
   saveState();
@@ -2986,6 +3323,7 @@ function boot(){
   checkAchievements();
   renderHome();
   maybeShowOnboard();
+  maybeShowIosInstall();
 
   // Auto-switch day tab every 5 minutes in case user keeps the page open
   setInterval(() => {
