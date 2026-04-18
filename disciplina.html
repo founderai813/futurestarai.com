@@ -499,6 +499,33 @@ body::before{
 }
 .task-del:hover{color:#ff6666; background: rgba(255,80,80,0.1)}
 
+.task-sort{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  margin-right:4px;
+}
+.task-sort button{
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-mute);
+  width: 22px; height: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size:.65rem;
+  line-height:1;
+  padding:0;
+  display:flex; align-items:center; justify-content:center;
+}
+.task-sort button:hover{
+  color: var(--hc, var(--accent));
+  border-color: var(--hc, var(--accent));
+}
+.task-sort button:disabled{
+  opacity:.3;
+  cursor:not-allowed;
+}
+
 /* Task note (evening) */
 .note-btn{
   background:transparent;
@@ -918,6 +945,38 @@ body::before{
   font-size:.72rem;
   color: var(--text-mute);
   margin-top:2px;
+}
+
+/* Flashback */
+.flashback{
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, rgba(77,166,255,0.12), rgba(123,80,220,0.08));
+  border: 1px solid rgba(77,166,255,0.3);
+  border-radius: 12px;
+  font-size: .85rem;
+  line-height: 1.6;
+  color: var(--text);
+  position:relative;
+  overflow:hidden;
+}
+.flashback::before{
+  content:'🔮';
+  position:absolute;
+  top: 8px; right: 10px;
+  font-size:1rem;
+  opacity:.7;
+}
+.flashback .fb-head{
+  font-family:'Cinzel', serif;
+  font-size:.72rem;
+  letter-spacing:.12em;
+  color:#7fb3ff;
+  margin-bottom:4px;
+}
+.flashback .fb-empty{
+  color: var(--text-dim);
+  font-style: italic;
 }
 
 /* Weekly challenge */
@@ -1346,6 +1405,120 @@ body::before{
   box-shadow: 0 0 20px var(--hc);
 }
 
+/* Parchment ritual */
+.parchment{
+  position:relative;
+  max-width: 360px;
+  width: 100%;
+  background:
+    linear-gradient(180deg, #f5e8c9 0%, #f0dfb2 100%);
+  color: #3a2a12;
+  border-radius: 6px;
+  padding: 28px 24px 22px;
+  box-shadow:
+    0 0 60px rgba(255,180,80,.35),
+    inset 0 0 40px rgba(180,120,40,.25);
+  font-family: 'Cinzel', 'Times New Roman', serif;
+  text-align:center;
+  animation: parchmentPop .55s cubic-bezier(.3,1.3,.5,1), parchmentEdge 0s .55s forwards;
+}
+.parchment::before,
+.parchment::after{
+  content:'';
+  position:absolute;
+  left: 0; right: 0;
+  height: 26px;
+  background-image:
+    radial-gradient(circle at 5% 50%, #f0dfb2 60%, transparent 62%),
+    radial-gradient(circle at 15% 50%, #f0dfb2 60%, transparent 62%),
+    radial-gradient(circle at 25% 50%, #f0dfb2 60%, transparent 62%),
+    radial-gradient(circle at 35% 50%, #f0dfb2 60%, transparent 62%),
+    radial-gradient(circle at 45% 50%, #f0dfb2 60%, transparent 62%),
+    radial-gradient(circle at 55% 50%, #f0dfb2 60%, transparent 62%),
+    radial-gradient(circle at 65% 50%, #f0dfb2 60%, transparent 62%),
+    radial-gradient(circle at 75% 50%, #f0dfb2 60%, transparent 62%),
+    radial-gradient(circle at 85% 50%, #f0dfb2 60%, transparent 62%),
+    radial-gradient(circle at 95% 50%, #f0dfb2 60%, transparent 62%);
+  background-size: 10% 100%;
+}
+.parchment::before{ top: -13px }
+.parchment::after{ bottom: -13px }
+@keyframes parchmentPop{
+  0%{ opacity:0; transform: scale(.6) rotate(-2deg) }
+  60%{ opacity:1; transform: scale(1.02) rotate(.5deg) }
+  100%{ opacity:1; transform: scale(1) rotate(0) }
+}
+.parchment-seal{
+  font-size: 2.5rem;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 2px 4px rgba(100,60,10,.4));
+}
+.parchment-title{
+  font-size: 1.25rem;
+  letter-spacing: .2em;
+  color: #6b3a12;
+  border-bottom: 1px dashed rgba(107,58,18,.4);
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+}
+.parchment-date{
+  font-size: .78rem;
+  color: #8a5a24;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+}
+.parchment-intro{
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: .88rem;
+  color: #4a321a;
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+.parchment-list{
+  list-style: none;
+  text-align: left;
+  margin: 8px 4px 14px;
+  padding: 0 6px;
+}
+.parchment-list li{
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: .92rem;
+  color: #3a2a12;
+  padding: 5px 8px;
+  border-bottom: 1px dashed rgba(107,58,18,.2);
+  display:flex; align-items:center; gap:8px;
+}
+.parchment-list li:last-child{ border-bottom:none }
+.parchment-list .hs{
+  font-size:.7rem;
+  color: #6b3a12;
+  margin-left:auto;
+}
+.parchment-quote{
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: .82rem;
+  font-style: italic;
+  color: #6b3a12;
+  line-height: 1.7;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  border-left: 3px solid #8a5a24;
+  background: rgba(255,220,170,.4);
+  text-align:left;
+}
+.parchment-sign{
+  font-size:.7rem;
+  color:#6b3a12;
+  letter-spacing:.08em;
+  margin-top:10px;
+}
+#declare-modal .parchment + button,
+.parchment > button.btn{
+  background: linear-gradient(135deg, #8a5a24, #6b3a12);
+  color: #f5e8c9;
+  box-shadow: 0 4px 12px rgba(100,60,10,.4);
+}
+
 /* Burst particles (absolutely positioned inside modal-card) */
 .modal-card{overflow:visible}
 .burst{
@@ -1561,6 +1734,7 @@ body::before{
 
     <!-- Morning panel -->
     <div class="card" id="morning-panel">
+      <div id="flashback"></div>
       <div class="card-title">從任務庫勾選今日修煉</div>
       <div class="quick-actions" id="quick-actions"></div>
       <div id="morning-list"></div>
@@ -1789,6 +1963,20 @@ body::before{
     <div class="title-name" id="levelup-title">——</div>
     <div class="title-house" id="levelup-house">——</div>
     <button onclick="closeLevelUp()">繼續修煉</button>
+  </div>
+</div>
+
+<!-- Declaration parchment ritual -->
+<div class="modal" id="declare-modal">
+  <div class="parchment">
+    <div class="parchment-seal" aria-hidden="true">🪶</div>
+    <div class="parchment-title">自律誓言書</div>
+    <div class="parchment-date" id="declare-date">——</div>
+    <div class="parchment-intro">我，於此時此刻，鄭重宣誓完成以下修煉：</div>
+    <ul class="parchment-list" id="declare-list"></ul>
+    <div class="parchment-quote" id="declare-quote">——</div>
+    <div class="parchment-sign">— 簽署於 Hogwarts · <span id="declare-mentor">石內卜</span> 見證 —</div>
+    <button class="btn" onclick="closeDeclareModal()" style="margin-top:14px">⚡ 封印誓言</button>
   </div>
 </div>
 
@@ -2426,6 +2614,8 @@ function renderMorningPanel(){
   const btn = document.getElementById('declare-btn');
   const qa = document.getElementById('quick-actions');
 
+  renderFlashback();
+
   if(qa) qa.innerHTML = renderQuickActions(!!alreadyDeclared);
 
   if(alreadyDeclared){
@@ -2473,6 +2663,39 @@ function renderMorningPanel(){
   btn.textContent = pendingDeclarations.size === 0
     ? '🪄 請先勾選任務'
     : `🪄 立誓修煉（${pendingDeclarations.size} 項）`;
+}
+
+function renderFlashback(){
+  const el = document.getElementById('flashback');
+  if(!el) return;
+  // Look for the most recent past date with ANY declarations, prefer 7 days ago
+  const today = new Date();
+  const candidates = [7, 14, 30];
+  let found = null;
+  for(const days of candidates){
+    const d = new Date(today); d.setDate(d.getDate() - days);
+    const key = dateKey(d);
+    const decl = state.declarations[key] || [];
+    if(decl.length === 0) continue;
+    const comp = state.completions[key] || {};
+    const doneIds = decl.filter(id => comp[id]);
+    const doneTasks = doneIds
+      .map(id => state.tasks.find(t => t.id === id))
+      .filter(Boolean);
+    found = { key, days, doneTasks, total: decl.length, done: doneIds.length };
+    break;
+  }
+  if(!found){ el.innerHTML = ''; return; }
+  const names = found.doneTasks.slice(0, 3).map(t => `${t.icon||'✨'} ${t.name}`).join('、');
+  const rest = found.doneTasks.length > 3 ? `等 ${found.doneTasks.length} 項` : '';
+  const body = found.done === 0
+    ? `<span class="fb-empty">那天你宣告了 ${found.total} 項，但一項未兌現——今天，是否該再試一次？</span>`
+    : `你完成了 ${names}${rest}。現在的你，還記得當時的感覺嗎？`;
+  el.innerHTML = `
+    <div class="flashback">
+      <div class="fb-head">🔮 ${found.days} 天前的今日 · ${found.key}</div>
+      <div>${body}</div>
+    </div>`;
 }
 
 function renderQuickActions(declared){
@@ -2750,8 +2973,12 @@ function renderLibraryList(){
           <span class="chevron">▾</span>
         </div>
         <div class="group-body">
-          ${grouped[h].map(t => `
+          ${grouped[h].map((t, idx) => `
             <div class="task-row" style="--hc:${HOUSES[h].color}">
+              <div class="task-sort">
+                <button onclick="moveTask('${t.id}', -1)" ${idx===0?'disabled':''} aria-label="上移">▲</button>
+                <button onclick="moveTask('${t.id}', 1)" ${idx===grouped[h].length-1?'disabled':''} aria-label="下移">▼</button>
+              </div>
               <div class="task-icon">${t.icon || '✨'}</div>
               <div class="task-body">
                 <div class="task-name">${escapeHTML(t.name)}</div>
@@ -3354,8 +3581,29 @@ function declareMorning(){
   saveState();
   checkAchievements();
   sfxDeclare();
-  toast('誓言已立下，勿負今日魔法');
+  showDeclareRitual(state.declarations[today]);
   renderMorningPanel();
+}
+
+function showDeclareRitual(ids){
+  const list = document.getElementById('declare-list');
+  const dateEl = document.getElementById('declare-date');
+  const quoteEl = document.getElementById('declare-quote');
+  const mentorEl = document.getElementById('declare-mentor');
+  if(!list) return;
+  dateEl.textContent = todayKey();
+  mentorEl.textContent = currentMentor().name;
+  list.innerHTML = ids.map(id => {
+    const t = state.tasks.find(x => x.id === id);
+    if(!t) return '';
+    return `<li>${t.icon || '✨'} <span>${escapeHTML(t.name)}</span><span class="hs">+${t.pts} · ${HOUSES[t.house].emoji}</span></li>`;
+  }).join('');
+  quoteEl.textContent = pickFromList(currentMentor().morning);
+  document.getElementById('declare-modal').classList.add('show');
+}
+
+function closeDeclareModal(){
+  document.getElementById('declare-modal').classList.remove('show');
 }
 
 /* ---------- Evening: toggle completion ---------- */
@@ -3444,6 +3692,23 @@ function deleteTask(id){
   saveState();
   renderLibraryPage();
   toast('已刪除');
+}
+
+function moveTask(id, delta){
+  // Move within its own house's order in state.tasks
+  const task = state.tasks.find(t => t.id === id);
+  if(!task) return;
+  const sameHouse = state.tasks.filter(t => t.house === task.house);
+  const idx = sameHouse.indexOf(task);
+  const next = idx + delta;
+  if(next < 0 || next >= sameHouse.length) return;
+  const swap = sameHouse[next];
+  const ai = state.tasks.indexOf(task);
+  const bi = state.tasks.indexOf(swap);
+  state.tasks[ai] = swap;
+  state.tasks[bi] = task;
+  saveState();
+  renderLibraryPage();
 }
 
 /* ---------- Settings ---------- */
@@ -4320,7 +4585,9 @@ function initShortcuts(){
       const sh  = document.getElementById('share-modal');
       const ob  = document.getElementById('onboard');
       const ch  = document.getElementById('chat');
+      const dm  = document.getElementById('declare-modal');
       if(ch && ch.classList.contains('show')){ closeChat(); return; }
+      if(dm && dm.classList.contains('show')){ closeDeclareModal(); return; }
       if(ob && ob.classList.contains('show')){ closeOnboard(); return; }
       if(lvl && lvl.classList.contains('show')){ closeLevelUp(); return; }
       if(sh  && sh.classList.contains('show')){  closeShareCard(); return; }
