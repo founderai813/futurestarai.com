@@ -231,6 +231,53 @@ body::before{
   40%,60%{transform:translateX(3px)}
 }
 
+/* Achievements grid */
+.badge-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap:8px;
+  margin-top:6px;
+}
+.badge{
+  background: var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px 8px;
+  text-align:center;
+  transition: all .25s ease;
+  cursor: default;
+  position:relative;
+}
+.badge.unlocked{
+  border-color: var(--accent);
+  box-shadow: 0 0 14px var(--accent-soft);
+}
+.badge .glyph{
+  font-size:1.8rem;
+  margin-bottom:4px;
+  filter: grayscale(1) brightness(.5);
+  transition: filter .3s ease;
+}
+.badge.unlocked .glyph{ filter: none }
+.badge .bname{
+  font-size:.75rem;
+  color: var(--text-dim);
+  letter-spacing:.05em;
+  margin-bottom:2px;
+}
+.badge.unlocked .bname{ color: var(--text) }
+.badge .bdesc{
+  font-size:.66rem;
+  color: var(--text-mute);
+  line-height:1.4;
+}
+.badge .when{
+  position:absolute; top:4px; right:6px;
+  font-size:.55rem;
+  color: var(--text-mute);
+  font-family:'Cinzel', serif;
+}
+
 /* Red flash overlay when scolding appears */
 .red-flash{
   position:fixed;inset:0;
@@ -752,6 +799,55 @@ body::before{
 }
 .lb-bar-fill{height:100%; background: var(--hc); box-shadow: 0 0 10px var(--hc)}
 
+/* Trend chart */
+.trend-wrap{
+  width:100%;
+  margin-top:6px;
+}
+.trend-wrap svg{
+  width:100%;
+  height:180px;
+  display:block;
+}
+.trend-legend{
+  display:flex; flex-wrap:wrap; gap:10px 14px;
+  margin-top:10px;
+  font-size:.72rem;
+  color: var(--text-dim);
+  justify-content:center;
+}
+.trend-legend .dot{
+  display:inline-block;
+  width:8px; height:8px; border-radius:50%;
+  margin-right:5px;
+  vertical-align:middle;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Journal */
+.journal-item{
+  padding:10px 12px;
+  margin:8px 0;
+  background: var(--surface-2);
+  border:1px solid var(--border);
+  border-left:3px solid var(--hc, var(--accent));
+  border-radius:10px;
+}
+.journal-head{
+  display:flex; align-items:center; gap:8px;
+  font-size:.82rem;
+  margin-bottom:4px;
+}
+.journal-head .date{color: var(--text-mute); font-family:'Cinzel', serif; font-size:.72rem}
+.journal-head .task{color: var(--text); font-weight:500}
+.journal-body{
+  font-size:.88rem;
+  color: var(--text-dim);
+  line-height:1.6;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
 /* Settings */
 .setting-row{
   display:flex;align-items:center;gap:12px;
@@ -1060,8 +1156,24 @@ body::before{
     </div>
 
     <div class="card">
+      <div class="card-title">四院趨勢 · 近 30 天</div>
+      <div id="trend-chart" class="trend-wrap"></div>
+      <div class="trend-legend" id="trend-legend"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title">四院積分排行榜</div>
       <div class="leaderboard" id="leaderboard"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">成就徽章 <span class="small" id="badge-count" style="color:var(--text-mute);letter-spacing:0;margin-left:4px"></span></div>
+      <div class="badge-grid" id="badge-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">修煉日誌</div>
+      <div id="journal-list"></div>
     </div>
   </section>
 
@@ -1261,6 +1373,18 @@ const MENTOR_EVENING_LINES = [
   '宣告只需勇氣，兌現才需品格。哪一項是你的？',
 ];
 
+const ACHIEVEMENTS = [
+  { id:'first_declare', emoji:'🪄', name:'初次立誓',      desc:'完成第一次早晨宣告' },
+  { id:'first_done',    emoji:'✅', name:'初次兌現',      desc:'第一次打勾完成任務' },
+  { id:'streak_3',      emoji:'🔥', name:'三日連勝',      desc:'連續 3 天全項完成' },
+  { id:'streak_7',      emoji:'🌟', name:'週連勝',        desc:'連續 7 天全項完成' },
+  { id:'notes_3',       emoji:'📜', name:'觀心三章',      desc:'累計寫下 3 篇修煉日誌' },
+  { id:'total_100',     emoji:'💯', name:'破百修煉者',    desc:'四院總積分達 100' },
+  { id:'total_500',     emoji:'🏆', name:'五百基石',      desc:'四院總積分達 500' },
+  { id:'all_houses_30', emoji:'🌀', name:'全院均衡',      desc:'四院積分各達 30' },
+  { id:'any_250',       emoji:'👑', name:'登峰造極',      desc:'任一學院達到最高稱號（250 分）' },
+];
+
 const SCOLDINGS = [
   '昨天你宣告了『{tasks}』，卻一項都沒有完成。我不生氣——我只是對你徹底失去了期待。',
   '又一次空口宣告。『{tasks}』這些承諾，如同你的魔法一樣——毫無價值。',
@@ -1341,6 +1465,7 @@ function defaultState(){
     mentorImage: null,
     selectedHouse: 'gryffindor',
     lastTitles: { gryffindor:'新生', hufflepuff:'新生', slytherin:'新生', ravenclaw:'新生' },
+    achievements: {}, // id -> ISO unlock timestamp
   };
 }
 
@@ -1353,6 +1478,7 @@ function loadState(){
     return {
       ...base, ...parsed,
       notes: parsed.notes || {},
+      achievements: parsed.achievements || {},
       housePoints: { ...base.housePoints, ...(parsed.housePoints||{}) },
       lastTitles: { ...base.lastTitles, ...(parsed.lastTitles||{}) },
     };
@@ -1698,7 +1824,7 @@ function saveNote(id, value){
   else state.notes[today][id] = value;
   // Debounce save
   clearTimeout(window.__noteT);
-  window.__noteT = setTimeout(saveState, 400);
+  window.__noteT = setTimeout(() => { saveState(); checkAchievements(); }, 400);
 }
 
 function renderScoldingBox(){
@@ -1824,7 +1950,208 @@ let currentRange = 7;
 function renderReportPage(){
   renderHeatmap();
   renderStats();
+  renderTrendChart();
   renderLeaderboard();
+  renderBadges();
+  renderJournal();
+}
+
+function renderTrendChart(){
+  const el = document.getElementById('trend-chart');
+  const legend = document.getElementById('trend-legend');
+  if(!el) return;
+
+  const DAYS = 30;
+  const today = new Date();
+  // Build a taskId -> house/pts lookup (including seed IDs)
+  const byId = {};
+  for(const t of state.tasks) byId[t.id] = t;
+
+  // Cumulative pts per day per house over DAYS
+  const series = {}; HOUSE_ORDER.forEach(h => series[h] = new Array(DAYS).fill(0));
+  const runningTotals = { gryffindor:0, hufflepuff:0, slytherin:0, ravenclaw:0 };
+  const labels = [];
+  for(let i=DAYS-1; i>=0; i--){
+    const d = new Date(today); d.setDate(d.getDate()-i);
+    const key = dateKey(d);
+    labels.push(key.slice(5));
+    const completions = state.completions[key] || {};
+    for(const [taskId, done] of Object.entries(completions)){
+      if(!done) continue;
+      const t = byId[taskId];
+      if(t) runningTotals[t.house] = (runningTotals[t.house] || 0) + t.pts;
+    }
+    const idx = DAYS - 1 - i;
+    for(const h of HOUSE_ORDER) series[h][idx] = runningTotals[h];
+  }
+
+  const maxY = Math.max(1, ...HOUSE_ORDER.flatMap(h => series[h]));
+  const W = 300, H = 160, PAD = 24;
+  const xStep = (W - PAD * 2) / (DAYS - 1);
+  const scaleY = v => H - PAD - (v / maxY) * (H - PAD * 2);
+  const scaleX = i => PAD + i * xStep;
+
+  const paths = HOUSE_ORDER.map(h => {
+    const d = series[h].map((v, i) => `${i===0?'M':'L'} ${scaleX(i).toFixed(1)} ${scaleY(v).toFixed(1)}`).join(' ');
+    return `<path d="${d}" fill="none" stroke="${HOUSES[h].color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />`;
+  }).join('');
+
+  // Gridlines
+  const gridLines = [];
+  const ticks = 4;
+  for(let k=0; k<=ticks; k++){
+    const y = PAD + (H - PAD*2) * k / ticks;
+    const v = Math.round(maxY - (maxY * k / ticks));
+    gridLines.push(`<line x1="${PAD}" y1="${y}" x2="${W-PAD}" y2="${y}" stroke="rgba(200,180,255,0.08)" />`);
+    gridLines.push(`<text x="${PAD-4}" y="${y+3}" font-size="7" fill="#6c638a" text-anchor="end">${v}</text>`);
+  }
+
+  // X axis labels: show 1st, middle, last
+  const xLabelIdx = [0, Math.floor((DAYS-1)/2), DAYS-1];
+  const xLabels = xLabelIdx.map(i =>
+    `<text x="${scaleX(i)}" y="${H-6}" font-size="7" fill="#6c638a" text-anchor="middle">${labels[i]}</text>`
+  ).join('');
+
+  el.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      ${gridLines.join('')}
+      ${paths}
+      ${xLabels}
+    </svg>`;
+
+  legend.innerHTML = HOUSE_ORDER.map(h => {
+    const pts = runningTotals[h];
+    return `<span><span class="dot" style="background:${HOUSES[h].color};color:${HOUSES[h].color}"></span>${HOUSES[h].emoji} ${HOUSES[h].name} · ${pts}</span>`;
+  }).join('');
+}
+
+function renderBadges(){
+  const grid = document.getElementById('badge-grid');
+  const count = document.getElementById('badge-count');
+  if(!grid) return;
+  const unlocked = Object.keys(state.achievements || {}).length;
+  count.textContent = `· 已解鎖 ${unlocked} / ${ACHIEVEMENTS.length}`;
+  grid.innerHTML = ACHIEVEMENTS.map(a => {
+    const when = state.achievements?.[a.id];
+    const on = !!when;
+    const whenShort = when ? when.slice(5,10) : '';
+    return `
+      <div class="badge ${on?'unlocked':''}" title="${escapeHTML(a.desc)}">
+        ${on?`<div class="when">${whenShort}</div>`:''}
+        <div class="glyph">${a.emoji}</div>
+        <div class="bname">${escapeHTML(a.name)}</div>
+        <div class="bdesc">${escapeHTML(a.desc)}</div>
+      </div>`;
+  }).join('');
+}
+
+function unlock(id){
+  state.achievements = state.achievements || {};
+  if(state.achievements[id]) return false;
+  state.achievements[id] = todayKey();
+  const a = ACHIEVEMENTS.find(x => x.id === id);
+  if(a) toast(`🏅 解鎖成就：${a.name}`);
+  return true;
+}
+
+function checkAchievements(){
+  const ach = state.achievements || {};
+  let changed = false;
+
+  // Any declaration
+  if(!ach.first_declare && Object.keys(state.declarations || {}).length > 0){
+    changed = unlock('first_declare') || changed;
+  }
+  // Any completion (any day has at least 1 true)
+  if(!ach.first_done){
+    for(const d of Object.values(state.completions || {})){
+      if(d && Object.values(d).some(v => v)){ changed = unlock('first_done') || changed; break; }
+    }
+  }
+  // Streak 3 / 7 (walking back from today)
+  if(!ach.streak_3 || !ach.streak_7){
+    const s = computeCurrentStreak();
+    if(!ach.streak_3 && s >= 3) changed = unlock('streak_3') || changed;
+    if(!ach.streak_7 && s >= 7) changed = unlock('streak_7') || changed;
+  }
+  // Notes ≥ 3
+  if(!ach.notes_3){
+    let n = 0;
+    for(const d of Object.values(state.notes || {})){
+      for(const v of Object.values(d || {})){
+        if(v && v.trim()){ n++; if(n >= 3) break; }
+      }
+      if(n >= 3) break;
+    }
+    if(n >= 3) changed = unlock('notes_3') || changed;
+  }
+  // Totals
+  const total = HOUSE_ORDER.reduce((s, h) => s + (state.housePoints[h] || 0), 0);
+  if(!ach.total_100 && total >= 100) changed = unlock('total_100') || changed;
+  if(!ach.total_500 && total >= 500) changed = unlock('total_500') || changed;
+  // All houses 30+
+  if(!ach.all_houses_30 && HOUSE_ORDER.every(h => (state.housePoints[h] || 0) >= 30)){
+    changed = unlock('all_houses_30') || changed;
+  }
+  // Any house 250+
+  if(!ach.any_250 && HOUSE_ORDER.some(h => (state.housePoints[h] || 0) >= 250)){
+    changed = unlock('any_250') || changed;
+  }
+  if(changed) saveState();
+}
+
+function computeCurrentStreak(){
+  const today = new Date();
+  let streak = 0;
+  for(let i=0; i<60; i++){
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = dateKey(d);
+    const declared = state.declarations[key] || [];
+    if(declared.length === 0){
+      if(i === 0) continue;
+      break;
+    }
+    const completions = state.completions[key] || {};
+    const allDone = declared.every(id => completions[id]);
+    if(allDone) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function renderJournal(){
+  const el = document.getElementById('journal-list');
+  if(!el) return;
+  const notes = state.notes || {};
+  const days = Object.keys(notes).sort().reverse().slice(0, 14);
+  const entries = [];
+  for(const d of days){
+    for(const [taskId, text] of Object.entries(notes[d] || {})){
+      if(!text || !text.trim()) continue;
+      const t = state.tasks.find(x => x.id === taskId);
+      entries.push({ date:d, taskId, text, task:t });
+    }
+  }
+  if(entries.length === 0){
+    el.innerHTML = emptyHTML('📜', '暫無修煉日誌', '晚間回報時點「＋筆記」寫下你的覆盤');
+    return;
+  }
+  entries.sort((a,b) => b.date.localeCompare(a.date));
+  el.innerHTML = entries.slice(0, 30).map(e => {
+    const hc = e.task ? HOUSES[e.task.house].color : 'var(--accent)';
+    const icon = e.task ? (e.task.icon || '✨') : '✨';
+    const name = e.task ? e.task.name : '（已刪除任務）';
+    return `
+      <div class="journal-item" style="--hc:${hc}">
+        <div class="journal-head">
+          <span class="date">${e.date}</span>
+          <span>${icon}</span>
+          <span class="task">${escapeHTML(name)}</span>
+        </div>
+        <div class="journal-body">${escapeHTML(e.text)}</div>
+      </div>`;
+  }).join('');
 }
 
 function switchRange(n){
@@ -2001,6 +2328,7 @@ function declareMorning(){
   state.declarations[today] = Array.from(pendingDeclarations);
   state.completions[today] = state.completions[today] || {};
   saveState();
+  checkAchievements();
   toast('誓言已立下，勿負今日魔法');
   renderMorningPanel();
 }
@@ -2030,6 +2358,7 @@ function toggleTask(id){
     checkLevelUp(t.house, before, after);
   }
   saveState();
+  checkAchievements();
   updateTheme();
   renderHouseRow();
   renderEveningPanel();
@@ -2313,6 +2642,7 @@ function boot(){
   injectManifest();
   updateTheme();
   initParticles();
+  checkAchievements();
   renderHome();
 
   // Auto-switch day tab every 5 minutes in case user keeps the page open
