@@ -932,6 +932,18 @@ body::before{
 }
 .lb-bar-fill{height:100%; background: var(--hc); box-shadow: 0 0 10px var(--hc)}
 
+/* Tag cloud */
+.tag-cloud-wrap{
+  padding:10px;
+  min-height:120px;
+}
+.tag-cloud-wrap svg{
+  width:100%;
+  height:180px;
+  display:block;
+}
+.tag-cloud-wrap .empty{ padding: 16px 0 }
+
 /* Trend chart */
 .trend-wrap{
   width:100%;
@@ -1544,6 +1556,50 @@ body::before{
   box-shadow: 0 0 20px var(--hc);
 }
 
+/* Focus timer */
+.focus-ring{
+  position:relative;
+  width:220px;height:220px;
+  margin:6px auto 0;
+}
+.focus-ring svg{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+}
+.focus-ring svg circle{ transition: stroke-dashoffset .2s linear, stroke .4s ease }
+.focus-time{
+  position:absolute; inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cinzel', serif;
+  font-size:2.6rem;font-weight:700;
+  color:var(--accent);
+  text-shadow: 0 0 18px var(--accent-glow);
+  font-variant-numeric: tabular-nums;
+}
+.focus-phase{
+  position:absolute; left:0;right:0; bottom:26%;
+  text-align:center;
+  font-size:.72rem;
+  letter-spacing:.2em;
+  color:var(--text-mute);
+}
+
+/* Focus start button on task row */
+.focus-btn{
+  flex-shrink:0;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-mute);
+  font-size:.75rem;
+  padding:5px 9px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.focus-btn:hover{
+  color: var(--hc, var(--accent));
+  border-color: var(--hc, var(--accent));
+}
+
 /* Parchment ritual */
 .parchment{
   position:relative;
@@ -1784,6 +1840,50 @@ body::before{
   margin-bottom:14px;
 }
 
+/* Quiz */
+.quiz-q{
+  font-size:.95rem;
+  line-height:1.7;
+  color: var(--text);
+  margin:10px 0 14px;
+  padding: 10px 14px;
+  background: rgba(10,8,20,0.4);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 10px 10px 0;
+  text-align:left;
+}
+.quiz-opts{ display:flex; flex-direction:column; gap:8px }
+.quiz-opt{
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: .88rem;
+  line-height:1.6;
+  text-align:left;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+.quiz-opt:hover{
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+  transform: translateX(2px);
+}
+.quiz-result-label{
+  font-size:.78rem;
+  color:var(--text-mute);
+  letter-spacing:.15em;
+  margin-bottom:4px;
+}
+.quiz-result-house{
+  font-family:'Cinzel', serif;
+  font-size:1.8rem;
+  color: var(--accent);
+  text-shadow: 0 0 20px var(--accent-glow);
+}
+
 /* Toast */
 .toast{
   position:fixed;
@@ -1999,6 +2099,11 @@ body::before{
     </div>
 
     <div class="card">
+      <div class="card-title">關鍵字雲 · 近 30 日</div>
+      <div id="tag-cloud" class="tag-cloud-wrap"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title">修煉日誌</div>
       <div id="journal-list"></div>
     </div>
@@ -2183,6 +2288,30 @@ body::before{
   </div>
 </div>
 
+<!-- Pomodoro focus timer -->
+<div class="modal" id="focus-modal">
+  <div class="modal-card" style="max-width:340px; padding:24px">
+    <div style="font-family:'Cinzel',serif;font-size:.78rem;letter-spacing:.2em;color:var(--text-dim);margin-bottom:6px" id="focus-task-label">專注修煉</div>
+    <div style="font-family:'Noto Sans TC',sans-serif;font-size:1rem;color:var(--text);margin-bottom:10px" id="focus-task-name">——</div>
+    <div class="focus-ring" id="focus-ring">
+      <svg viewBox="0 0 220 220">
+        <circle cx="110" cy="110" r="92" stroke="rgba(255,255,255,0.08)" stroke-width="14" fill="none"/>
+        <circle cx="110" cy="110" r="92" stroke="var(--accent)" stroke-width="14" fill="none"
+          stroke-linecap="round" stroke-dasharray="577.9" stroke-dashoffset="0"
+          transform="rotate(-90 110 110)" id="focus-arc"
+          style="filter: drop-shadow(0 0 8px var(--accent))"/>
+      </svg>
+      <div class="focus-time" id="focus-time">25:00</div>
+      <div class="focus-phase" id="focus-phase">專注時段</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn ghost" onclick="pauseFocus()" id="focus-pause" style="flex:1">⏸ 暫停</button>
+      <button class="btn ghost" onclick="skipFocus()" style="flex:1">⏭ 跳過</button>
+    </div>
+    <button class="btn" onclick="closeFocus()" style="margin-top:8px;background:linear-gradient(135deg,#ff6666,#a82727);box-shadow:0 4px 14px rgba(255,77,77,0.3)">✕ 取消修煉</button>
+  </div>
+</div>
+
 <!-- Declaration parchment ritual -->
 <div class="modal" id="declare-modal">
   <div class="parchment">
@@ -2271,7 +2400,25 @@ body::before{
       四院不是標籤，而是你自律的四個面向。<br>
       任務歸屬哪一院，就是在鍛鍊哪一項。
     </p>
-    <button class="btn" onclick="closeOnboard()">🪄 立下我的第一個誓言</button>
+    <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+      <button class="btn ghost" onclick="startQuiz()" style="flex:1;min-width:140px">🎯 做個小測驗</button>
+      <button class="btn" onclick="closeOnboard()" style="flex:1;min-width:140px">🪄 直接開始修煉</button>
+    </div>
+  </div>
+
+  <!-- Quiz view -->
+  <div class="onboard-card" id="quiz-card" style="display:none">
+    <div class="hat" style="font-size:2.2rem">🎯</div>
+    <h2 class="onboard-title" id="quiz-title">分院測驗</h2>
+    <div id="quiz-progress" class="small" style="color:var(--text-mute);letter-spacing:.15em;margin-bottom:10px">第 1／8 題</div>
+    <div class="quiz-q" id="quiz-question">——</div>
+    <div id="quiz-options"></div>
+    <div id="quiz-result" style="display:none">
+      <div class="quiz-result-label">最適合你的主軌：</div>
+      <div class="quiz-result-house" id="quiz-result-house">——</div>
+      <p class="small" id="quiz-result-desc" style="margin:8px 0 14px;line-height:1.7"></p>
+      <button class="btn" onclick="finishQuiz()">🌟 以此開始修煉</button>
+    </div>
   </div>
 </div>
 
@@ -3514,6 +3661,7 @@ function renderEveningPanel(){
           <div class="task-name">${escapeHTML(t.name)}</div>
           <div class="task-meta">${HOUSES[t.house].emoji} ${HOUSES[t.house].name}</div>
         </div>
+        ${checked ? '' : `<button class="focus-btn" onclick="event.stopPropagation(); startFocus('${t.id}')" title="專注 25 分鐘">⏱</button>`}
         <button class="note-btn ${hasNote?'has':''}" onclick="event.stopPropagation(); toggleNote('${t.id}')">
           ${hasNote ? '📝' : '＋筆記'}
         </button>
@@ -3708,7 +3856,74 @@ function renderReportPage(){
   renderLeaderboard();
   renderMonthlyTop();
   renderBadges();
+  renderTagCloud();
   renderJournal();
+}
+
+function renderTagCloud(){
+  const el = document.getElementById('tag-cloud');
+  if(!el) return;
+  // Count completed tasks in last 30 days, weighted by frequency
+  const today = new Date();
+  const counts = {};
+  for(let i=0; i<30; i++){
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const comp = state.completions[dateKey(d)] || {};
+    for(const [id, done] of Object.entries(comp)){
+      if(!done) continue;
+      const t = state.tasks.find(x => x.id === id);
+      if(!t) continue;
+      counts[t.name] = counts[t.name] || { count: 0, house: t.house, icon: t.icon };
+      counts[t.name].count += 1;
+    }
+  }
+  const items = Object.entries(counts)
+    .map(([name, info]) => ({ name, ...info }))
+    .sort((a,b) => b.count - a.count);
+
+  if(items.length === 0){
+    el.innerHTML = emptyHTML('☁️', '近 30 日無完成紀錄', '先打幾個勾再來看關鍵字雲');
+    return;
+  }
+
+  const maxC = items[0].count;
+  const W = 300, H = 180, PAD = 8;
+  // Simple row-pack layout with varying sizes
+  const placed = [];
+  let rowY = 16;
+  let rowX = PAD;
+  let rowMaxH = 0;
+  const maxFont = 28, minFont = 11;
+  for(const it of items.slice(0, 22)){
+    const ratio = it.count / maxC;
+    const size = Math.round(minFont + (maxFont - minFont) * ratio);
+    const textLen = it.name.length;
+    const wEst = Math.max(size * 0.95 * textLen, size * 2);
+    if(rowX + wEst > W - PAD){
+      rowY += rowMaxH + 6;
+      rowX = PAD;
+      rowMaxH = 0;
+    }
+    if(rowY > H - 12) break;
+    placed.push({ ...it, size, x: rowX + wEst/2, y: rowY + size });
+    rowX += wEst + 8;
+    rowMaxH = Math.max(rowMaxH, size + 2);
+  }
+  const nodes = placed.map(p => {
+    const c = HOUSES[p.house]?.color || '#fff';
+    const weight = 500 + Math.min(200, Math.round(p.count / maxC * 200));
+    const opacity = 0.55 + 0.45 * (p.count / maxC);
+    return `<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}"
+      font-family="'Noto Sans TC', sans-serif"
+      font-size="${p.size}" font-weight="${weight}"
+      fill="${c}" opacity="${opacity.toFixed(2)}"
+      text-anchor="middle">${escapeXML(p.name)}</text>`;
+  }).join('');
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${nodes}</svg>`;
+}
+
+function escapeXML(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 function renderMonthlyTop(){
@@ -5628,6 +5843,8 @@ function initShortcuts(){
       const ob  = document.getElementById('onboard');
       const ch  = document.getElementById('chat');
       const dm  = document.getElementById('declare-modal');
+      const fm  = document.getElementById('focus-modal');
+      if(fm && fm.classList.contains('show')){ closeFocus(); return; }
       if(ch && ch.classList.contains('show')){ closeChat(); return; }
       if(dm && dm.classList.contains('show')){ closeDeclareModal(); return; }
       if(ob && ob.classList.contains('show')){ closeOnboard(); return; }
@@ -5678,6 +5895,107 @@ function initShortcuts(){
     if(dx < 0) switchDayTab('evening');
     else switchDayTab('morning');
   }, { passive: true });
+}
+
+/* ---------- Focus timer (Pomodoro) ---------- */
+const FOCUS_WORK_SEC = 25 * 60;
+const FOCUS_BREAK_SEC = 5 * 60;
+const focusState = {
+  taskId: null,
+  phase: 'work', // 'work' | 'break'
+  total: FOCUS_WORK_SEC,
+  remaining: FOCUS_WORK_SEC,
+  tickId: null,
+  paused: false,
+  last: 0,
+};
+
+function startFocus(taskId){
+  const t = state.tasks.find(x => x.id === taskId);
+  if(!t){ toast('找不到任務'); return; }
+  focusState.taskId = taskId;
+  focusState.phase = 'work';
+  focusState.total = FOCUS_WORK_SEC;
+  focusState.remaining = FOCUS_WORK_SEC;
+  focusState.paused = false;
+  focusState.last = Date.now();
+  document.getElementById('focus-task-label').textContent = '專注修煉 · 25 分鐘';
+  document.getElementById('focus-task-name').textContent = `${t.icon||'✨'} ${t.name}`;
+  document.getElementById('focus-modal').classList.add('show');
+  document.getElementById('focus-pause').textContent = '⏸ 暫停';
+  renderFocusUI();
+  if(focusState.tickId) clearInterval(focusState.tickId);
+  focusState.tickId = setInterval(focusTick, 250);
+}
+
+function focusTick(){
+  if(focusState.paused) return;
+  const now = Date.now();
+  const dt = (now - focusState.last) / 1000;
+  focusState.last = now;
+  focusState.remaining -= dt;
+  if(focusState.remaining <= 0){
+    focusState.remaining = 0;
+    renderFocusUI();
+    // Phase transition
+    if(focusState.phase === 'work'){
+      // Auto-check task
+      const taskId = focusState.taskId;
+      const today = todayKey();
+      const declared = state.declarations[today] || [];
+      if(declared.includes(taskId) && !(state.completions[today]||{})[taskId]){
+        toggleTask(taskId);
+      } else {
+        sfxCheck();
+      }
+      // Start break
+      focusState.phase = 'break';
+      focusState.total = FOCUS_BREAK_SEC;
+      focusState.remaining = FOCUS_BREAK_SEC;
+      focusState.last = Date.now();
+      document.getElementById('focus-task-label').textContent = '休息 · 5 分鐘';
+      toast('✨ 專注完成！自動打勾');
+      renderFocusUI();
+    } else {
+      clearInterval(focusState.tickId);
+      focusState.tickId = null;
+      sfxLevelup();
+      toast('休息結束，回到修煉');
+      closeFocus();
+    }
+  } else {
+    renderFocusUI();
+  }
+}
+
+function renderFocusUI(){
+  const r = focusState.remaining;
+  const mm = String(Math.floor(r / 60)).padStart(2,'0');
+  const ss = String(Math.floor(r % 60)).padStart(2,'0');
+  document.getElementById('focus-time').textContent = `${mm}:${ss}`;
+  document.getElementById('focus-phase').textContent = focusState.phase === 'work' ? '專注時段' : '休息時段';
+  const arc = document.getElementById('focus-arc');
+  if(arc){
+    const circ = 577.9; // 2*pi*r where r=92
+    const pct = focusState.total > 0 ? focusState.remaining / focusState.total : 0;
+    arc.setAttribute('stroke-dashoffset', String(circ * (1 - pct)));
+    arc.setAttribute('stroke', focusState.phase === 'work' ? getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() : '#4da6ff');
+  }
+}
+
+function pauseFocus(){
+  focusState.paused = !focusState.paused;
+  if(!focusState.paused) focusState.last = Date.now();
+  document.getElementById('focus-pause').textContent = focusState.paused ? '▶ 繼續' : '⏸ 暫停';
+}
+
+function skipFocus(){
+  focusState.remaining = 0;
+}
+
+function closeFocus(){
+  if(focusState.tickId){ clearInterval(focusState.tickId); focusState.tickId = null; }
+  document.getElementById('focus-modal').classList.remove('show');
 }
 
 /* ---------- Mentor chat ---------- */
@@ -5902,6 +6220,133 @@ function closeOnboard(){
   saveState();
   document.getElementById('onboard').classList.remove('show');
   sfxDeclare();
+}
+
+/* ---------- Sorting quiz ---------- */
+const QUIZ = [
+  { q:'週末下午的自由時間，你最想做什麼？', a:{
+    0:'去戶外運動／跑步／健身',
+    1:'與家人朋友好好聊一聊',
+    2:'研究新工具、學習新技能',
+    3:'讀一本書／寫一點東西',
+  }},
+  { q:'面對一個你害怕的任務，你的第一反應？', a:{
+    0:'硬著頭皮先做再說',
+    1:'慢慢來，按部就班不焦慮',
+    2:'先列出獲得、資源、路徑',
+    3:'研究背景、思考利弊',
+  }},
+  { q:'別人稱讚你最多的特質是？', a:{
+    0:'行動力強、不囉唆',
+    1:'可靠、溫和、持之以恆',
+    2:'有企圖心、目標明確',
+    3:'聰明、有想法、有深度',
+  }},
+  { q:'看到別人進步比你快，你的感受？', a:{
+    0:'激起鬥志，馬上行動追上',
+    1:'為他開心，專注走自己的路',
+    2:'分析差距，設計更好的策略',
+    3:'反思自己哪裡還能優化',
+  }},
+  { q:'最容易讓你放棄任務的原因？', a:{
+    0:'疲勞、沒體力',
+    1:'中斷、失去節奏感',
+    2:'看不到成果、缺乏回饋',
+    3:'覺得意義不夠、懷疑價值',
+  }},
+  { q:'如果只能投資時間在一件事，你會選？', a:{
+    0:'身體健康與體能',
+    1:'家人關係與內在平靜',
+    2:'事業／財務／個人品牌',
+    3:'知識、閱讀、寫作輸出',
+  }},
+  { q:'你希望被他人如何記得？', a:{
+    0:'真誠勇敢、做到就是做到',
+    1:'溫暖可靠、最值得信任的朋友',
+    2:'成就非凡、影響了很多人',
+    3:'智慧深刻、洞見獨到',
+  }},
+  { q:'你最想擁有的魔法是？', a:{
+    0:'瞬間移動／飛行（行動自由）',
+    1:'治癒（照顧所愛之人）',
+    2:'控制時間（完成更多事）',
+    3:'讀心／預知（洞察真相）',
+  }},
+];
+
+let quizScores = [0,0,0,0];
+let quizIdx = 0;
+
+function startQuiz(){
+  quizIdx = 0;
+  quizScores = [0,0,0,0];
+  document.querySelector('.onboard-card:not(#quiz-card)').style.display = 'none';
+  document.getElementById('quiz-card').style.display = '';
+  document.getElementById('quiz-result').style.display = 'none';
+  document.getElementById('quiz-options').style.display = '';
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion(){
+  const item = QUIZ[quizIdx];
+  document.getElementById('quiz-progress').textContent = `第 ${quizIdx+1} ／ ${QUIZ.length} 題`;
+  document.getElementById('quiz-question').textContent = item.q;
+  const opts = document.getElementById('quiz-options');
+  opts.className = 'quiz-opts';
+  opts.innerHTML = Object.entries(item.a).map(([k, text]) =>
+    `<button class="quiz-opt" onclick="answerQuiz(${k})">${escapeHTML(text)}</button>`
+  ).join('');
+}
+
+function answerQuiz(idx){
+  quizScores[idx] += 1;
+  quizIdx += 1;
+  if(quizIdx >= QUIZ.length){
+    showQuizResult();
+  } else {
+    renderQuizQuestion();
+  }
+}
+
+function showQuizResult(){
+  // Find top index
+  let topIdx = 0, topScore = -1;
+  for(let i=0; i<4; i++){
+    if(quizScores[i] > topScore){ topScore = quizScores[i]; topIdx = i; }
+  }
+  const houseKey = HOUSE_ORDER[topIdx];
+  const h = HOUSES[houseKey];
+  document.getElementById('quiz-options').style.display = 'none';
+  document.getElementById('quiz-question').style.display = 'none';
+  document.getElementById('quiz-progress').style.display = 'none';
+  document.getElementById('quiz-title').textContent = '測驗結果';
+  const resHouse = document.getElementById('quiz-result-house');
+  resHouse.textContent = `${h.emoji} ${h.name}`;
+  resHouse.style.color = h.color;
+  resHouse.style.textShadow = `0 0 20px ${h.color}`;
+  document.getElementById('quiz-result-desc').textContent =
+    `你的主軌是「${h.aspect}」。我們會把 ${h.name} 的預設任務優先加入你的任務庫，當然也可以自由添加其他院別。`;
+  document.getElementById('quiz-result').style.display = '';
+  state.selectedHouse = houseKey;
+  saveState();
+  // Seed with that house's preset tasks (only if library is near-empty)
+  const nonSeed = (state.tasks || []).filter(t => !String(t.id).startsWith('seed_'));
+  if(nonSeed.length === 0){
+    const existing = new Set(state.tasks.map(t => t.name));
+    for(const preset of DEFAULT_TASKS.filter(t => t.house === houseKey)){
+      if(existing.has(preset.name)) continue;
+      state.tasks.push({
+        id: 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+        name: preset.name, icon: preset.icon, pts: preset.pts, house: preset.house,
+        createdAt: todayKey(),
+      });
+    }
+    saveState();
+  }
+}
+
+function finishQuiz(){
+  closeOnboard();
 }
 
 function applySeasonTheme(){
