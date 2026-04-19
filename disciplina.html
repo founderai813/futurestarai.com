@@ -1806,6 +1806,62 @@ body::before{
   100%{transform:scale(1.6); opacity:0}
 }
 
+/* Login gate */
+.login-gate{
+  position:fixed; inset:0;
+  z-index:160;
+  display:none;
+  background:
+    radial-gradient(700px 500px at 50% 0%, rgba(38,166,154,0.22), transparent 70%),
+    radial-gradient(700px 500px at 100% 100%, rgba(123,108,246,0.2), transparent 70%),
+    linear-gradient(180deg, #06040f 0%, #0a0814 100%);
+  align-items:center;
+  justify-content:center;
+  padding:24px 18px;
+  overflow-y:auto;
+}
+.login-gate.show{display:flex}
+.login-card{
+  max-width:380px;
+  width:100%;
+  background: linear-gradient(160deg, rgba(30,24,50,0.94), rgba(12,9,22,0.96));
+  border:1px solid var(--border-strong);
+  border-radius:20px;
+  padding:28px 22px;
+  text-align:center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: popIn .5s cubic-bezier(.3,1.3,.5,1);
+}
+.login-card .login-seal{
+  font-size:2.6rem;
+  filter: drop-shadow(0 4px 18px rgba(38,166,154,.45));
+}
+.login-title{
+  font-family:'Cinzel', serif;
+  font-size:1.25rem;
+  letter-spacing:.18em;
+  margin:8px 0 10px;
+  background: linear-gradient(135deg,#fff,#26a69a);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.login-lead{
+  font-size:.9rem;
+  line-height:1.7;
+  color: var(--text);
+  margin-bottom:14px;
+}
+.login-card .input{
+  width:100%;
+  text-align:center;
+  font-size:.95rem;
+  letter-spacing:.03em;
+}
+.login-card .btn{ width:100% }
+
 /* Onboarding overlay */
 .onboard{
   position:fixed; inset:0;
@@ -2321,6 +2377,14 @@ body::before{
     </div>
 
     <div class="card">
+      <div class="card-title">帳號</div>
+      <div class="setting-row">
+        <div class="setting-label" id="login-info">目前信箱：——<div class="setting-desc">登入資料保存於本機，尚無雲端同步</div></div>
+      </div>
+      <button class="btn ghost" onclick="logout()">🚪 切換 / 登出</button>
+    </div>
+
+    <div class="card">
       <div class="card-title" style="color:#ff8888">危險區域</div>
       <p class="small" style="margin-bottom:10px">清除所有資料，回到初始狀態（不可復原）</p>
       <button class="btn danger" onclick="clearAllData()">🗑 清除所有資料</button>
@@ -2467,6 +2531,26 @@ body::before{
   </div>
 </div>
 
+<!-- Email login gate -->
+<div class="login-gate" id="login-gate">
+  <div class="login-card">
+    <div class="login-seal" aria-hidden="true">✉️</div>
+    <h2 class="login-title">修行者身份</h2>
+    <p class="login-lead">
+      請輸入你的電子信箱作為個人存檔識別。<br>
+      同一信箱可在同一裝置上延續紀錄。
+    </p>
+    <form onsubmit="submitLogin(event)">
+      <input class="input" id="login-email" type="email" inputmode="email" autocomplete="email"
+        placeholder="you@example.com" required>
+      <button class="btn" type="submit" style="margin-top:10px">🪄 開始修煉</button>
+    </form>
+    <p class="small" style="margin-top:10px;color:var(--text-mute);line-height:1.6">
+      目前僅在本裝置保存；尚未提供雲端同步。更換裝置請用「匯出備份」移轉資料。
+    </p>
+  </div>
+</div>
+
 <!-- Sorting-hat onboarding -->
 <div class="onboard" id="onboard">
   <div class="onboard-stars"></div>
@@ -2514,7 +2598,17 @@ body::before{
 ============================================================ */
 
 /* ---------- Constants ---------- */
-const STORAGE_KEY = 'disciplina_v1';
+const STORAGE_KEY_BASE = 'disciplina_v1';
+const USER_KEY = 'disciplina_user';
+let STORAGE_KEY = STORAGE_KEY_BASE;
+
+function initStorageKey(){
+  const email = localStorage.getItem(USER_KEY);
+  STORAGE_KEY = email
+    ? `${STORAGE_KEY_BASE}:${encodeURIComponent(email)}`
+    : STORAGE_KEY_BASE;
+}
+initStorageKey();
 
 const THEMES = {};
 THEMES.hogwarts = {
@@ -3596,10 +3690,14 @@ function yesterdayKey(){
 
 /* ---------- Theme ---------- */
 function getLeadingHouse(){
-  let lead = 'gryffindor', max = -1;
+  let lead = HOUSE_ORDER[0], max = -1;
   for(const h of HOUSE_ORDER){
     const p = state.housePoints[h] || 0;
     if(p > max){ max = p; lead = h; }
+  }
+  // Tie-break at zero by honoring the user's manual selection
+  if(max === 0 && state.selectedHouse && HOUSE_ORDER.includes(state.selectedHouse)){
+    lead = state.selectedHouse;
   }
   return lead;
 }
@@ -3611,7 +3709,6 @@ function updateTheme(){
   root.style.setProperty('--accent', h.color);
   root.style.setProperty('--accent-soft', h.soft);
   root.style.setProperty('--accent-glow', h.glow);
-  state.selectedHouse = lead;
   if(window.__particleColor !== undefined) window.__particleColor = h.color;
 }
 
@@ -3855,7 +3952,7 @@ function renderHouseRow(){
     const title = getTitleByPts(h, pts);
     const pct = Math.min(100, (pts / maxPts) * 100);
     return `
-      <div class="house-cell ${h===lead ? 'leading' : ''}" style="--hc:${HOUSES[h].color}">
+      <div class="house-cell ${h===lead ? 'leading' : ''}" style="--hc:${HOUSES[h].color}" onclick="selectHouse('${h}')" title="點選設為主修學院">
         <div class="crown">👑</div>
         <div class="house-emoji">${HOUSES[h].emoji}</div>
         <div class="house-name">${HOUSES[h].name}</div>
@@ -4746,6 +4843,11 @@ function switchPage(name, opts){
     renderMentorPicker();
     renderQuotaInfo();
     renderChangelog();
+    const li = document.getElementById('login-info');
+    if(li){
+      const em = currentUserEmail() || '(未登入)';
+      li.firstChild.textContent = '目前信箱：' + em;
+    }
     const mt = document.getElementById('mute-toggle');
     if(mt) mt.checked = !state.muted;
     const hc = document.getElementById('hc-toggle');
@@ -5407,6 +5509,15 @@ function selectTheme(id){
   if(id === state.theme){ toast('目前已是此主題'); return; }
   if(!confirm(`切換到「${THEMES[id].name}」？你的任務、積分與稱號會依位置對應到新主題。`)) return;
   applyTheme(id);
+}
+
+function selectHouse(key){
+  if(!HOUSE_ORDER.includes(key)) return;
+  state.selectedHouse = key;
+  saveState();
+  updateTheme();
+  renderHouseRow();
+  toast('主修學院已切至：' + HOUSES[key].name);
 }
 
 function selectMentor(key){
@@ -6958,6 +7069,55 @@ function getAiEndpoint(){
 }
 
 /* ---------- Boot ---------- */
+/* ---------- Email login (local profiles) ---------- */
+function currentUserEmail(){
+  return localStorage.getItem(USER_KEY);
+}
+
+function showLoginGate(){
+  document.getElementById('login-gate').classList.add('show');
+  setTimeout(() => {
+    const inp = document.getElementById('login-email');
+    if(inp) inp.focus();
+  }, 150);
+}
+
+function hideLoginGate(){
+  document.getElementById('login-gate').classList.remove('show');
+}
+
+function submitLogin(e){
+  if(e) e.preventDefault();
+  const inp = document.getElementById('login-email');
+  const email = (inp.value || '').trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    toast('請輸入有效的電子信箱');
+    return;
+  }
+  const wasUser = currentUserEmail();
+  localStorage.setItem(USER_KEY, email);
+  initStorageKey();
+  // Migrate anonymous data on first login if no namespaced data exists
+  if(!localStorage.getItem(STORAGE_KEY)){
+    const anon = localStorage.getItem(STORAGE_KEY_BASE);
+    if(anon) localStorage.setItem(STORAGE_KEY, anon);
+  }
+  state = loadState();
+  pendingDeclarations = new Set();
+  applyTheme(state.theme === 'hogwarts' ? 'oriental' : (state.theme || DEFAULT_THEME_ID), { silent: true });
+  updateTheme();
+  hideLoginGate();
+  renderHome();
+  toast(wasUser ? `已切換為：${email}` : `歡迎，${email}`);
+}
+
+function logout(){
+  if(!confirm('登出後需重新輸入信箱才能看到紀錄（資料不會被刪除）。確定？')) return;
+  localStorage.removeItem(USER_KEY);
+  initStorageKey();
+  location.reload();
+}
+
 function maybeShowOnboard(){
   if(!state.onboarded){
     document.getElementById('onboard').classList.add('show');
@@ -7164,8 +7324,12 @@ function boot(){
   setInterval(reminderTick, 30 * 1000);
   reminderTick();
 
-  maybeShowOnboard();
-  maybeShowIosInstall();
+  if(!currentUserEmail()){
+    showLoginGate();
+  } else {
+    maybeShowOnboard();
+    maybeShowIosInstall();
+  }
   initShortcuts();
 
   // Auto-switch day tab every 5 minutes in case user keeps the page open
