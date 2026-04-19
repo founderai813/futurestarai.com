@@ -375,6 +375,26 @@ body::before{
   font-family:'Cinzel', serif;
 }
 
+.shield-btn{
+  margin-top:8px;
+  background: linear-gradient(135deg, #7b6cf6, #4da6ff);
+  box-shadow: 0 4px 14px rgba(123,108,246,0.25);
+  color:#fff;
+  width:100%;
+  border:none;
+}
+.shield-btn:hover{ box-shadow: 0 6px 18px rgba(123,108,246,0.4) }
+.shield-used{
+  margin-top:8px;
+  padding: 8px 10px;
+  background: rgba(123,108,246,0.15);
+  border:1px solid rgba(123,108,246,0.5);
+  border-radius: 10px;
+  font-size:.85rem;
+  color: #b8b0ff;
+  text-align:center;
+}
+
 /* Red flash overlay when scolding appears */
 .red-flash{
   position:fixed;inset:0;
@@ -2085,7 +2105,10 @@ body::before{
     <div class="card">
       <div class="card-title">四院積分排行榜</div>
       <div class="leaderboard" id="leaderboard"></div>
-      <button class="btn ghost" onclick="generateWeeklyCard()" style="margin-top:12px">🗓 產生本週總結卡</button>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn ghost" onclick="generateWeeklyCard()" style="flex:1">🗓 本週總結</button>
+        <button class="btn ghost" onclick="generateYearlyCard()" style="flex:1">🎊 年度回顧</button>
+      </div>
     </div>
 
     <div class="card">
@@ -3170,6 +3193,253 @@ THEMES.oriental = {
   },
 };
 
+/* ---------- Theme: Four Elements (Aether) ---------- */
+THEMES.aether = {
+  id: 'aether',
+  name: '元素 · Aether',
+  short: 'AETHER EDITION',
+  brand: 'Disciplina',
+  tagline: '自律元素書',
+  defaultMentorId: 'ignis',
+  onboard: {
+    title: '元素契約',
+    lead: '歡迎來到 <b>Disciplina · 自律元素書</b>。<br>四元素各司其職，亦各自平衡。<br>你的誓言，將與它們共鳴。',
+    sub: '四元素代表你內在的四種能量。<br>任務歸屬哪一元素，就是在調動哪一股力量。',
+  },
+  parchment: {
+    title: '元素契約書',
+    intro: '我，持此契約，允諾完成以下修煉：',
+    sign: '簽署於 元素之塔',
+  },
+  houses: {
+    fire:  { name:'火 · Ignis', emoji:'🔥', color:'#ff5a3c', glow:'rgba(255,90,60,0.5)',  soft:'rgba(255,90,60,0.2)',  aspect:'熱情行動' },
+    earth: { name:'地 · Terra', emoji:'🌱', color:'#6fae4f', glow:'rgba(111,174,79,0.5)', soft:'rgba(111,174,79,0.2)', aspect:'穩定堅持' },
+    air:   { name:'風 · Ventus', emoji:'💨', color:'#8fd4ff', glow:'rgba(143,212,255,0.5)', soft:'rgba(143,212,255,0.2)', aspect:'思辨靈活' },
+    water: { name:'水 · Aqua', emoji:'💧', color:'#5aa9ff', glow:'rgba(90,169,255,0.5)', soft:'rgba(90,169,255,0.2)', aspect:'直覺流動' },
+  },
+  houseOrder: ['fire','earth','air','water'],
+  defaultTasks: [
+    { name:'高強度訓練',  icon:'🏋️', pts:15, house:'fire' },
+    { name:'冷水淋浴',    icon:'🚿', pts:10, house:'fire' },
+    { name:'爆發力衝刺',  icon:'⚡', pts:10, house:'fire' },
+    { name:'清晨專案衝刺', icon:'🔥', pts:5,  house:'fire' },
+
+    { name:'規律作息',    icon:'🌿', pts:10, house:'earth' },
+    { name:'飲食紀錄',    icon:'🥗', pts:5,  house:'earth' },
+    { name:'整理環境',    icon:'🧹', pts:5,  house:'earth' },
+    { name:'種植照料',    icon:'🪴', pts:10, house:'earth' },
+
+    { name:'閱讀文章',    icon:'📰', pts:10, house:'air' },
+    { name:'寫作輸出',    icon:'✍️', pts:10, house:'air' },
+    { name:'外語練習',    icon:'🗣️', pts:10, house:'air' },
+    { name:'人脈聯繫',    icon:'🤝', pts:5,  house:'air' },
+
+    { name:'冥想靜坐',    icon:'🧘', pts:10, house:'water' },
+    { name:'情緒日記',    icon:'💭', pts:5,  house:'water' },
+    { name:'聆聽音樂',    icon:'🎶', pts:5,  house:'water' },
+    { name:'陪伴所愛',    icon:'💞', pts:10, house:'water' },
+  ],
+  titles: {
+    fire:  [
+      { pts:0, name:'火苗' }, { pts:30, name:'火舌' },
+      { pts:80, name:'烈焰使者' }, { pts:150, name:'鳳凰之心' }, { pts:250, name:'熾焰之王' },
+    ],
+    earth: [
+      { pts:0, name:'新芽' }, { pts:30, name:'紮根者' },
+      { pts:80, name:'山石守護' }, { pts:150, name:'大地之柱' }, { pts:250, name:'盤古之後' },
+    ],
+    air:   [
+      { pts:0, name:'微風' }, { pts:30, name:'風之使者' },
+      { pts:80, name:'翔空者' }, { pts:150, name:'雲端學士' }, { pts:250, name:'穹宇之智' },
+    ],
+    water: [
+      { pts:0, name:'露珠' }, { pts:30, name:'涓流' },
+      { pts:80, name:'深潭觀者' }, { pts:150, name:'潮汐賢人' }, { pts:250, name:'深海之心' },
+    ],
+  },
+  dailyQuotes: [
+    '火焰記得自己的形狀，水永遠忘記。兩者皆是力量。',
+    '元素不是你擁有的，是你願意成為的。',
+    '穩固如地，流動如水——這是修煉的節奏。',
+    '風不與山爭高，卻吹過千萬座山。',
+    '每個元素都有它的季節；你只需辨認此刻。',
+    '火讓你開始，地讓你持續，風讓你靈活，水讓你原諒。',
+    '沒有一種元素獨自足夠，但每天至少召喚一種。',
+    '紀律是四元素的交會處。',
+    '靜如深潭，動如驚雷——皆為元素本色。',
+    '元素循環，你的自律亦是。',
+    '「不破不立」——火的本性；「細水長流」——水的本性。',
+    '土記得每一步，風吹拂一切又不留痕。',
+    '當你困頓，呼喚風；當你焦慮，呼喚地。',
+    '誓言若無元素承載，便是空話。',
+    '元素之書今日翻開——你是主角。',
+  ],
+  defaultMentorSvg: `
+<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="ebg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1c1630"/>
+      <stop offset="100%" stop-color="#07050f"/>
+    </radialGradient>
+  </defs>
+  <rect width="80" height="80" fill="url(#ebg)"/>
+  <!-- element sigils -->
+  <circle cx="20" cy="20" r="4" fill="#ff5a3c" opacity="0.35"/>
+  <circle cx="60" cy="20" r="4" fill="#8fd4ff" opacity="0.35"/>
+  <circle cx="20" cy="60" r="4" fill="#6fae4f" opacity="0.35"/>
+  <circle cx="60" cy="60" r="4" fill="#5aa9ff" opacity="0.35"/>
+  <!-- hooded silhouette -->
+  <path d="M10 80 Q22 54 40 54 Q58 54 70 80 Z" fill="#0b0a18"/>
+  <path d="M24 54 Q28 30 40 28 Q52 30 56 54 Z" fill="#121023"/>
+  <!-- face shadow inside hood -->
+  <ellipse cx="40" cy="42" rx="10" ry="12" fill="#2a2540"/>
+  <!-- glowing eyes -->
+  <circle cx="36" cy="42" r="1.3" fill="#ffd08a"/>
+  <circle cx="44" cy="42" r="1.3" fill="#ffd08a"/>
+  <!-- pendant -->
+  <circle cx="40" cy="62" r="3" fill="#ffd08a" opacity="0.7"/>
+  <path d="M40 58 L38 50 M40 58 L42 50" stroke="#ffd08a" stroke-width="0.7" opacity="0.5"/>
+</svg>`,
+  mentors: {
+    ignis: {
+      name: 'IGNIS · 炎者',
+      title: '熾熱直接，催你立刻行動',
+      morning: [
+        '火焰不等——趁熱立誓，否則它就熄了。',
+        '想，是冷的；做，是熱的。選一邊。',
+        '你靈感再好，沒有行動也燒不出灰。',
+        '晨光是引火柴——現在就劃。',
+        '遲疑是潮濕的木頭，點不著火。',
+        '用一件小事點燃今日——哪怕只是五分鐘。',
+        '火不在乎起點大小，只在乎你有沒有點火。',
+        '焚盡昨日的藉口——重新立誓。',
+      ],
+      evening: [
+        '火熄前，檢視你燒了什麼。',
+        '誠實告訴自己：哪幾項你真的「燃」起來了？',
+        '沒燒完的灰，別假裝是金子。',
+        '夜風將至——讓今日的火留下炭火，別留藉口。',
+        '今晚的打勾，是明日再燃的火引。',
+        '若今日火苗微弱，別責怪自己——只要不熄。',
+        '灰燼中自有明日的種子。',
+        '焚盡不誠實的自我——然後入睡。',
+      ],
+      scold: [
+        '昨日你說要燒『{tasks}』——火呢？連煙都沒看見。',
+        '承諾若不踐行，只是濕柴。昨日未竟：『{tasks}』。',
+        '『{tasks}』——你把它們丟進了昨夜的涼水。',
+        '火者不言多——但你昨日既沒言也沒做。『{tasks}』。',
+        '別再把昨日的灰當藉口——昨日未竟：『{tasks}』。',
+        '勇氣不是火——是選擇點燃。『{tasks}』。',
+        '『{tasks}』仍冷著——現在就燒。',
+        '焚燒需要柴與氧——你昨日兩者皆無。『{tasks}』。',
+      ],
+    },
+    terra: {
+      name: 'TERRA · 地者',
+      title: '穩定溫厚，教你慢慢紮根',
+      morning: [
+        '大地從不急——但從不停。',
+        '今日一小步，便是明日的厚土。',
+        '不必大動作，只需不間斷。',
+        '山不語，而眾生信其恆定——你也可以。',
+        '紮根的過程無人看見，但它支撐一切。',
+        '允許今日只做一件事——但請真的做到。',
+        '大地記得你每一步——哪怕很慢。',
+        '穩定是一種奢華——今日，你值得擁有。',
+      ],
+      evening: [
+        '夜晚，大地歸於沉靜——請你也是。',
+        '今日紮下的根，明日自會發芽。',
+        '回顧時請溫柔——大地從不評判。',
+        '未完成的，明日的土壤仍會等你。',
+        '每日一點，勝過偶爾的驚天動地。',
+        '請為今日的恆心，感謝自己一次。',
+        '山的成就，是日復一日的屹立。',
+        '夜色厚實——如土一般接住你今日的努力。',
+      ],
+      scold: [
+        '昨日你遠離了土地——『{tasks}』沒能紮根。',
+        '風可以吹走雲，但不該吹走承諾。昨日未竟：『{tasks}』。',
+        '大地仍在等你——『{tasks}』的種子未播。',
+        '恆心被中斷了——請明日接回。『{tasks}』。',
+        '『{tasks}』不需要偉大，只需要持續——而昨日你沒有。',
+        '根需要水與時間——你兩者都未給。『{tasks}』。',
+        '土地寬容，但不會替你長出莊稼。未竟：『{tasks}』。',
+        '明日請重新蹲下，撫摸你的任務。『{tasks}』。',
+      ],
+    },
+    ventus: {
+      name: 'VENTUS · 風者',
+      title: '輕盈靈活，常提問讓你反思',
+      morning: [
+        '風不執著——請你也是。有些任務可以換個做法。',
+        '若今日重訂計畫，會怎麼樣？',
+        '先丟掉昨日的成見，再看今日的任務。',
+        '問問自己：這些任務，哪一件最輕？先做它。',
+        '風者不爭——但總先一步抵達。',
+        '你今日最想轉變的是什麼？',
+        '輕盈之道，始於放下一件你不必做的事。',
+        '風穿越一切卻不留痕——願你的焦慮也是。',
+      ],
+      evening: [
+        '回顧今日，哪件事你做得比預期輕鬆？記下來。',
+        '風記得路徑，不記得辛苦。',
+        '未做到的——也許它根本不該做？',
+        '今晚反思：哪些是必要的，哪些只是習慣？',
+        '風者懂取捨——今日哪件事你捨棄了？',
+        '輕盈入眠——別把未完成當重擔。',
+        '風每晚都換方向——你也可以重新開始。',
+        '記下今日的三個觀察——它們比打勾更重要。',
+      ],
+      scold: [
+        '昨日你不夠靈活——『{tasks}』被卡住了。',
+        '也許『{tasks}』的做法該換——不是放棄，是重試。',
+        '風轉向不是失敗——但你昨日靜止不動。『{tasks}』。',
+        '請把『{tasks}』拆得更小——風吹得更細膩。',
+        '停在昨日是不公平的——明日請繼續流動。『{tasks}』。',
+        '『{tasks}』提醒你：某個習慣已不合身了。',
+        '風者善於迂迴——昨日你過於正面硬碰。『{tasks}』。',
+        '重新設計『{tasks}』，再立誓——一定更輕。',
+      ],
+    },
+    aqua: {
+      name: 'AQUA · 水者',
+      title: '溫柔流動，重視情緒與連結',
+      morning: [
+        '早安——今日你內心的潮汐是漲還是落？',
+        '請先照顧自己的感受，再照顧清單。',
+        '水不急於到達——它只是流動。你也是。',
+        '若心累了，請在任務之外先停一下。',
+        '誓言不必偉大——只要誠實。',
+        '今天想為誰／為自己做一件柔軟的事？',
+        '流動之道：先動起來，不必方向完美。',
+        '水會繞路，但總會到——所以放心。',
+      ],
+      evening: [
+        '今日的感受，比打勾重要。寫一句。',
+        '沒完成的任務不會恨你——但你的身體會感謝休息。',
+        '潮退之後請感謝自己——今日已盡力。',
+        '請為今晚留一點點溫柔——給自己也給他人。',
+        '讓未完成漂走一些——明日潮水會再來。',
+        '水永遠回來——你的紀律也是。',
+        '允許今晚的自己流淚或大笑——皆是修煉。',
+        '晚安——願你夢見深海的平靜。',
+      ],
+      scold: [
+        '昨日你被潮水帶走了——『{tasks}』擱淺在岸邊。',
+        '也許昨日情緒太滿——但明日仍要回來。『{tasks}』。',
+        '水可以重新流動——不必對未完成的『{tasks}』太重。',
+        '你今晨回頭看的勇氣，比打勾更重要。『{tasks}』。',
+        '未完成不是溺水——只是今日的潮退。『{tasks}』。',
+        '請對昨夜的自己說一句原諒——然後今日重啟。『{tasks}』。',
+        '感受重要，執行亦重要——請兩者都給自己。『{tasks}』。',
+        '水會繞過石頭，而不是和它正面對撞——昨日未竟：『{tasks}』。',
+      ],
+    },
+  },
+};
+
 /* ---------- State ---------- */
 let state = loadState();
 let currentPage = 'home';
@@ -3206,6 +3476,7 @@ function defaultState(){
     privacy: false,
     goals: [], // [{id, kind:'task'|'house', ref, target, month:'YYYY-MM', name}]
     theme: 'hogwarts',
+    streakShield: { month: '', used: 0, protected: [] }, // 1 card per month
   };
 }
 
@@ -3220,6 +3491,7 @@ function loadState(){
       notes: parsed.notes || {},
       achievements: parsed.achievements || {},
       reminder: { ...base.reminder, ...(parsed.reminder||{}) },
+      streakShield: { ...base.streakShield, ...(parsed.streakShield||{}) },
       housePoints: { ...base.housePoints, ...(parsed.housePoints||{}) },
       lastTitles: { ...base.lastTitles, ...(parsed.lastTitles||{}) },
     };
@@ -3718,14 +3990,21 @@ function renderScoldingBox(){
     .filter(t => t && !completions[t.id]);
   if(missed.length === 0){ box.innerHTML=''; return; }
 
+  const s = ensureStreakShield();
+  const protectedYesterday = s.protected.includes(y);
   const names = missed.map(t => t.name).join('、');
   const tmpl = pickFromList(currentMentor().scold);
   const text = tmpl.replace('{tasks}', names);
-  box.innerHTML = `<div class="mentor-line scolding">${escapeHTML(text)}</div>`;
+  const shieldUi = protectedYesterday
+    ? `<div class="shield-used">🛡 此日已啟用連勝保護</div>`
+    : (canUseShield()
+        ? `<button class="btn ghost shield-btn" onclick="shieldDay('${y}')">🛡 使用連勝保護卡（本月剩 ${1 - s.used}）</button>`
+        : `<div class="small" style="margin-top:6px;color:var(--text-mute)">本月連勝保護卡已用完（每月 1 張）</div>`);
+  box.innerHTML = `<div class="mentor-line scolding">${escapeHTML(text)}</div>${shieldUi}`;
 
   // Red flash — only once per day per missed-set
   const flashKey = 'disciplina_flashed_' + todayKey();
-  if(!sessionStorage.getItem(flashKey)){
+  if(!sessionStorage.getItem(flashKey) && !protectedYesterday){
     sessionStorage.setItem(flashKey, '1');
     triggerRedFlash();
   }
@@ -4113,11 +4392,13 @@ function checkAchievements(){
 
 function computeCurrentStreak(){
   const today = new Date();
+  const shielded = new Set((state.streakShield?.protected) || []);
   let streak = 0;
   for(let i=0; i<60; i++){
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const key = dateKey(d);
+    if(shielded.has(key)){ streak++; continue; }
     const declared = state.declarations[key] || [];
     if(declared.length === 0){
       if(i === 0) continue;
@@ -4129,6 +4410,34 @@ function computeCurrentStreak(){
     else break;
   }
   return streak;
+}
+
+function ensureStreakShield(){
+  const m = currentMonthKey();
+  if(!state.streakShield || state.streakShield.month !== m){
+    state.streakShield = { month: m, used: 0, protected: (state.streakShield?.protected)||[] };
+    // Keep protected dates but reset monthly usage
+    saveState();
+  }
+  return state.streakShield;
+}
+
+function canUseShield(){
+  const s = ensureStreakShield();
+  return s.used < 1;
+}
+
+function shieldDay(key){
+  if(!canUseShield()){ toast('本月保護卡已用完'); return; }
+  const s = ensureStreakShield();
+  if(s.protected.includes(key)){ toast('該日已受保護'); return; }
+  s.protected.push(key);
+  s.used += 1;
+  saveState();
+  toast('🛡 已使用連勝保護卡');
+  sfxLevelup();
+  renderEveningPanel();
+  renderHouseRow();
 }
 
 function renderJournal(){
@@ -5103,6 +5412,7 @@ function closeLevelUp(){
 /* ---------- Share card ---------- */
 async function generateShareCard(){
   const canvas = document.getElementById('share-canvas');
+  canvas.width = 900; canvas.height = 1200;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
 
@@ -5256,6 +5566,7 @@ async function generateShareCard(){
 
 async function generateWeeklyCard(){
   const canvas = document.getElementById('share-canvas');
+  canvas.width = 900; canvas.height = 1200;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
 
@@ -5442,6 +5753,190 @@ async function generateWeeklyCard(){
   ctx.fillText('disciplina.futurestarai.com', W/2, H - 50);
 
   document.getElementById('share-modal').classList.add('show');
+}
+
+async function generateYearlyCard(){
+  const canvas = document.getElementById('share-canvas');
+  canvas.width = 900;
+  canvas.height = 1400;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  try {
+    if(document.fonts && document.fonts.load){
+      await Promise.all([
+        document.fonts.load('700 70px Cinzel'),
+        document.fonts.load('500 22px Cinzel'),
+        document.fonts.load('700 48px Cinzel'),
+        document.fonts.load('500 22px "Noto Sans TC"'),
+        document.fonts.load('500 18px "Noto Sans TC"'),
+      ]);
+      await document.fonts.ready;
+    }
+  } catch(e){}
+
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, '#120d20');
+  g.addColorStop(0.5, '#0a0814');
+  g.addColorStop(1, '#06040d');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  const lead = getLeadingHouse();
+  const leadColor = HOUSES[lead].color;
+  const glow = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, W);
+  glow.addColorStop(0, leadColor + '60');
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow; ctx.fillRect(0,0,W,H);
+
+  for(let i=0; i<120; i++){
+    ctx.globalAlpha = 0.3 + Math.random()*0.5;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(Math.random()*W, Math.random()*H, Math.random()*1.5+0.4, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  const cjk = '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif';
+  const cinzel = '"Cinzel", "Times New Roman", serif';
+
+  const year = new Date().getFullYear();
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#e8e4f5';
+  ctx.font = `700 70px ${cinzel}`;
+  ctx.fillText('ANNUAL REPORT', W/2, 130);
+  ctx.fillStyle = '#6c638a';
+  ctx.font = `500 22px ${cinzel}`;
+  ctx.fillText('DISCIPLINA · 年度修煉卷軸', W/2, 168);
+  ctx.fillStyle = leadColor;
+  ctx.font = `700 48px ${cinzel}`;
+  ctx.fillText(String(year), W/2, 228);
+
+  // Compute year stats
+  const yrPrefix = String(year) + '-';
+  let totalDone = 0, totalDecl = 0, yearPts = 0;
+  const perMonth = {}; // 1..12 -> { done, declared, pts }
+  for(let mo=1; mo<=12; mo++) perMonth[mo] = { done:0, declared:0, pts:0 };
+  const perHouse = { ...Object.fromEntries(HOUSE_ORDER.map(h => [h,0])) };
+  for(const [dk, decl] of Object.entries(state.declarations || {})){
+    if(!dk.startsWith(yrPrefix)) continue;
+    const mo = parseInt(dk.slice(5,7), 10);
+    const comp = state.completions[dk] || {};
+    perMonth[mo].declared += decl.length;
+    totalDecl += decl.length;
+    for(const id of decl){
+      if(comp[id]){
+        perMonth[mo].done += 1;
+        totalDone += 1;
+        const t = state.tasks.find(x => x.id === id);
+        if(t){
+          perMonth[mo].pts += t.pts;
+          yearPts += t.pts;
+          perHouse[t.house] = (perHouse[t.house] || 0) + t.pts;
+        }
+      }
+    }
+  }
+  let bestMonth = 1, bestPts = 0;
+  for(let mo=1; mo<=12; mo++){
+    if(perMonth[mo].pts > bestPts){ bestPts = perMonth[mo].pts; bestMonth = mo; }
+  }
+  const rate = totalDecl ? Math.round(totalDone/totalDecl*100) : 0;
+
+  // Key stats row
+  const yStats = 300;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fff';
+  ctx.font = `700 52px ${cinzel}`;
+  ctx.fillText(`${totalDone}`, W*0.2, yStats);
+  ctx.fillText(`${rate}%`, W*0.5, yStats);
+  ctx.fillText(`${yearPts}`, W*0.8, yStats);
+  ctx.fillStyle = '#a59dc2';
+  ctx.font = `500 20px ${cjk}`;
+  ctx.fillText('總完成次數', W*0.2, yStats + 32);
+  ctx.fillText('完成率', W*0.5, yStats + 32);
+  ctx.fillText('年度積分', W*0.8, yStats + 32);
+
+  // 12-month heatmap
+  ctx.fillStyle = '#a59dc2';
+  ctx.font = `500 18px ${cjk}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`12 個月足跡 · 最強月份：${bestMonth} 月（${bestPts} 分）`, W/2, yStats + 80);
+
+  const hmTop = yStats + 110;
+  const cellW = 130, gap = 8;
+  const cols = 4;
+  const cellH = 100;
+  const totalW = cellW * cols + gap * (cols-1);
+  const hmStartX = (W - totalW) / 2;
+  let maxMonth = Math.max(1, ...Object.values(perMonth).map(m => m.pts));
+  for(let mo=1; mo<=12; mo++){
+    const i = mo - 1;
+    const col = i % cols, row = Math.floor(i / cols);
+    const x = hmStartX + col * (cellW + gap);
+    const y = hmTop + row * (cellH + gap);
+    const data = perMonth[mo];
+    const intensity = data.pts / maxMonth;
+    ctx.fillStyle = `rgba(${hexToRgbStr(leadColor)}, ${0.12 + intensity*0.5})`;
+    ctx.strokeStyle = intensity > 0.05 ? leadColor : 'rgba(200,180,255,0.12)';
+    ctx.lineWidth = 2;
+    roundRect(ctx, x, y, cellW, cellH, 14);
+    ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = '#6c638a';
+    ctx.font = `500 16px ${cjk}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`${mo} 月`, x + cellW/2, y + 22);
+    ctx.fillStyle = data.pts > 0 ? '#fff' : '#50496a';
+    ctx.font = `700 34px ${cinzel}`;
+    ctx.fillText(String(data.pts), x + cellW/2, y + 58);
+    ctx.fillStyle = '#a59dc2';
+    ctx.font = `500 14px ${cjk}`;
+    ctx.fillText(`${data.done} 次`, x + cellW/2, y + 82);
+  }
+
+  // House totals
+  const hy = hmTop + Math.ceil(12/cols) * (cellH + gap) + 24;
+  const boxW = 190, hbgap = 16, hbH = 120;
+  const hbStart = (W - (boxW*4 + hbgap*3)) / 2;
+  for(let i=0; i<HOUSE_ORDER.length; i++){
+    const h = HOUSE_ORDER[i];
+    const x = hbStart + i * (boxW + hbgap);
+    const c = HOUSES[h].color;
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.strokeStyle = c + '88';
+    ctx.lineWidth = 2;
+    roundRect(ctx, x, hy, boxW, hbH, 16);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = `400 34px system-ui, "Apple Color Emoji", "Segoe UI Emoji"`;
+    ctx.textAlign = 'center';
+    ctx.fillText(HOUSES[h].emoji, x + boxW/2, hy + 44);
+    ctx.fillStyle = c;
+    ctx.font = `500 15px ${cjk}`;
+    ctx.fillText(HOUSES[h].name, x + boxW/2, hy + 66);
+    ctx.fillStyle = c;
+    ctx.font = `700 30px ${cinzel}`;
+    ctx.fillText(String(perHouse[h] || 0), x + boxW/2, hy + 102);
+  }
+
+  // Footer
+  ctx.fillStyle = '#6c638a';
+  ctx.font = `500 20px ${cjk}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`「${year} 一年之修煉，非朝夕之功」 — ${currentMentor().name}`, W/2, H - 90);
+  ctx.font = `500 18px ${cinzel}`;
+  ctx.fillStyle = leadColor;
+  ctx.fillText('disciplina.futurestarai.com', W/2, H - 50);
+
+  document.getElementById('share-modal').classList.add('show');
+}
+
+function hexToRgbStr(hex){
+  const m = hex.replace('#','');
+  const v = parseInt(m, 16);
+  return `${(v>>16)&255},${(v>>8)&255},${v&255}`;
 }
 
 function roundRect(ctx, x, y, w, h, r){
