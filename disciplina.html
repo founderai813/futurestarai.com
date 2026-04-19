@@ -5389,7 +5389,10 @@ function renderMentorPicker(){
 function renderThemePicker(){
   const el = document.getElementById('theme-picker');
   if(!el) return;
-  el.innerHTML = Object.entries(THEMES).map(([key, t]) => {
+  // Hogwarts theme is kept in the bundle only for data migration — do
+  // not surface it in the UI. Only Oriental and Aether are selectable.
+  const visible = Object.entries(THEMES).filter(([key]) => key !== 'hogwarts');
+  el.innerHTML = visible.map(([key, t]) => {
     const houseDots = t.houseOrder.map(h => `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${t.houses[h].color};box-shadow:0 0 6px ${t.houses[h].color};margin-right:4px"></span>`).join('');
     return `
       <div class="mentor-card-pick ${state.theme===key?'on':''}" onclick="selectTheme('${key}')">
@@ -7130,8 +7133,12 @@ function applySeasonTheme(){
 function boot(){
   injectManifest();
   applySeasonTheme();
-  // Apply saved content theme silently so strings/constants are right from start
-  applyTheme(state.theme && THEMES[state.theme] ? state.theme : 'hogwarts', { silent: true });
+  // Migrate any legacy Hogwarts save into Oriental automatically
+  if(state.theme === 'hogwarts'){
+    applyTheme('oriental', { silent: true });
+  } else {
+    applyTheme(state.theme && THEMES[state.theme] ? state.theme : 'oriental', { silent: true });
+  }
   if(state.highContrast) document.body.classList.add('hc');
   if(state.privacy) document.body.classList.add('privacy');
   // Ambient requires a user gesture, so just mark state — will auto-start on first interaction
