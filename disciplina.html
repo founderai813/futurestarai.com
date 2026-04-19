@@ -2007,6 +2007,12 @@ body::before{
   <!-- ============ Settings page ============ -->
   <section class="page" id="page-settings">
     <div class="card">
+      <div class="card-title">主題包</div>
+      <p class="small" style="margin-bottom:8px">切換世界觀。任務、學院、稱號、導師、台詞會整套替換。</p>
+      <div id="theme-picker" class="mentor-picker"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title">導師選擇</div>
       <div id="mentor-picker" class="mentor-picker"></div>
     </div>
@@ -2280,15 +2286,37 @@ body::before{
 /* ---------- Constants ---------- */
 const STORAGE_KEY = 'disciplina_v1';
 
-const HOUSES = {
+const THEMES = {};
+THEMES.hogwarts = {
+  id: 'hogwarts',
+  name: 'Hogwarts · 霍格華茲',
+  short: 'HOGWARTS EDITION',
+  brand: 'Disciplina',
+  tagline: '自律魔典',
+  defaultMentorId: 'severus',
+  onboard: {
+    title: '分院帽之誓',
+    lead: '歡迎來到 <b>Disciplina · 自律魔典</b>。<br>這裡沒有捷徑，也沒有鳳凰來救你。<br>你的每一個誓言，都會被看見。',
+    sub: '四院不是標籤，而是你自律的四個面向。<br>任務歸屬哪一院，就是在鍛鍊哪一項。',
+  },
+  parchment: {
+    title: '自律誓言書',
+    intro: '我，於此時此刻，鄭重宣誓完成以下修煉：',
+    sign: '簽署於 Hogwarts',
+  },
+};
+THEMES.hogwarts.houses = {
   gryffindor: { name:'葛來芬多', emoji:'🦁', color:'#ff6b35', glow:'rgba(255,107,53,0.5)', soft:'rgba(255,107,53,0.2)', aspect:'行動力' },
   hufflepuff: { name:'赫夫帕夫', emoji:'🦡', color:'#f5c518', glow:'rgba(245,197,24,0.5)', soft:'rgba(245,197,24,0.2)', aspect:'一致性' },
   slytherin:  { name:'斯萊哲林', emoji:'🐍', color:'#2ecc71', glow:'rgba(46,204,113,0.5)', soft:'rgba(46,204,113,0.2)', aspect:'野心執行' },
   ravenclaw:  { name:'雷文克勞', emoji:'🦅', color:'#4da6ff', glow:'rgba(77,166,255,0.5)', soft:'rgba(77,166,255,0.2)', aspect:'反思成長' },
 };
-const HOUSE_ORDER = ['gryffindor','hufflepuff','slytherin','ravenclaw'];
+THEMES.hogwarts.houseOrder = ['gryffindor','hufflepuff','slytherin','ravenclaw'];
 
-const DEFAULT_TASKS = [
+let HOUSES = THEMES.hogwarts.houses;
+let HOUSE_ORDER = THEMES.hogwarts.houseOrder;
+
+THEMES.hogwarts.defaultTasks = [
   // Gryffindor — 行動力
   { name:'運動訓練',    icon:'💪', pts:10, house:'gryffindor' },
   { name:'健康飲食',    icon:'🥗', pts:5,  house:'gryffindor' },
@@ -2310,8 +2338,9 @@ const DEFAULT_TASKS = [
   { name:'自媒體輸出',  icon:'🎨', pts:15, house:'ravenclaw' },
   { name:'商業邏輯',    icon:'💡', pts:10, house:'ravenclaw' },
 ];
+let DEFAULT_TASKS = THEMES.hogwarts.defaultTasks;
 
-const TITLES = {
+THEMES.hogwarts.titles = {
   gryffindor: [
     { pts:0,   name:'新生' },
     { pts:30,  name:'勇氣見習' },
@@ -2341,8 +2370,9 @@ const TITLES = {
     { pts:250, name:'智慧之冠' },
   ],
 };
+let TITLES = THEMES.hogwarts.titles;
 
-const DAILY_QUOTES = [
+THEMES.hogwarts.dailyQuotes = [
   '魔杖不會選擇平庸之輩。',
   '自律者，方能駕馭時間之河。',
   '真正的勇氣，是每日的堅持。',
@@ -2354,6 +2384,7 @@ const DAILY_QUOTES = [
   '沉默的紀律，勝過喧囂的誓言。',
   '預言握在你手中，不在星辰之上。',
 ];
+let DAILY_QUOTES = THEMES.hogwarts.dailyQuotes;
 
 const MENTOR_MORNING_LINES = [
   '黎明已至，別再像個哈比人那樣賴床。宣告今日的修煉吧。',
@@ -2494,7 +2525,7 @@ const SCOLDINGS = [
   '勇氣不是宣告，勇氣是完成。你昨日只做了一半。未竟：『{tasks}』。',
 ];
 
-const MENTORS = {
+THEMES.hogwarts.mentors = {
   severus: {
     name: 'PROF. SEVERUS',
     title: '石內卜 · 毒舌但一針見血',
@@ -2668,9 +2699,10 @@ const MENTORS = {
     ],
   },
 };
+let MENTORS = THEMES.hogwarts.mentors;
 
 /* ---------- Default mentor SVG ---------- */
-const DEFAULT_MENTOR_SVG = `
+THEMES.hogwarts.defaultMentorSvg = `
 <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="bgG" cx="50%" cy="50%" r="50%">
@@ -2707,6 +2739,289 @@ const DEFAULT_MENTOR_SVG = `
   <!-- thin sneer lips -->
   <path d="M36 51 Q40 50 44 51" stroke="#6b4040" stroke-width="0.8" fill="none" stroke-linecap="round"/>
 </svg>`;
+let DEFAULT_MENTOR_SVG = THEMES.hogwarts.defaultMentorSvg;
+
+/* ---------- Theme: Oriental Four Symbols (四象) ---------- */
+THEMES.oriental = {
+  id: 'oriental',
+  name: '四象 · 東方修行',
+  short: 'ORIENTAL · 四象修行',
+  brand: 'Disciplina',
+  tagline: '自律道典',
+  defaultMentorId: 'xueming',
+  onboard: {
+    title: '四象拜師',
+    lead: '歡迎入門 <b>Disciplina · 自律道典</b>。<br>修行不靠仙緣，靠每日不輟。<br>你的每一個誓言，都將被天地紀錄。',
+    sub: '四象不是分類，而是修行的四個面向。<br>你選擇修煉的，便決定你走向何方。',
+  },
+  parchment: {
+    title: '自律拜師帖',
+    intro: '弟子於此時此刻，恭立誓言，願完成以下修煉：',
+    sign: '簽署於 靈山',
+  },
+  houses: {
+    azure:     { name:'青龍', emoji:'🐉', color:'#26a69a', glow:'rgba(38,166,154,0.5)', soft:'rgba(38,166,154,0.2)', aspect:'開創行動' },
+    white:     { name:'白虎', emoji:'🐯', color:'#f5c518', glow:'rgba(245,197,24,0.5)', soft:'rgba(245,197,24,0.2)', aspect:'果決律己' },
+    vermilion: { name:'朱雀', emoji:'🔥', color:'#ff4d4d', glow:'rgba(255,77,77,0.5)',  soft:'rgba(255,77,77,0.2)',  aspect:'熱情創造' },
+    black:     { name:'玄武', emoji:'🐢', color:'#7b6cf6', glow:'rgba(123,108,246,0.5)', soft:'rgba(123,108,246,0.2)', aspect:'沉靜智慧' },
+  },
+  houseOrder: ['azure','white','vermilion','black'],
+  defaultTasks: [
+    // 青龍 — 開創行動
+    { name:'晨起跑步',    icon:'🏃', pts:10, house:'azure' },
+    { name:'清淨飲食',    icon:'🥗', pts:5,  house:'azure' },
+    { name:'戒癮修身',    icon:'🛡️', pts:15, house:'azure' },
+    { name:'撰寫專論',    icon:'📜', pts:15, house:'azure' },
+    // 白虎 — 果決律己
+    { name:'每日感恩',    icon:'🙏', pts:5,  house:'white' },
+    { name:'拳腳練習',    icon:'🥋', pts:10, house:'white' },
+    { name:'覆盤觀心',    icon:'📖', pts:10, house:'white' },
+    { name:'家書一封',    icon:'💌', pts:5,  house:'white' },
+    // 朱雀 — 熱情創造
+    { name:'AI 修練',     icon:'🤖', pts:15, house:'vermilion' },
+    { name:'財務籌畫',    icon:'💰', pts:10, house:'vermilion' },
+    { name:'行業布局',    icon:'🎯', pts:15, house:'vermilion' },
+    { name:'術數研讀',    icon:'🔮', pts:5,  house:'vermilion' },
+    // 玄武 — 沉靜智慧
+    { name:'經典閱讀',    icon:'📚', pts:10, house:'black' },
+    { name:'寫作論述',    icon:'✍️', pts:10, house:'black' },
+    { name:'自媒體耕耘',  icon:'🎨', pts:15, house:'black' },
+    { name:'商道思辨',    icon:'💡', pts:10, house:'black' },
+  ],
+  titles: {
+    azure: [
+      { pts:0, name:'蒙生' },
+      { pts:30, name:'初龍' },
+      { pts:80, name:'騰龍' },
+      { pts:150, name:'真龍' },
+      { pts:250, name:'龍君' },
+    ],
+    white: [
+      { pts:0, name:'蒙生' },
+      { pts:30, name:'小虎' },
+      { pts:80, name:'白虎衛' },
+      { pts:150, name:'白虎王' },
+      { pts:250, name:'虎神' },
+    ],
+    vermilion: [
+      { pts:0, name:'蒙生' },
+      { pts:30, name:'朱羽' },
+      { pts:80, name:'焰雀' },
+      { pts:150, name:'赤鳳' },
+      { pts:250, name:'朱雀神' },
+    ],
+    black: [
+      { pts:0, name:'蒙生' },
+      { pts:30, name:'玄鱗' },
+      { pts:80, name:'墨龜' },
+      { pts:150, name:'玄鶴' },
+      { pts:250, name:'玄武帝' },
+    ],
+  },
+  dailyQuotes: [
+    '心不妄動，形不輕舉。',
+    '千日之功，毀於一日之怠。',
+    '修身之道，始於晨起。',
+    '月光不會挑人而照，紀律不會為懶者停步。',
+    '三日不練心生怠，一日修煉勝十懶。',
+    '靜以修身，儉以養德。',
+    '不積跬步，無以至千里。',
+    '人生在勤，不索何獲。',
+    '天行健，君子以自強不息。',
+    '日新者日進，不日新者必日退。',
+    '持志如心痛，一心在痛上，豈有功夫說閒話、管閒事。',
+    '有志者事竟成，破釜沉舟，百二秦關終屬楚。',
+    '克己復禮為仁，一日克己復禮，天下歸仁焉。',
+    '善始者實繁，克終者蓋寡。',
+    '不矜細行，終累大德。',
+  ],
+  defaultMentorSvg: `
+<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="ybg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1a1a30"/>
+      <stop offset="100%" stop-color="#06040d"/>
+    </radialGradient>
+    <linearGradient id="yhair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a1e"/>
+      <stop offset="100%" stop-color="#0a0a0d"/>
+    </linearGradient>
+  </defs>
+  <rect width="80" height="80" fill="url(#ybg)"/>
+  <!-- distant mountain & moon -->
+  <circle cx="60" cy="20" r="7" fill="#fff" opacity="0.18"/>
+  <path d="M0 70 L20 55 L40 65 L60 50 L80 70 Z" fill="#0e0c1c" opacity="0.7"/>
+  <!-- robe shoulders -->
+  <path d="M10 78 Q22 56 40 60 Q58 56 70 78 Z" fill="#0d0d18"/>
+  <path d="M32 60 L40 54 L48 60" fill="none" stroke="#2a2a3a" stroke-width="1"/>
+  <!-- face -->
+  <ellipse cx="40" cy="40" rx="14" ry="17" fill="#dcd0c4"/>
+  <!-- top knot bun + ribbon -->
+  <ellipse cx="40" cy="20" rx="6" ry="5" fill="url(#yhair)"/>
+  <path d="M28 28 Q40 19 52 28 L50 36 Q40 30 30 36 Z" fill="url(#yhair)"/>
+  <!-- side hair -->
+  <path d="M27 32 Q24 45 26 56 L30 56 L30 40 Q31 34 32 30 Z" fill="url(#yhair)"/>
+  <path d="M53 32 Q56 45 54 56 L50 56 L50 40 Q49 34 48 30 Z" fill="url(#yhair)"/>
+  <!-- brows -->
+  <path d="M32 36 Q35 35 38 36" stroke="#1a1a1e" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <path d="M42 36 Q45 35 48 36" stroke="#1a1a1e" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <!-- eyes (calm closed) -->
+  <path d="M33 41 Q35 42 37 41" stroke="#1a1a1e" stroke-width="1" fill="none"/>
+  <path d="M43 41 Q45 42 47 41" stroke="#1a1a1e" stroke-width="1" fill="none"/>
+  <!-- nose -->
+  <path d="M40 43 L39 47 L41 47" stroke="#9a8a7a" stroke-width="0.6" fill="none"/>
+  <!-- gentle lips -->
+  <path d="M36 51 Q40 52 44 51" stroke="#6b4040" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+</svg>`,
+  mentors: {
+    xueming: {
+      name: '雪冥 · 嚴師',
+      title: '冷峻嚴厲，言語直指要害',
+      morning: [
+        '天光未明，汝已該起。再賴床三分，便再退三步。',
+        '不必狡辯藉口——任務在那兒等你，自己選。',
+        '我不期待你，因為期待已被你昨日的怠惰耗盡。',
+        '修煉不是給人看的——是給天看的。誓言，立下吧。',
+        '今日之惰，明日之罪。',
+        '莫言不能——只說「不為」。',
+        '人最遠的距離，不是空間，是「今日」與「行動」之間。',
+        '請不要用情緒蒙騙紀律——立下今日該做的事。',
+        '一日之計在於晨——這是聖人說的，不是我發明的。',
+        '我見過比你更懶的，但他們現在沒臉再修煉。',
+        '勿令今夕之我，再受昨夕之我之累。',
+        '天下無難事，只有你不肯坐下的事。',
+      ],
+      evening: [
+        '夜幕已垂——回顧誓言，逐項清算。',
+        '不要對我撒謊——對自己也別。',
+        '打勾的請打勾，否則就讓未完成的留著刺你。',
+        '自欺者，明日仍欺。',
+        '日終有清算——你今夕兌現了多少？',
+        '請別用「盡力了」搪塞——我只看做了什麼。',
+        '若不誠實面對今日，便將困於明日的循環。',
+        '你做的每一項，都將在他日成為你的肋骨。',
+        '不檢視今日的人，注定重蹈昨日。',
+        '夜深當靜——請靜中對自己說：「我是否兌現我的誓？」',
+      ],
+      scold: [
+        '昨日你立誓『{tasks}』——今晨竟一字未踐。我不怒，僅替你嘆息。',
+        '『{tasks}』——這幾項，你昨日宣之，今晨棄之。羞愧二字尚不夠。',
+        '我見過懶——但你的懶能列入修煉者反面教材。未完：『{tasks}』。',
+        '天若降罪，必先怠者。昨日未踐：『{tasks}』。',
+        '『{tasks}』——這串字，便是你昨日的虛言。',
+        '莫怪我言重——你昨日對自己更重。未完：『{tasks}』。',
+        '修身之路斷於「今日不做」——你斷了哪幾項？『{tasks}』。',
+        '『{tasks}』全屬空誓——你的誓言比羽毛還輕。',
+        '每日不踐之誓，皆成日後之債。今日的債：『{tasks}』。',
+        '時間最不仁，它記下你昨日的怠惰：『{tasks}』。',
+      ],
+    },
+    heling: {
+      name: '鶴齡 · 仁師',
+      title: '溫和睿智，引人自省',
+      morning: [
+        '晨光初啟，請允許自己做一件最小、最可行的事。',
+        '你不必完美——但請務必動手。',
+        '真正的力量，藏在每日重複的微小行動中。',
+        '願你今日的選擇，比昨日溫柔，比明日清晰。',
+        '日出時分立誓，最容易被天地聽見。',
+        '微小的紀律，是最大的自由。',
+        '請以悲憫對待昨日的自己——然後務實面對今日。',
+        '修行不在山中——在你願不願意現在開始。',
+        '請從心裡誠實地寫下今日要做的事。',
+        '願你帶著一點點勇氣，迎接這個普通的早晨。',
+      ],
+      evening: [
+        '夜色降臨——回首今日，請以溫柔的心檢視。',
+        '未完者，不必責怪——明日仍有月光。',
+        '請允許自己不完美——那是修煉真正的入口。',
+        '真正的勝利，不在打勾之多寡，而在你願意持續回來。',
+        '請對自己說：「我已盡力，且無虛言。」',
+        '讓今日的進步——哪怕一寸——成為明日的開端。',
+        '不必比昨日好太多——比昨日真實一些就夠。',
+        '願你帶著平靜入眠，明日再見。',
+      ],
+      scold: [
+        '『{tasks}』——尚未完成的它們，是邀請而非審判。',
+        '請對昨日的自己心存悲憫——但對今日要更用心。未踐：『{tasks}』。',
+        '未踐的誓言不是你的罪過，只是尚未到時辰。『{tasks}』。',
+        '請明日把『{tasks}』縮小到你確定能做的尺寸。',
+        '並非每個誓言都需在當日完成——但每個都值得你回頭看。『{tasks}』。',
+        '『{tasks}』還在等你——它們不會走遠。',
+        '請帶著昨夜未踐的『{tasks}』，今晨重新立誓。',
+        '失敗只是延遲的成功——而你今日仍有機會。『{tasks}』。',
+      ],
+    },
+    suying: {
+      name: '素英 · 律師',
+      title: '嚴而有愛，務實重紀律',
+      morning: [
+        '晨曦至，立誓開始——不要讓我催第二次。',
+        '修身先修德，立誓先立志。',
+        '請寫下你今日要做的事——具體、可行、無藉口。',
+        '弟子，不必說大話——做一件小事勝於誓十事。',
+        '我對你嚴，是因為我相信你。',
+        '修煉是堂課——你要交作業，不必交感言。',
+        '不要等心情——心情等不到，但今日會走。',
+        '請現在、立刻、馬上選定今日的任務。',
+      ],
+      evening: [
+        '夜入——清點今日所為，誠實面對。',
+        '該打勾的打勾，未完者寫下原因。',
+        '「盡力」不是答案——你究竟做到什麼，請逐項回報。',
+        '不允許敷衍——這是給自己的功課。',
+        '請於睡前花五分鐘檢視——這是修身的基本工夫。',
+        '未完成的請不要逃避——明日請補上。',
+        '修煉者不畏失敗，只畏不誠。',
+        '結束今日，請帶著清楚而非模糊。',
+      ],
+      scold: [
+        '弟子，昨日所立誓『{tasks}』，竟未踐之——請寫下三條補救。',
+        '『{tasks}』未完——這不是失敗，是失約。',
+        '修身之道無捷徑——你昨日的怠惰已記在帳上。未完：『{tasks}』。',
+        '我並非責你——是責你對自己之輕忽。『{tasks}』。',
+        '請不要用「太忙」搪塞——人皆有時間，差在如何使用。『{tasks}』。',
+        '未踐之誓，便是缺席的修煉——『{tasks}』。',
+        '今夜請坐下，把昨日未做的『{tasks}』重新規劃進明日。',
+        '莫等到失去才後悔——昨日未踐：『{tasks}』。',
+      ],
+    },
+    yunzhi: {
+      name: '雲梔 · 學姐',
+      title: '熱心積極，引用研究鼓勵',
+      morning: [
+        '師弟師妹，早安！今天也要來修煉嗎？',
+        '我已經幫你看過任務了——非常棒的規劃喔！',
+        '研究說，每日固定時間立誓，效率會提升 40%——快來吧！',
+        '先勾一個最小最簡單的開始，慢慢來！',
+        '別忘了喝水、伸展、深呼吸——這些都算修煉的一部分！',
+        '今天要對自己溫柔一點，但別偷懶喔！',
+        '微小持續勝過激烈偶爾——記得這句話喔！',
+        '我相信你！加油加油，今天也要漂亮地修煉！',
+      ],
+      evening: [
+        '辛苦了！我們來看看今天完成了多少吧～',
+        '不論做了多少，過程本身就是成就！',
+        '記得寫筆記喔！未來的你會感謝今天的你！',
+        '沒做完的也別灰心，明日重來！',
+        '我整理了今日重點——你完成的已經很棒了！',
+        '睡前告訴自己：「我今日有所進步」。',
+        '研究指出，21 天就會養成習慣——你已經更接近了！',
+        '晚安之前，記得給自己一個微笑～',
+      ],
+      scold: [
+        '咦？昨天的『{tasks}』沒完成耶——要不要找我聊聊原因？',
+        '我幫你研究過了——這些『{tasks}』其實只需要五分鐘呢！',
+        '沒關係沒關係，明天再戰！但今天要寫下原因喔。『{tasks}』。',
+        '累不是萬能藉口——我們一起想辦法吧！未完：『{tasks}』。',
+        '我相信你只是順序排錯——再試一次！『{tasks}』。',
+        '來來來，把『{tasks}』縮小成更可行的版本——我陪你！',
+        '研究表明拖延始於「下一刻才開始」——下一刻就是現在！『{tasks}』。',
+        '沒完成只是練習中的一個資料點——明天會更好！『{tasks}』。',
+      ],
+    },
+  },
+};
 
 /* ---------- State ---------- */
 let state = loadState();
@@ -2743,6 +3058,7 @@ function defaultState(){
     ambient: false,
     privacy: false,
     goals: [], // [{id, kind:'task'|'house', ref, target, month:'YYYY-MM', name}]
+    theme: 'hogwarts',
   };
 }
 
@@ -2854,7 +3170,105 @@ function pickFromList(list){
 }
 
 function currentMentor(){
-  return MENTORS[state.mentor] || MENTORS.severus;
+  return MENTORS[state.mentor] || MENTORS[Object.keys(MENTORS)[0]];
+}
+
+function currentTheme(){
+  return THEMES[state.theme] || THEMES.hogwarts;
+}
+
+function applyTheme(id, opts){
+  const t = THEMES[id] || THEMES.hogwarts;
+  const prev = state.theme;
+  const prevTheme = THEMES[prev] || THEMES.hogwarts;
+
+  // Remap house keys by position if theme actually changed
+  if(prev !== t.id){
+    const fromOrder = prevTheme.houseOrder;
+    const toOrder = t.houseOrder;
+    const map = {};
+    fromOrder.forEach((k, i) => { map[k] = toOrder[i] || toOrder[0]; });
+
+    // tasks
+    state.tasks = (state.tasks || []).map(task => ({
+      ...task,
+      house: map[task.house] || task.house,
+    }));
+    // housePoints
+    const newPoints = { ...t.houses && Object.keys(t.houses).reduce((o,k)=> (o[k]=0,o), {}) };
+    for(const [k, v] of Object.entries(state.housePoints || {})){
+      const nk = map[k] || k;
+      if(toOrder.includes(nk)) newPoints[nk] = (newPoints[nk]||0) + v;
+    }
+    state.housePoints = newPoints;
+    // lastTitles
+    const newTitles = {};
+    for(const k of toOrder) newTitles[k] = '新生';
+    for(const [k, v] of Object.entries(state.lastTitles || {})){
+      const nk = map[k] || k;
+      if(toOrder.includes(nk)) newTitles[nk] = v;
+    }
+    state.lastTitles = newTitles;
+    // goals (kind: house ref)
+    state.goals = (state.goals || []).map(g => g.kind === 'house'
+      ? { ...g, ref: map[g.ref] || g.ref, name: g.name.replace(prevTheme.houses[g.ref]?.name||'', t.houses[map[g.ref]]?.name || '') }
+      : g
+    );
+    // selectedHouse
+    if(state.selectedHouse) state.selectedHouse = map[state.selectedHouse] || toOrder[0];
+    // weeklyChallenge house key
+    if(state.weeklyChallenge && state.weeklyChallenge.house){
+      state.weeklyChallenge.house = map[state.weeklyChallenge.house] || state.weeklyChallenge.house;
+    }
+  }
+
+  // Swap live constants
+  HOUSES = t.houses;
+  HOUSE_ORDER = t.houseOrder;
+  DEFAULT_TASKS = t.defaultTasks;
+  TITLES = t.titles;
+  MENTORS = t.mentors;
+  DAILY_QUOTES = t.dailyQuotes;
+  DEFAULT_MENTOR_SVG = t.defaultMentorSvg;
+
+  // Reset mentor if invalid
+  if(!MENTORS[state.mentor]) state.mentor = t.defaultMentorId;
+
+  state.theme = t.id;
+  saveState();
+
+  // Brand text
+  const brandH1 = document.querySelector('.brand h1');
+  const brandSub = document.querySelector('.brand .sub');
+  if(brandH1) brandH1.textContent = t.brand;
+  if(brandSub) brandSub.textContent = t.tagline + ' · ' + t.short;
+  // Onboard text
+  const obT = document.querySelector('.onboard-title');
+  const obL = document.querySelector('.onboard-lead');
+  const obS = document.querySelector('.onboard-sub');
+  if(obT) obT.textContent = t.onboard.title;
+  if(obL) obL.innerHTML = t.onboard.lead;
+  if(obS) obS.innerHTML = t.onboard.sub;
+  // Parchment text
+  const pT = document.querySelector('.parchment-title');
+  const pI = document.querySelector('.parchment-intro');
+  if(pT) pT.textContent = t.parchment.title;
+  if(pI) pI.textContent = t.parchment.intro;
+  const pS = document.querySelector('.parchment-sign');
+  if(pS) pS.innerHTML = `— ${t.parchment.sign} · <span id="declare-mentor">${currentMentor().name}</span> 見證 —`;
+
+  if(!opts || !opts.silent){
+    updateTheme();
+    if(currentPage === 'home') renderHome();
+    else if(currentPage === 'library') renderLibraryPage();
+    else if(currentPage === 'report') renderReportPage();
+    else if(currentPage === 'settings'){
+      renderMentorAvatars();
+      renderMentorPicker();
+      renderThemePicker();
+    }
+    toast('主題已切換：' + t.name);
+  }
 }
 
 function renderMentorLine(){
@@ -3666,6 +4080,7 @@ function switchPage(name, opts){
   else if(name === 'report'){ renderReportPage(); }
   else if(name === 'settings'){
     renderMentorAvatars();
+    renderThemePicker();
     renderMentorPicker();
     renderQuotaInfo();
     renderChangelog();
@@ -4175,6 +4590,26 @@ function renderMentorPicker(){
     const m = currentMentor();
     lbl.firstChild.textContent = m.name;
   }
+}
+
+function renderThemePicker(){
+  const el = document.getElementById('theme-picker');
+  if(!el) return;
+  el.innerHTML = Object.entries(THEMES).map(([key, t]) => {
+    const houseDots = t.houseOrder.map(h => `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${t.houses[h].color};box-shadow:0 0 6px ${t.houses[h].color};margin-right:4px"></span>`).join('');
+    return `
+      <div class="mentor-card-pick ${state.theme===key?'on':''}" onclick="selectTheme('${key}')">
+        <div class="mn-name">${t.name}</div>
+        <div class="mn-title" style="display:flex;align-items:center;margin-top:4px">${houseDots}<span style="margin-left:6px">${t.tagline}</span></div>
+      </div>`;
+  }).join('');
+}
+
+function selectTheme(id){
+  if(!THEMES[id]) return;
+  if(id === state.theme){ toast('目前已是此主題'); return; }
+  if(!confirm(`切換到「${THEMES[id].name}」？你的任務、積分與稱號會依位置對應到新主題。`)) return;
+  applyTheme(id);
 }
 
 function selectMentor(key){
@@ -5483,6 +5918,10 @@ function applySeasonTheme(){
 function boot(){
   injectManifest();
   applySeasonTheme();
+  // Apply saved content theme silently so strings/constants are right from start
+  if(state.theme && THEMES[state.theme] && state.theme !== 'hogwarts'){
+    applyTheme(state.theme, { silent: true });
+  }
   if(state.highContrast) document.body.classList.add('hc');
   if(state.privacy) document.body.classList.add('privacy');
   // Ambient requires a user gesture, so just mark state — will auto-start on first interaction
