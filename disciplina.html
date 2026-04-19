@@ -1054,6 +1054,45 @@ body::before{
   font-size:.78rem; color: var(--text-dim);
 }
 
+/* Emoji picker */
+.emoji-pick-btn{
+  font-size:1.2rem;
+  line-height:1;
+}
+.emoji-picker{
+  display:none;
+  background: rgba(10,8,20,0.6);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  margin-bottom:8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.emoji-picker.show{ display:block; animation: fadeIn .2s ease }
+.emoji-picker .ep-cat{
+  font-size:.7rem;
+  color: var(--text-mute);
+  letter-spacing:.1em;
+  margin: 6px 4px 4px;
+}
+.emoji-picker .ep-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+  gap:2px;
+}
+.emoji-picker .ep-btn{
+  background: transparent;
+  border:none;
+  font-size:1.2rem;
+  padding:6px 0;
+  border-radius:6px;
+  cursor:pointer;
+  transition: background .15s ease;
+}
+.emoji-picker .ep-btn:hover{ background: rgba(255,255,255,0.06) }
+.emoji-picker .ep-btn:active{ background: var(--accent-soft) }
+
 /* Mentor picker */
 .mentor-picker{
   display:grid;
@@ -1964,7 +2003,10 @@ body::before{
           <div class="mentor-name">PROF. SEVERUS</div>
           <div class="mentor-line" id="mentor-line">——</div>
         </div>
-        <button class="chat-open-btn" onclick="openChat()" aria-label="與導師對話">💬</button>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+          <button class="chat-open-btn" onclick="speakMentorLine()" aria-label="朗讀">🔊</button>
+          <button class="chat-open-btn" onclick="openChat()" aria-label="與導師對話">💬</button>
+        </div>
       </div>
       <div id="scolding-box"></div>
     </div>
@@ -2041,9 +2083,12 @@ body::before{
       </div>
       <div class="form-row">
         <input class="input" id="custom-name" placeholder="例：凌晨 6 點跑步 5 公里" maxlength="28" style="flex:2.5">
-        <input class="input" id="custom-icon" placeholder="🔥" maxlength="2" style="flex:.6">
+        <button type="button" class="btn ghost emoji-pick-btn" onclick="toggleEmojiPicker()" id="emoji-pick-btn" style="flex:.6;margin-top:0;padding:11px 0">🔥</button>
+        <input type="hidden" id="custom-icon" value="">
       </div>
+      <div class="emoji-picker" id="emoji-picker"></div>
       <button class="btn ghost" onclick="addCustomTask()">＋ 加入任務庫</button>
+      <button class="btn ghost" onclick="openBulkImport()" style="margin-top:6px">📥 批量匯入任務</button>
     </div>
 
     <div class="card">
@@ -2308,6 +2353,26 @@ body::before{
     <div class="title-name" id="levelup-title">——</div>
     <div class="title-house" id="levelup-house">——</div>
     <button onclick="closeLevelUp()">繼續修煉</button>
+  </div>
+</div>
+
+<!-- Bulk import modal -->
+<div class="modal" id="bulk-modal">
+  <div class="modal-card" style="max-width:440px;text-align:left;padding:22px">
+    <h2 style="font-family:'Cinzel',serif;font-size:1rem;letter-spacing:.15em;color:var(--text);margin-bottom:6px">批量匯入任務</h2>
+    <p class="small" style="margin-bottom:8px;line-height:1.65">
+      每行一筆，格式可選：<br>
+      • <code>運動 火 10</code>（名稱／院別／積分）<br>
+      • <code>💪 運動 火</code>（圖示／名稱／院別）<br>
+      • <code>運動</code>（只給名稱，自動分院 + 預設 10 分）<br>
+    </p>
+    <textarea id="bulk-text" rows="8"
+      style="width:100%;min-height:160px;background:rgba(10,8,20,0.6);border:1px solid var(--border);border-radius:10px;padding:10px;color:var(--text);font-family:inherit;font-size:.9rem;line-height:1.5;resize:vertical;outline:none"
+      placeholder="運動 火 10&#10;冥想 水 5&#10;💪 重訓 火&#10;經典閱讀"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn ghost" onclick="closeBulkImport()" style="flex:1">取消</button>
+      <button class="btn" onclick="performBulkImport()" style="flex:1">匯入</button>
+    </div>
   </div>
 </div>
 
@@ -3698,6 +3763,65 @@ function renderMentorLine(){
   if(nameEl) nameEl.textContent = m.name;
 }
 
+/* ---------- Speech ---------- */
+let _speechVoice = null;
+let _speechVoicesLoaded = false;
+
+function ensureVoices(){
+  if(_speechVoicesLoaded) return;
+  if(!('speechSynthesis' in window)) return;
+  const list = window.speechSynthesis.getVoices();
+  if(!list || !list.length) return;
+  // Prefer zh-TW > zh-HK > zh-CN > zh-*
+  const tw = list.find(v => /zh-TW/i.test(v.lang));
+  const hk = list.find(v => /zh-HK/i.test(v.lang));
+  const cn = list.find(v => /zh-CN/i.test(v.lang));
+  const zh = list.find(v => /^zh/i.test(v.lang));
+  _speechVoice = tw || hk || cn || zh || null;
+  _speechVoicesLoaded = true;
+}
+
+function speakMentorLine(){
+  if(!('speechSynthesis' in window)){ toast('此瀏覽器不支援語音合成'); return; }
+  ensureVoices();
+  if(!_speechVoicesLoaded){
+    // Voices may load asynchronously
+    window.speechSynthesis.onvoiceschanged = () => { ensureVoices(); speakMentorLine(); };
+    return;
+  }
+  const text = document.getElementById('mentor-line').textContent;
+  if(!text || text === '——') return;
+  try { window.speechSynthesis.cancel(); } catch(e){}
+  const utter = new SpeechSynthesisUtterance(text);
+  if(_speechVoice) utter.voice = _speechVoice;
+  utter.lang = (_speechVoice && _speechVoice.lang) || 'zh-TW';
+  // Mentor-specific pitch/rate flavor
+  const tuning = {
+    severus:    { rate: 0.92, pitch: 0.7 },
+    dumbledore: { rate: 0.86, pitch: 0.85 },
+    mcgonagall: { rate: 0.96, pitch: 1.0 },
+    hermione:   { rate: 1.05, pitch: 1.18 },
+    xueming:    { rate: 0.9,  pitch: 0.7 },
+    heling:     { rate: 0.88, pitch: 0.85 },
+    suying:     { rate: 0.96, pitch: 1.05 },
+    yunzhi:     { rate: 1.08, pitch: 1.18 },
+    ignis:      { rate: 1.0,  pitch: 0.95 },
+    terra:      { rate: 0.85, pitch: 0.85 },
+    ventus:     { rate: 1.05, pitch: 1.1  },
+    aqua:       { rate: 0.92, pitch: 1.05 },
+  };
+  const t = tuning[state.mentor] || { rate: 1, pitch: 1 };
+  utter.rate = t.rate; utter.pitch = t.pitch;
+  utter.volume = 0.95;
+  window.speechSynthesis.speak(utter);
+}
+
+if('speechSynthesis' in window){
+  // Trigger initial voice list load
+  window.speechSynthesis.onvoiceschanged = ensureVoices;
+  setTimeout(ensureVoices, 100);
+}
+
 function renderDailyQuote(){
   // Seed by date so it stays stable in a single day
   const today = todayKey();
@@ -5038,9 +5162,38 @@ function addPresetTask(encoded){
   toast(`已加入：${t.name}`);
 }
 
+const EMOJI_GROUPS = [
+  { label:'運動', emojis:['💪','🏃','🚴','🏋️','🧘','🥋','🥊','⛹️','🏊','⚽','🤸','🚶'] },
+  { label:'健康', emojis:['🥗','🥦','💧','🍎','🍵','💊','😴','🧠','❤️','🛁','🧴','🌿'] },
+  { label:'學習', emojis:['📚','✍️','🎓','📝','📖','🔬','🧪','💻','🤖','🔤','🌐','💡'] },
+  { label:'工作', emojis:['💼','💰','📊','📈','🎯','📞','📧','🗓️','✅','🔧','⚙️','🛠️'] },
+  { label:'創作', emojis:['🎨','🎭','🎬','🎵','🎸','✒️','📷','🖌️','📹','🎤','🎮','🪄'] },
+  { label:'心靈', emojis:['🙏','🧘','🕯️','📿','🌙','☀️','🌟','✨','🔮','🌸','🍀','💫'] },
+  { label:'家庭', emojis:['💌','💞','🏠','🍳','🧹','🪴','👨‍👩‍👧','🎁','🤝','💝','🐶','🐱'] },
+  { label:'其他', emojis:['🔥','⚡','🌈','🎉','🚀','📅','🛡️','⏰','📱','📍','🎲','🎯'] },
+];
+
+function toggleEmojiPicker(){
+  const el = document.getElementById('emoji-picker');
+  if(el.classList.contains('show')){ el.classList.remove('show'); return; }
+  el.innerHTML = EMOJI_GROUPS.map(g => `
+    <div class="ep-cat">${g.label}</div>
+    <div class="ep-grid">
+      ${g.emojis.map(e => `<button type="button" class="ep-btn" onclick="pickEmoji('${e}')">${e}</button>`).join('')}
+    </div>
+  `).join('');
+  el.classList.add('show');
+}
+
+function pickEmoji(e){
+  document.getElementById('custom-icon').value = e;
+  document.getElementById('emoji-pick-btn').textContent = e;
+  document.getElementById('emoji-picker').classList.remove('show');
+}
+
 function addCustomTask(){
   const name = document.getElementById('custom-name').value.trim();
-  const icon = document.getElementById('custom-icon').value.trim() || '✨';
+  const icon = document.getElementById('custom-icon').value.trim() || document.getElementById('emoji-pick-btn').textContent.trim() || '✨';
   const house = document.getElementById('custom-house').value;
   const pts = parseInt(document.getElementById('custom-pts').value, 10);
   if(!name){ toast('請輸入任務名稱'); return; }
@@ -5053,8 +5206,111 @@ function addCustomTask(){
   saveState();
   document.getElementById('custom-name').value = '';
   document.getElementById('custom-icon').value = '';
+  document.getElementById('emoji-pick-btn').textContent = '🔥';
   renderLibraryPage();
   toast(`已加入：${name}`);
+}
+
+function openBulkImport(){
+  document.getElementById('bulk-text').value = '';
+  document.getElementById('bulk-modal').classList.add('show');
+  setTimeout(() => document.getElementById('bulk-text').focus(), 100);
+}
+function closeBulkImport(){
+  document.getElementById('bulk-modal').classList.remove('show');
+}
+
+function performBulkImport(){
+  const raw = document.getElementById('bulk-text').value.trim();
+  if(!raw){ toast('請輸入至少一行任務'); return; }
+  const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const existing = new Set(state.tasks.map(t => t.name));
+  const added = [];
+  const skipped = [];
+  let rotateIdx = 0;
+  for(const line of lines){
+    const parsed = parseBulkLine(line, rotateIdx);
+    if(!parsed){ skipped.push(line); continue; }
+    if(existing.has(parsed.name)){ skipped.push(parsed.name + '（已存在）'); continue; }
+    state.tasks.push({
+      id: 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      name: parsed.name, icon: parsed.icon, pts: parsed.pts, house: parsed.house,
+      createdAt: todayKey(),
+    });
+    existing.add(parsed.name);
+    added.push(parsed.name);
+    rotateIdx += 1;
+  }
+  if(added.length === 0){
+    toast('沒有新任務被加入');
+    return;
+  }
+  saveState();
+  closeBulkImport();
+  renderLibraryPage();
+  toast(`已加入 ${added.length} 項`);
+  if(skipped.length){
+    setTimeout(() => toast(`略過 ${skipped.length} 項：` + skipped.slice(0,3).join('、')), 1700);
+  }
+}
+
+function parseBulkLine(line, rotateIdx){
+  // Strip leading emoji if present
+  const emojiRe = /^([\p{Extended_Pictographic}\u200d]+)\s*/u;
+  let icon = '✨';
+  let rest = line;
+  const em = rest.match(emojiRe);
+  if(em){ icon = em[1]; rest = rest.slice(em[0].length); }
+  // Tokenize the rest
+  const parts = rest.split(/[\s\t,，]+/).filter(Boolean);
+  if(parts.length === 0) return null;
+  const name = parts[0];
+  if(!name) return null;
+  let house = null, pts = 10;
+  for(const p of parts.slice(1)){
+    const n = parseInt(p, 10);
+    if(!isNaN(n) && n > 0 && n < 100){ pts = n; continue; }
+    const k = matchHouseKeyword(p);
+    if(k) house = k;
+  }
+  if(!house) house = inferHouseByKeyword(name) || HOUSE_ORDER[rotateIdx % HOUSE_ORDER.length];
+  return { name, icon, house, pts };
+}
+
+function matchHouseKeyword(s){
+  const sNorm = s.trim();
+  // Match by name, by emoji, or first char
+  for(const h of HOUSE_ORDER){
+    const info = HOUSES[h];
+    if(sNorm === h) return h;
+    if(sNorm === info.name) return h;
+    if(sNorm === info.emoji) return h;
+    if(info.name.startsWith(sNorm)) return h;
+    if(sNorm.length === 1 && info.name.includes(sNorm)) return h;
+  }
+  return null;
+}
+
+function inferHouseByKeyword(name){
+  const KW = {
+    gryffindor: ['運動','跑','重訓','拳','戒','健身','跑步','行動','努力','戰','攻'],
+    hufflepuff: ['感恩','聯繫','家人','朋友','陪','照顧','整理','植物','睡眠','作息','一致'],
+    slytherin:  ['財','投資','工作','創業','接案','行銷','策略','規劃','野心','目標','錢','商業'],
+    ravenclaw:  ['閱讀','寫作','學習','思考','研究','輸出','寫','研','語言','知識','分析','智'],
+    azure:      ['行動','創','跑','晨','發','起','律'],
+    white:      ['律','律己','感恩','家','拳','禪','觀'],
+    vermilion:  ['財','創','學','業','籌','術'],
+    black:      ['讀','寫','智','靜','思','閱'],
+    fire:       ['火','拳','戒','跑','重訓','激','燒','衝'],
+    earth:      ['作息','整理','植','飲食','穩','根','種'],
+    air:        ['讀','寫','學','語','詞','寫作','聊'],
+    water:      ['冥','靜','音樂','陪','哭','笑','感受','情緒'],
+  };
+  for(const h of HOUSE_ORDER){
+    const list = KW[h] || [];
+    if(list.some(kw => name.includes(kw))) return h;
+  }
+  return null;
 }
 
 function deleteTask(id){
@@ -6339,6 +6595,8 @@ function initShortcuts(){
       const ch  = document.getElementById('chat');
       const dm  = document.getElementById('declare-modal');
       const fm  = document.getElementById('focus-modal');
+      const bm  = document.getElementById('bulk-modal');
+      if(bm && bm.classList.contains('show')){ closeBulkImport(); return; }
       if(fm && fm.classList.contains('show')){ closeFocus(); return; }
       if(ch && ch.classList.contains('show')){ closeChat(); return; }
       if(dm && dm.classList.contains('show')){ closeDeclareModal(); return; }
