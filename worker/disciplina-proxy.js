@@ -1,18 +1,23 @@
 /**
  * Disciplina · Cloudflare Worker
  *
- * POST /            — AI mentor chat proxy (requires ANTHROPIC_API_KEY secret)
+ * POST /            — AI mentor chat proxy (Gemini or Anthropic)
  * POST /sync/save   — store an (already client-encrypted) blob per email
  * GET  /sync/load   — retrieve the blob (?email=...)
  *
- * Secrets:
- *   wrangler secret put ANTHROPIC_API_KEY
+ * Choose ONE of the following for AI chat:
+ *   wrangler secret put GEMINI_API_KEY         (Google AI Studio, free tier)
+ *   wrangler secret put ANTHROPIC_API_KEY      (Anthropic Claude)
+ * If both are set, GEMINI_API_KEY wins.
+ *
  * KV binding (required for /sync/*):
  *   DISCIPLINA_KV
  */
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-sonnet-4-6';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const CLAUDE_MODEL = 'claude-sonnet-4-6';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 const MAX_BLOB_BYTES = 2 * 1024 * 1024; // 2 MB safety cap
 
 const MENTOR_SYSTEM = {
@@ -88,8 +93,10 @@ export default {
 
 /* ---------------- Chat proxy ---------------- */
 async function handleChat(request, env) {
-  if (!env.ANTHROPIC_API_KEY) {
-    return json({ error: 'ANTHROPIC_API_KEY not configured' }, 500);
+  const hasGemini = !!env.GEMINI_API_KEY;
+  const hasAnthropic = !!env.ANTHROPIC_API_KEY;
+  if (!hasGemini && !hasAnthropic) {
+    return json({ error: 'No AI key configured (GEMINI_API_KEY or ANTHROPIC_API_KEY)' }, 500);
   }
 
   let body;
@@ -105,6 +112,47 @@ async function handleChat(request, env) {
   const ctxText = context ? formatContext(context) : '';
   const system = MENTOR_SYSTEM[personaKey] + BASE_RULES + ctxText;
 
+  try {
+    if (hasGemini) return await callGemini(env, system, message, history);
+    return await callAnthropic(env, system, message, history);
+  } catch (e) {
+    return json({ error: 'Upstream error', detail: String(e) }, 502);
+  }
+}
+
+async function callGemini(env, system, message, history) {
+  const contents = [];
+  if (Array.isArray(history)) {
+    for (const h of history.slice(-10)) {
+      if (!h || !h.role || !h.text) continue;
+      if (h.role === 'you')    contents.push({ role: 'user',  parts: [{ text: h.text }] });
+      if (h.role === 'mentor') contents.push({ role: 'model', parts: [{ text: h.text }] });
+    }
+  }
+  contents.push({ role: 'user', parts: [{ text: message }] });
+
+  const model = env.GEMINI_MODEL || GEMINI_MODEL;
+  const url = `${GEMINI_URL}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents,
+      generationConfig: { maxOutputTokens: 400, temperature: 0.9 },
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    return json({ error: 'Gemini API failed', status: res.status, detail }, 502);
+  }
+  const data = await res.json();
+  const reply = (data.candidates?.[0]?.content?.parts || [])
+    .map(p => p.text || '').join('').trim();
+  return json({ reply: reply || '（無回應）', provider: 'gemini' });
+}
+
+async function callAnthropic(env, system, message, history) {
   const messages = [];
   if (Array.isArray(history)) {
     for (const h of history.slice(-10)) {
@@ -114,32 +162,27 @@ async function handleChat(request, env) {
     }
   }
   messages.push({ role: 'user', content: message });
-
-  try {
-    const res = await fetch(ANTHROPIC_URL, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: env.MODEL || MODEL,
-        max_tokens: 400,
-        system,
-        messages,
-      }),
-    });
-    if (!res.ok) {
-      const detail = await res.text();
-      return json({ error: 'Anthropic API failed', status: res.status, detail }, 502);
-    }
-    const data = await res.json();
-    const reply = (data.content || []).map(p => p.text || '').join('').trim();
-    return json({ reply: reply || '（無回應）' });
-  } catch (e) {
-    return json({ error: 'Upstream error', detail: String(e) }, 502);
+  const res = await fetch(ANTHROPIC_URL, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: env.CLAUDE_MODEL || CLAUDE_MODEL,
+      max_tokens: 400,
+      system,
+      messages,
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    return json({ error: 'Anthropic API failed', status: res.status, detail }, 502);
   }
+  const data = await res.json();
+  const reply = (data.content || []).map(p => p.text || '').join('').trim();
+  return json({ reply: reply || '（無回應）', provider: 'anthropic' });
 }
 
 /* ---------------- Sync endpoints ---------------- */
