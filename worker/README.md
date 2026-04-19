@@ -29,9 +29,14 @@ wrangler login
 wrangler kv:namespace create DISCIPLINA_KV
 # Copy the `id = "..."` it prints into wrangler.toml
 
-# 4. (Optional) add the Anthropic API key for AI chat
+# 4. (Optional) add an AI key for mentor chat — pick one:
+#    a) Google Gemini (free tier, easier to get)
+wrangler secret put GEMINI_API_KEY
+# Paste the key from https://aistudio.google.com/apikey
+
+#    b) Anthropic Claude
 wrangler secret put ANTHROPIC_API_KEY
-# Paste your sk-ant-... key when prompted
+# Paste your sk-ant-... key from https://console.anthropic.com/
 
 # 5. Deploy
 wrangler deploy
