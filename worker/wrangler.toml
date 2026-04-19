@@ -2,9 +2,16 @@ name = "disciplina-proxy"
 main = "disciplina-proxy.js"
 compatibility_date = "2025-01-01"
 
+# KV namespace for cloud sync.
+# Create with:   wrangler kv:namespace create DISCIPLINA_KV
+# Then paste the returned id below.
+[[kv_namespaces]]
+binding = "DISCIPLINA_KV"
+id = "REPLACE_WITH_NAMESPACE_ID"
+
 # Optional: override default model
 # [vars]
 # MODEL = "claude-sonnet-4-6"
 
-# Secret must be set via:
+# Secret for chat proxy, set via:
 #   wrangler secret put ANTHROPIC_API_KEY

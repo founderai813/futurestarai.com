@@ -2379,9 +2379,28 @@ body::before{
     <div class="card">
       <div class="card-title">帳號</div>
       <div class="setting-row">
-        <div class="setting-label" id="login-info">目前信箱：——<div class="setting-desc">登入資料保存於本機，尚無雲端同步</div></div>
+        <div class="setting-label" id="login-info">目前信箱：——<div class="setting-desc">登入資料保存於本機，跨裝置請用下方雲端同步</div></div>
       </div>
       <button class="btn ghost" onclick="logout()">🚪 切換 / 登出</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">雲端同步</div>
+      <p class="small" style="line-height:1.7;margin-bottom:10px">
+        需搭配部署好的 Cloudflare Worker（見專案 <code>worker/README.md</code>）。
+        資料在本機用 AES-GCM 加密後才上傳，伺服器看不到明文。
+        <strong>密語忘了就無法還原</strong>，請妥善保管。
+      </p>
+      <div class="form-row">
+        <input class="input" id="sync-endpoint" placeholder="https://disciplina-proxy.xxx.workers.dev" style="flex:1">
+      </div>
+      <div class="form-row">
+        <input class="input" id="sync-pass" type="password" placeholder="同步密語（自訂，至少 4 字）" autocomplete="new-password" style="flex:1">
+      </div>
+      <div class="form-row">
+        <button class="btn ghost" id="cloud-save-btn" onclick="cloudSave()" style="flex:1">☁ 上傳雲端</button>
+        <button class="btn ghost" id="cloud-load-btn" onclick="cloudLoad()" style="flex:1">☁ 從雲端還原</button>
+      </div>
     </div>
 
     <div class="card">
@@ -4848,6 +4867,8 @@ function switchPage(name, opts){
       const em = currentUserEmail() || '(未登入)';
       li.firstChild.textContent = '目前信箱：' + em;
     }
+    const se = document.getElementById('sync-endpoint');
+    if(se) se.value = getSyncEndpoint() || '';
     const mt = document.getElementById('mute-toggle');
     if(mt) mt.checked = !state.muted;
     const hc = document.getElementById('hc-toggle');
@@ -7069,6 +7090,154 @@ function getAiEndpoint(){
 }
 
 /* ---------- Boot ---------- */
+/* ---------- Cloud sync (Cloudflare Worker + KV) ---------- */
+const SYNC_ENDPOINT_KEY = 'disciplina_sync_endpoint';
+
+function getSyncEndpoint(){
+  // Reuse AI endpoint if present (they live on the same Worker)
+  return localStorage.getItem(SYNC_ENDPOINT_KEY)
+    || localStorage.getItem('disciplina_ai_endpoint')
+    || window.DISCIPLINA_AI_ENDPOINT
+    || '';
+}
+
+function setSyncEndpoint(url){
+  const clean = (url || '').trim().replace(/\/$/, '');
+  if(clean) localStorage.setItem(SYNC_ENDPOINT_KEY, clean);
+  else localStorage.removeItem(SYNC_ENDPOINT_KEY);
+}
+
+async function deriveSyncKey(email, pass){
+  const enc = new TextEncoder();
+  const material = await crypto.subtle.importKey(
+    'raw', enc.encode(pass), { name: 'PBKDF2' }, false, ['deriveKey']
+  );
+  return await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: enc.encode('disciplina:' + email.toLowerCase()),
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    material,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptBlob(plaintext, email, pass){
+  const key = await deriveSyncKey(email, pass);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    new TextEncoder().encode(plaintext)
+  );
+  const combined = new Uint8Array(iv.length + ct.byteLength);
+  combined.set(iv);
+  combined.set(new Uint8Array(ct), iv.length);
+  let s = '';
+  for(const b of combined) s += String.fromCharCode(b);
+  return btoa(s);
+}
+
+async function decryptBlob(b64, email, pass){
+  const bin = atob(b64);
+  const combined = new Uint8Array(bin.length);
+  for(let i=0; i<bin.length; i++) combined[i] = bin.charCodeAt(i);
+  const iv = combined.slice(0, 12);
+  const ct = combined.slice(12);
+  const key = await deriveSyncKey(email, pass);
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  return new TextDecoder().decode(pt);
+}
+
+async function cloudSave(){
+  const email = currentUserEmail();
+  const endpointIn = document.getElementById('sync-endpoint');
+  const passIn = document.getElementById('sync-pass');
+  if(endpointIn) setSyncEndpoint(endpointIn.value);
+  const pass = (passIn?.value || '').trim();
+  const endpoint = getSyncEndpoint();
+  if(!email){ toast('請先登入信箱'); return; }
+  if(!endpoint){ toast('請先填寫同步端點'); return; }
+  if(pass.length < 4){ toast('同步密語至少 4 個字元'); return; }
+
+  const btn = document.getElementById('cloud-save-btn');
+  if(btn){ btn.disabled = true; btn.textContent = '☁ 上傳中…'; }
+  try {
+    const plain = JSON.stringify(state);
+    const blob = await encryptBlob(plain, email, pass);
+    const res = await fetch(endpoint + '/sync/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ email, blob }),
+    });
+    if(!res.ok){
+      const e = await safeJson(res);
+      toast('上傳失敗：' + (e?.error || res.status));
+    } else {
+      const { updatedAt } = await safeJson(res) || {};
+      toast('✓ 已上傳雲端' + (updatedAt ? ' · ' + updatedAt.slice(0,16).replace('T',' ') : ''));
+    }
+  } catch(err){
+    console.error(err);
+    toast('加密或傳送失敗');
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = '☁ 上傳雲端'; }
+  }
+}
+
+async function cloudLoad(){
+  const email = currentUserEmail();
+  const endpointIn = document.getElementById('sync-endpoint');
+  const passIn = document.getElementById('sync-pass');
+  if(endpointIn) setSyncEndpoint(endpointIn.value);
+  const pass = (passIn?.value || '').trim();
+  const endpoint = getSyncEndpoint();
+  if(!email){ toast('請先登入信箱'); return; }
+  if(!endpoint){ toast('請先填寫同步端點'); return; }
+  if(pass.length < 4){ toast('請輸入同步密語'); return; }
+
+  if(!confirm('從雲端還原會覆蓋此裝置目前的資料。繼續？')) return;
+
+  const btn = document.getElementById('cloud-load-btn');
+  if(btn){ btn.disabled = true; btn.textContent = '☁ 下載中…'; }
+  try {
+    const res = await fetch(endpoint + '/sync/load?email=' + encodeURIComponent(email));
+    if(res.status === 404){ toast('雲端尚無此信箱的紀錄'); return; }
+    if(!res.ok){ toast('下載失敗：' + res.status); return; }
+    const { blob } = await res.json();
+    let plain;
+    try {
+      plain = await decryptBlob(blob, email, pass);
+    } catch {
+      toast('解密失敗：密語不正確或資料毀損');
+      return;
+    }
+    let parsed;
+    try { parsed = JSON.parse(plain); }
+    catch { toast('雲端資料格式錯誤'); return; }
+    state = { ...defaultState(), ...parsed };
+    saveState();
+    pendingDeclarations = new Set();
+    applyTheme(state.theme === 'hogwarts' ? 'oriental' : (state.theme || DEFAULT_THEME_ID), { silent: true });
+    updateTheme();
+    switchPage('home');
+    toast('✓ 已從雲端還原');
+  } catch(err){
+    console.error(err);
+    toast('下載失敗');
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = '☁ 從雲端還原'; }
+  }
+}
+
+async function safeJson(res){
+  try { return await res.json(); } catch { return null; }
+}
+
 /* ---------- Email login (local profiles) ---------- */
 function currentUserEmail(){
   return localStorage.getItem(USER_KEY);

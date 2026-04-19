@@ -1,12 +1,18 @@
-# Disciplina · AI Mentor Proxy
+# Disciplina · Worker
 
-Thin Cloudflare Worker that forwards chat requests from `disciplina.html` to the
-Anthropic Messages API, so the API key never leaves the server.
+One Cloudflare Worker serving two purposes:
+
+1. **`POST /`** — AI mentor chat proxy to Anthropic Messages API
+2. **`POST /sync/save`** / **`GET /sync/load`** — cloud sync for Disciplina,
+   storing the **already client-encrypted** blob keyed by email
+
+The Worker never sees plain task data — encryption happens on the client with
+the user's sync passphrase.
 
 ## Files
 
 - `disciplina-proxy.js` — the Worker
-- `wrangler.toml` — Cloudflare config
+- `wrangler.toml` — Cloudflare config (includes KV binding)
 
 ## Deploy
 
@@ -19,55 +25,74 @@ npm install -g wrangler
 # 2. Log in
 wrangler login
 
-# 3. From this directory, add your API key as a secret
-wrangler secret put ANTHROPIC_API_KEY
-# Paste your key (starts with sk-ant-...) when prompted
+# 3. (From this directory) create a KV namespace for cloud sync
+wrangler kv:namespace create DISCIPLINA_KV
+# Copy the `id = "..."` it prints into wrangler.toml
 
-# 4. Deploy
+# 4. (Optional) add the Anthropic API key for AI chat
+wrangler secret put ANTHROPIC_API_KEY
+# Paste your sk-ant-... key when prompted
+
+# 5. Deploy
 wrangler deploy
 ```
 
-After deploy you will get a URL like
-`https://disciplina-proxy.<your-subdomain>.workers.dev`.
+You will get a URL like `https://disciplina-proxy.<subdomain>.workers.dev`.
 
-## Wire it into the app
+## Point the app at the Worker
 
-Open `disciplina.html` and before the app loads, set the endpoint:
+Open the deployed Disciplina site, go to **⚙️ 設定 → 雲端同步**:
 
-```html
-<script>window.DISCIPLINA_AI_ENDPOINT = 'https://disciplina-proxy.<your>.workers.dev';</script>
-```
+- `同步端點`: paste `https://disciplina-proxy.<subdomain>.workers.dev`
+- `同步密語`: pick something you can remember — this encrypts your data
+- Click **☁ 上傳雲端** on device 1
+- On device 2 (same email + same passphrase): click **☁ 從雲端還原**
 
-Put this just before the existing `<script>` block. When present, the mentor
-chat will POST to the Worker; otherwise it falls back to local rule-based
-replies automatically.
-
-Alternatively, append `?ai=<url>` to the page URL — the app also checks that
-and saves it to localStorage (see client code).
+The AI chat auto-uses the same endpoint; no extra config.
 
 ## Request / response
 
-`POST /` with JSON body:
+### `POST /` (AI chat)
 
 ```json
 {
   "message": "今天沒動力",
-  "mentor": "severus",
-  "context": { "done": 2, "total": 4, "tasks": ["運動訓練", "寫作(已完成)"], "leadingHouse": "葛來芬多", "totalPts": 140, "streak": 3 },
-  "history": [{ "role": "you", "text": "嗨" }, { "role": "mentor", "text": "……" }]
+  "mentor": "xueming",
+  "context": { "done": 2, "total": 4, ... },
+  "history": [{ "role": "you", "text": "..." }, ...]
 }
 ```
+Returns `{ "reply": "..." }`.
 
-Returns:
+### `POST /sync/save`
 
 ```json
-{ "reply": "……" }
+{ "email": "user@example.com", "blob": "<base64 AES-GCM ciphertext>" }
 ```
+Returns `{ "ok": true, "updatedAt": "2026-04-19T..." }`.
+
+### `GET /sync/load?email=user@example.com`
+
+Returns `{ "blob": "...", "updatedAt": "..." }` or 404 if no record.
+
+## Security model
+
+- The Worker **cannot read** your tasks or notes; the blob is encrypted
+  client-side with AES-GCM using a key derived from your passphrase +
+  email (PBKDF2, 100k iterations).
+- If you lose the passphrase, data on the server is unrecoverable.
+- Knowing someone's email lets an attacker **overwrite** their cloud
+  backup (DoS) but cannot read their data. If this matters, front the
+  Worker with a shared secret or rate-limit middleware.
+
+## Quotas & costs
+
+- Cloudflare Workers free tier: 100k requests/day
+- Cloudflare KV free tier: 100k reads/day, 1k writes/day, 1 GB storage
+- Anthropic API billed per token usage (not by Cloudflare)
 
 ## Notes
 
-- CORS is set to `*` to keep the client simple; lock it down to your domain
-  in production if you are concerned about abuse.
-- No rate limiting is included; add one if you expose the Worker publicly.
-- The default model is `claude-sonnet-4-6`. Override via the `MODEL`
-  environment variable in `wrangler.toml` or the dashboard.
+- CORS is `*` for client convenience; lock it down in production
+- No rate limiting; add if you expose to the public
+- Blob size cap: 2 MB per save (default)
