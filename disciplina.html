@@ -2478,12 +2478,7 @@ body::before{
       這裡沒有捷徑，也沒有鳳凰來救你。<br>
       你的每一個誓言，都會被看見。
     </p>
-    <div class="onboard-houses">
-      <div class="oh" style="--hc:#ff6b35"><div class="oh-emo">🦁</div><div class="oh-name">葛來芬多</div><div class="oh-aspect">行動力</div></div>
-      <div class="oh" style="--hc:#f5c518"><div class="oh-emo">🦡</div><div class="oh-name">赫夫帕夫</div><div class="oh-aspect">一致性</div></div>
-      <div class="oh" style="--hc:#2ecc71"><div class="oh-emo">🐍</div><div class="oh-name">斯萊哲林</div><div class="oh-aspect">野心執行</div></div>
-      <div class="oh" style="--hc:#4da6ff"><div class="oh-emo">🦅</div><div class="oh-name">雷文克勞</div><div class="oh-aspect">反思成長</div></div>
-    </div>
+    <div class="onboard-houses" id="onboard-houses"></div>
     <p class="onboard-sub">
       四院不是標籤，而是你自律的四個面向。<br>
       任務歸屬哪一院，就是在鍛鍊哪一項。
@@ -3506,32 +3501,33 @@ THEMES.aether = {
 };
 
 /* ---------- State ---------- */
-let state = loadState();
-let currentPage = 'home';
-let currentDayTab = getDefaultTab();
-let currentLibraryHouse = 'gryffindor';
-let pendingDeclarations = new Set(); // taskIds selected in morning before declaring
+const DEFAULT_THEME_ID = 'oriental';
 
 function defaultState(){
-  // Seed some default tasks so first-run is useful
-  const seedTasks = DEFAULT_TASKS.slice(0, 4).map((t,i)=>({
+  const theme = THEMES[DEFAULT_THEME_ID] || THEMES.hogwarts;
+  // Seed one preset task per house so first-run renders every house
+  const seeds = theme.houseOrder.map(h => theme.defaultTasks.find(t => t.house === h)).filter(Boolean);
+  const seedTasks = seeds.map((t, i) => ({
     id: 'seed_'+i,
     name: t.name, icon: t.icon, pts: t.pts, house: t.house,
     createdAt: todayKey(),
   }));
+  const housePoints = {};
+  for(const h of theme.houseOrder) housePoints[h] = 0;
+  const lastTitles = {};
+  for(const h of theme.houseOrder) lastTitles[h] = (theme.titles[h]?.[0]?.name) || '新生';
   return {
     tasks: seedTasks,
     declarations: {},
     completions: {},
     notes: {},
-    housePoints: { gryffindor:0, hufflepuff:0, slytherin:0, ravenclaw:0 },
+    housePoints,
     mentorImage: null,
-    selectedHouse: 'gryffindor',
-    lastTitles: { gryffindor:'新生', hufflepuff:'新生', slytherin:'新生', ravenclaw:'新生' },
+    selectedHouse: theme.houseOrder[0],
+    lastTitles,
     achievements: {}, // id -> ISO unlock timestamp
     onboarded: false,
     muted: true,
-    mentor: 'severus',
     weeklyChallenge: null,
     chatPersist: false,
     chatLog: [],
@@ -3540,7 +3536,8 @@ function defaultState(){
     ambient: false,
     privacy: false,
     goals: [], // [{id, kind:'task'|'house', ref, target, month:'YYYY-MM', name}]
-    theme: 'hogwarts',
+    theme: DEFAULT_THEME_ID,
+    mentor: theme.defaultMentorId,
     streakShield: { month: '', used: 0, protected: [] }, // 1 card per month
   };
 }
@@ -3551,6 +3548,9 @@ function loadState(){
     if(!raw) return defaultState();
     const parsed = JSON.parse(raw);
     const base = defaultState();
+    // Legacy save files (pre-v2.0) have no `theme` field but their
+    // tasks/points use hogwarts keys — keep them on hogwarts.
+    if(!parsed.theme) parsed.theme = 'hogwarts';
     return {
       ...base, ...parsed,
       notes: parsed.notes || {},
@@ -3565,6 +3565,12 @@ function loadState(){
     return defaultState();
   }
 }
+
+let state = loadState();
+let currentPage = 'home';
+let currentDayTab = getDefaultTab();
+let currentLibraryHouse = state.theme && THEMES[state.theme] ? THEMES[state.theme].houseOrder[0] : 'gryffindor';
+let pendingDeclarations = new Set(); // taskIds selected in morning before declaring
 
 function saveState(){
   try{
@@ -3726,6 +3732,14 @@ function applyTheme(id, opts){
   const brandSub = document.querySelector('.brand .sub');
   if(brandH1) brandH1.textContent = t.brand;
   if(brandSub) brandSub.textContent = t.tagline + ' · ' + t.short;
+  // Onboard house row (themed)
+  const ohRow = document.getElementById('onboard-houses');
+  if(ohRow){
+    ohRow.innerHTML = t.houseOrder.map(h => {
+      const info = t.houses[h];
+      return `<div class="oh" style="--hc:${info.color}"><div class="oh-emo">${info.emoji}</div><div class="oh-name">${info.name}</div><div class="oh-aspect">${info.aspect}</div></div>`;
+    }).join('');
+  }
   // Onboard text
   const obT = document.querySelector('.onboard-title');
   const obL = document.querySelector('.onboard-lead');
@@ -7117,9 +7131,7 @@ function boot(){
   injectManifest();
   applySeasonTheme();
   // Apply saved content theme silently so strings/constants are right from start
-  if(state.theme && THEMES[state.theme] && state.theme !== 'hogwarts'){
-    applyTheme(state.theme, { silent: true });
-  }
+  applyTheme(state.theme && THEMES[state.theme] ? state.theme : 'hogwarts', { silent: true });
   if(state.highContrast) document.body.classList.add('hc');
   if(state.privacy) document.body.classList.add('privacy');
   // Ambient requires a user gesture, so just mark state — will auto-start on first interaction
