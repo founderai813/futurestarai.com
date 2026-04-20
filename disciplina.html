@@ -2033,24 +2033,47 @@ body::before{
   .preset-grid{grid-template-columns: repeat(2, 1fr)}
 }
 
-/* Desktop: give the page more breathing room and larger text */
+/* Desktop: scale up aggressively for readability */
 @media (min-width: 720px){
-  html{ font-size: 17px }
-  .app{ max-width: 820px; padding: 22px 24px 12px }
-  .card{ padding: 20px; border-radius: 20px }
-  .task-name{ font-size: 1rem }
-  .mentor-line{ font-size: 1rem; line-height: 1.65 }
-  .quote{ font-size: 1.05rem }
-  .brand h1{ font-size: 2rem }
-  .house-pts{ font-size: 1.3rem }
-  .house-emoji{ font-size: 1.6rem }
-  .card-title{ font-size: 1.05rem }
-  .small{ font-size: .88rem }
+  html{ font-size: 19px }
+  .app{ max-width: 920px; padding: 28px 30px 16px }
+  .card{ padding: 24px; border-radius: 22px; margin: 18px 0 }
+  .brand{ padding: 22px 0 14px }
+  .brand h1{ font-size: 2.4rem }
+  .brand .sub{ font-size: .92rem }
+  .card-title{ font-size: 1.15rem }
+  .task-row{ padding: 16px; gap: 14px; margin: 10px 0 }
+  .task-name{ font-size: 1.1rem }
+  .task-meta{ font-size: .82rem }
+  .task-icon{ font-size: 1.5rem }
+  .checkbox{ width: 26px; height: 26px; font-size: 1rem }
+  .task-pts{ font-size: .95rem; padding: 5px 12px }
+  .mentor-avatar{ width: 88px; height: 88px }
+  .mentor-name{ font-size: 1.05rem }
+  .mentor-line{ font-size: 1.05rem; line-height: 1.7 }
+  .quote{ font-size: 1.15rem; line-height: 1.75 }
+  .house-emoji{ font-size: 1.8rem }
+  .house-pts{ font-size: 1.5rem }
+  .house-name{ font-size: .82rem }
+  .house-rank{ font-size: .78rem }
+  .day-tab{ padding: 15px 10px; font-size: 1.05rem }
+  .btn{ padding: 16px 20px; font-size: 1.02rem }
+  .small{ font-size: .88rem; line-height: 1.7 }
+  .input, .select{ padding: 13px 14px; font-size: .98rem }
+  .nav{ max-width: 480px; padding: 8px }
+  .nav-btn{ font-size: .82rem; padding: 10px 4px }
+  .nav-btn .nav-icon{ font-size: 1.35rem }
 }
 @media (min-width: 1024px){
-  html{ font-size: 18px }
-  .app{ max-width: 880px }
-  .nav{ max-width: 440px }
+  html{ font-size: 21px }
+  .app{ max-width: 1000px }
+  .nav{ max-width: 520px }
+  .mentor-avatar{ width: 96px; height: 96px }
+  .brand h1{ font-size: 2.6rem; letter-spacing: .18em }
+}
+@media (min-width: 1440px){
+  html{ font-size: 22px }
+  .app{ max-width: 1080px }
 }
 </style>
 </head>
