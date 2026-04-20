@@ -831,9 +831,12 @@ body::before{
   box-shadow: 0 6px 18px color-mix(in srgb, var(--hc) 18%, transparent);
 }
 .preset-chip.added{
-  opacity:.45;
-  pointer-events:none;
-  filter: grayscale(.3);
+  opacity:.6;
+  filter: grayscale(.2);
+}
+.preset-chip.added:hover{
+  opacity: 1;
+  filter: none;
 }
 .preset-chip.added::after{
   content:'✓ 已加入';
@@ -841,6 +844,10 @@ body::before{
   font-size:.65rem;
   color: var(--hc);
   margin-top:2px;
+}
+.preset-chip.added:hover::after{
+  content:'✕ 點擊移除';
+  color:#ff8888;
 }
 .preset-chip .emo{
   font-size:1.6rem;
@@ -5421,8 +5428,12 @@ function checkLevelUp(house, before, after){
 /* ---------- Library: preset & custom ---------- */
 function addPresetTask(encoded){
   const t = JSON.parse(decodeURIComponent(encoded));
-  if(state.tasks.some(x => x.name === t.name)){
-    toast('任務已存在');
+  const existing = state.tasks.find(x => x.name === t.name && x.house === t.house);
+  if(existing){
+    state.tasks = state.tasks.filter(x => x.id !== existing.id);
+    saveState();
+    renderLibraryPage();
+    toast(`已移除：${t.name}`);
     return;
   }
   state.tasks.push({
