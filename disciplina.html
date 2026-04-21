@@ -4559,17 +4559,14 @@ function renderPresetGrid(){
   const tabColor = HOUSES[tabHouse].color;
   el.innerHTML = presets.map(t => {
     const added = existing.has(t.name);
-    // Clone with overridden house so the preset lands in the active tab's house
     const payload = { name: t.name, icon: t.icon, pts: t.pts, house: tabHouse };
-    const origColor = HOUSES[t.house].color;
     return `
       <div class="preset-chip ${added?'added':''}"
         style="--hc:${tabColor}"
-        title="原屬 ${HOUSES[t.house].name}"
         onclick="addPresetTask('${encodeURIComponent(JSON.stringify(payload))}')">
         <span class="emo">${t.icon}</span>
         <span class="name">${escapeHTML(t.name)}</span>
-        <span class="pts" style="border:1px solid ${origColor}55">+${t.pts}</span>
+        <span class="pts">+${t.pts}</span>
       </div>`;
   }).join('');
 }
