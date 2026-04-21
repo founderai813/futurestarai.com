@@ -4550,17 +4550,26 @@ function switchLibraryHouse(h){
 
 function renderPresetGrid(){
   const el = document.getElementById('preset-grid');
-  const presets = DEFAULT_TASKS.filter(t => t.house === currentLibraryHouse);
+  // Show the full 16-task catalog regardless of tab, so users can
+  // pick anything while only one house is unlocked. Tapping assigns
+  // the task to the currently-active tab's house.
+  const presets = DEFAULT_TASKS;
   const existing = new Set(state.tasks.map(t => t.name));
+  const tabHouse = currentLibraryHouse;
+  const tabColor = HOUSES[tabHouse].color;
   el.innerHTML = presets.map(t => {
     const added = existing.has(t.name);
+    // Clone with overridden house so the preset lands in the active tab's house
+    const payload = { name: t.name, icon: t.icon, pts: t.pts, house: tabHouse };
+    const origColor = HOUSES[t.house].color;
     return `
       <div class="preset-chip ${added?'added':''}"
-        style="--hc:${HOUSES[t.house].color}"
-        onclick="addPresetTask('${encodeURIComponent(JSON.stringify(t))}')">
+        style="--hc:${tabColor}"
+        title="原屬 ${HOUSES[t.house].name}"
+        onclick="addPresetTask('${encodeURIComponent(JSON.stringify(payload))}')">
         <span class="emo">${t.icon}</span>
         <span class="name">${escapeHTML(t.name)}</span>
-        <span class="pts">+${t.pts}</span>
+        <span class="pts" style="border:1px solid ${origColor}55">+${t.pts}</span>
       </div>`;
   }).join('');
 }
@@ -5557,7 +5566,7 @@ function checkLevelUp(house, before, after){
 function addPresetTask(encoded){
   const t = JSON.parse(decodeURIComponent(encoded));
   if(!isHouseUnlocked(t.house)){ toast(HOUSES[t.house].name + '尚未解鎖'); return; }
-  const existing = state.tasks.find(x => x.name === t.name && x.house === t.house);
+  const existing = state.tasks.find(x => x.name === t.name);
   if(existing){
     state.tasks = state.tasks.filter(x => x.id !== existing.id);
     saveState();
