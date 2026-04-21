@@ -431,6 +431,18 @@ body::before{
   box-shadow: 0 0 18px color-mix(in srgb, var(--hc) 30%, transparent);
   transform: translateY(-2px);
 }
+.house-cell.locked{
+  opacity: .42;
+  filter: grayscale(.6);
+  cursor: help;
+}
+.house-cell.locked:hover{ opacity: .7; filter: grayscale(.3) }
+.house-cell .house-lock{
+  position: absolute;
+  top: 6px; left: 6px;
+  font-size: .8rem;
+  opacity: .8;
+}
 .house-cell .crown{
   position:absolute;
   top:4px;right:6px;
@@ -801,6 +813,10 @@ body::before{
   background: color-mix(in srgb, var(--hc) 18%, transparent);
   border-color: var(--hc);
   color: var(--text);
+}
+.house-chip.locked{
+  opacity: .5;
+  cursor: not-allowed;
 }
 
 /* Preset task chip */
@@ -2771,6 +2787,7 @@ THEMES.hogwarts.houses = {
   ravenclaw:  { name:'雷文克勞', emoji:'🦅', color:'#4da6ff', glow:'rgba(77,166,255,0.5)', soft:'rgba(77,166,255,0.2)', aspect:'反思成長' },
 };
 THEMES.hogwarts.houseOrder = ['gryffindor','hufflepuff','slytherin','ravenclaw'];
+THEMES.hogwarts.unlockOrder = ['gryffindor','slytherin','hufflepuff','ravenclaw'];
 
 let HOUSES = THEMES.hogwarts.houses;
 let HOUSE_ORDER = THEMES.hogwarts.houseOrder;
@@ -3225,6 +3242,7 @@ THEMES.oriental = {
     black:     { name:'玄武', emoji:'🐢', color:'#7b6cf6', glow:'rgba(123,108,246,0.5)', soft:'rgba(123,108,246,0.2)', aspect:'智 · 思辨之德' },
   },
   houseOrder: ['azure','white','vermilion','black'],
+  unlockOrder: ['azure','vermilion','white','black'],
   defaultTasks: [
     // 青龍 · 勇 — 行動之德
     { name:'每日運動',    icon:'💪', pts:10, house:'azure' },
@@ -3507,6 +3525,7 @@ THEMES.aether = {
     water: { name:'水 · Aqua', emoji:'💧', color:'#5aa9ff', glow:'rgba(90,169,255,0.5)', soft:'rgba(90,169,255,0.2)', aspect:'直覺流動' },
   },
   houseOrder: ['fire','earth','air','water'],
+  unlockOrder: ['fire','air','earth','water'],
   defaultTasks: [
     { name:'高強度訓練',  icon:'🏋️', pts:15, house:'fire' },
     { name:'冷水淋浴',    icon:'🚿', pts:10, house:'fire' },
@@ -3734,13 +3753,8 @@ const DEFAULT_THEME_ID = 'oriental';
 
 function defaultState(){
   const theme = THEMES[DEFAULT_THEME_ID] || THEMES.hogwarts;
-  // Seed one preset task per house so first-run renders every house
-  const seeds = theme.houseOrder.map(h => theme.defaultTasks.find(t => t.house === h)).filter(Boolean);
-  const seedTasks = seeds.map((t, i) => ({
-    id: 'seed_'+i,
-    name: t.name, icon: t.icon, pts: t.pts, house: t.house,
-    createdAt: todayKey(),
-  }));
+  // No auto-seeding — user picks presets or writes their own tasks
+  const seedTasks = [];
   const housePoints = {};
   for(const h of theme.houseOrder) housePoints[h] = 0;
   const lastTitles = {};
@@ -3768,6 +3782,7 @@ function defaultState(){
     theme: DEFAULT_THEME_ID,
     mentor: theme.defaultMentorId,
     streakShield: { month: '', used: 0, protected: [] }, // 1 card per month
+    unlockedHouses: [(theme.unlockOrder || theme.houseOrder)[0]], // staged unlock
   };
 }
 
@@ -3780,7 +3795,7 @@ function loadState(){
     // Legacy save files (pre-v2.0) have no `theme` field but their
     // tasks/points use hogwarts keys — keep them on hogwarts.
     if(!parsed.theme) parsed.theme = 'hogwarts';
-    return {
+    const merged = {
       ...base, ...parsed,
       notes: parsed.notes || {},
       achievements: parsed.achievements || {},
@@ -3789,6 +3804,24 @@ function loadState(){
       housePoints: { ...base.housePoints, ...(parsed.housePoints||{}) },
       lastTitles: { ...base.lastTitles, ...(parsed.lastTitles||{}) },
     };
+    // Staged-unlock migration: legacy saves without this field get
+    // reset into the new progression — only first house unlocked,
+    // tasks / points / history cleared per user request.
+    if(!Array.isArray(parsed.unlockedHouses)){
+      const theme = THEMES[merged.theme] || THEMES[DEFAULT_THEME_ID] || THEMES.hogwarts;
+      const firstKey = (theme.unlockOrder || theme.houseOrder)[0];
+      merged.unlockedHouses = [firstKey];
+      merged.tasks = [];
+      merged.declarations = {};
+      merged.completions = {};
+      merged.notes = {};
+      merged.goals = [];
+      merged.weeklyChallenge = null;
+      merged.selectedHouse = firstKey;
+      merged.housePoints = Object.fromEntries(theme.houseOrder.map(h => [h, 0]));
+      merged.lastTitles = Object.fromEntries(theme.houseOrder.map(h => [h, (theme.titles[h]?.[0]?.name) || '新生']));
+    }
+    return merged;
   }catch(e){
     console.warn('load state failed', e);
     return defaultState();
@@ -3897,6 +3930,80 @@ function currentMentor(){
 
 function currentTheme(){
   return THEMES[state.theme] || THEMES.hogwarts;
+}
+
+/* ---------- Staged house unlocking ---------- */
+const UNLOCK_THRESHOLD = 30;
+
+function unlockedHouses(){
+  if(Array.isArray(state.unlockedHouses) && state.unlockedHouses.length) return state.unlockedHouses;
+  const order = currentTheme().unlockOrder || HOUSE_ORDER;
+  state.unlockedHouses = [order[0]];
+  return state.unlockedHouses;
+}
+
+function isHouseUnlocked(h){
+  return unlockedHouses().includes(h);
+}
+
+function currentPracticeHouse(){
+  // The most recently unlocked house — what the user is "working on"
+  const list = unlockedHouses();
+  return list[list.length - 1];
+}
+
+function nextLockedHouse(){
+  const order = currentTheme().unlockOrder || HOUSE_ORDER;
+  const unlocked = unlockedHouses();
+  return order.find(h => !unlocked.includes(h)) || null;
+}
+
+function maybeAutoUnlock(){
+  const current = currentPracticeHouse();
+  const next = nextLockedHouse();
+  if(!next) return; // all unlocked
+  const pts = state.housePoints[current] || 0;
+  if(pts >= UNLOCK_THRESHOLD){
+    state.unlockedHouses = [...unlockedHouses(), next];
+    saveState();
+    showHouseUnlockModal(next);
+  }
+}
+
+function showHouseUnlockModal(houseKey){
+  const h = HOUSES[houseKey];
+  if(!h) return;
+  const modal = document.getElementById('levelup-modal');
+  if(!modal) return;
+  const card = modal.querySelector('.modal-card');
+  card.style.setProperty('--hc', h.color);
+  document.getElementById('levelup-glyph').textContent = h.emoji;
+  const titleEl = document.getElementById('levelup-title');
+  titleEl.textContent = h.name + ' 解鎖';
+  titleEl.style.color = h.color;
+  titleEl.style.textShadow = `0 0 20px ${h.color}`;
+  document.getElementById('levelup-house').textContent = `新階段 · ${h.aspect}`;
+  modal.classList.add('show');
+  sfxLevelup();
+  // Reuse the burst particles spawn from the existing level-up modal
+  card.querySelectorAll('.burst, .modal-halo').forEach(n => n.remove());
+  const halo = document.createElement('div');
+  halo.className = 'modal-halo';
+  card.appendChild(halo);
+  setTimeout(() => halo.remove(), 1400);
+  const N = 18;
+  for(let i=0; i<N; i++){
+    const angle = (i / N) * Math.PI * 2 + Math.random() * 0.3;
+    const dist = 90 + Math.random() * 60;
+    const el = document.createElement('div');
+    el.className = 'burst';
+    el.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    el.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+    el.style.width = el.style.height = (4 + Math.random() * 6) + 'px';
+    el.style.animationDelay = (Math.random() * 80) + 'ms';
+    card.appendChild(el);
+    setTimeout(() => el.remove(), 1300);
+  }
 }
 
 function applyTheme(id, opts){
@@ -4082,18 +4189,22 @@ function renderHouseRow(){
   const lead = getLeadingHouse();
   const maxPts = Math.max(...Object.values(state.housePoints), 1);
   const el = document.getElementById('house-row');
+  const current = currentPracticeHouse();
   el.innerHTML = HOUSE_ORDER.map(h => {
     const pts = state.housePoints[h] || 0;
     const title = getTitleByPts(h, pts);
     const pct = Math.min(100, (pts / maxPts) * 100);
+    const locked = !isHouseUnlocked(h);
+    const ptsToNext = locked ? Math.max(0, UNLOCK_THRESHOLD - (state.housePoints[current] || 0)) : 0;
     return `
-      <div class="house-cell ${h===lead ? 'leading' : ''}" style="--hc:${HOUSES[h].color}" onclick="selectHouse('${h}')" title="點選設為主修學院">
+      <div class="house-cell ${h===lead ? 'leading' : ''} ${locked?'locked':''}" style="--hc:${HOUSES[h].color}" onclick="${locked ? `toast('再獲取 ' + ${ptsToNext} + ' 分解鎖 '+'${HOUSES[h].name}')` : `selectHouse('${h}')`}" title="${locked?'尚未解鎖':'點選設為主修學院'}">
         <div class="crown">👑</div>
+        ${locked ? '<div class="house-lock">🔒</div>' : ''}
         <div class="house-emoji">${HOUSES[h].emoji}</div>
         <div class="house-name">${HOUSES[h].name}</div>
-        <div class="house-pts">${pts}</div>
-        <div class="house-rank">${title}</div>
-        <div class="house-bar"><div class="house-bar-fill" style="width:${pct}%"></div></div>
+        <div class="house-pts">${locked ? '—' : pts}</div>
+        <div class="house-rank">${locked ? `達 ${UNLOCK_THRESHOLD} 分解鎖` : title}</div>
+        <div class="house-bar"><div class="house-bar-fill" style="width:${locked?0:pct}%"></div></div>
       </div>`;
   }).join('');
 }
@@ -4229,6 +4340,7 @@ function quickRepeatYesterday(){
 function quickSelectHouse(h){
   const today = todayKey();
   if(state.declarations[today]){ toast('今日已宣告'); return; }
+  if(!isHouseUnlocked(h)){ toast(HOUSES[h].name + '尚未解鎖'); return; }
   const ids = state.tasks.filter(t => t.house === h).map(t => t.id);
   ids.forEach(id => pendingDeclarations.add(id));
   renderMorningPanel();
@@ -4397,6 +4509,7 @@ function triggerRedFlash(){
 
 /* ---------- Library ---------- */
 function renderLibraryPage(){
+  renderCustomHouseOptions();
   renderPresetTabs();
   renderPresetGrid();
   renderGoalFormTargets();
@@ -4404,18 +4517,32 @@ function renderLibraryPage(){
   renderLibraryList();
 }
 
+function renderCustomHouseOptions(){
+  const sel = document.getElementById('custom-house');
+  if(!sel) return;
+  const unlocked = unlockedHouses();
+  sel.innerHTML = unlocked.map(h => `<option value="${h}">${HOUSES[h].emoji} ${HOUSES[h].name}</option>`).join('');
+}
+
 function renderPresetTabs(){
   const el = document.getElementById('preset-tabs');
-  el.innerHTML = HOUSE_ORDER.map(h =>
-    `<button class="house-chip ${h===currentLibraryHouse?'active':''}"
+  // Default the active chip to the current practice house if the
+  // previously selected one is now locked (e.g. after theme change)
+  if(!isHouseUnlocked(currentLibraryHouse)){
+    currentLibraryHouse = currentPracticeHouse();
+  }
+  el.innerHTML = HOUSE_ORDER.map(h => {
+    const locked = !isHouseUnlocked(h);
+    return `<button class="house-chip ${h===currentLibraryHouse?'active':''} ${locked?'locked':''}"
        style="--hc:${HOUSES[h].color}"
-       onclick="switchLibraryHouse('${h}')">
-       ${HOUSES[h].emoji} ${HOUSES[h].name}
-     </button>`
-  ).join('');
+       onclick="${locked ? `toast('${HOUSES[h].name}尚未解鎖')` : `switchLibraryHouse('${h}')`}">
+       ${locked?'🔒 ':''}${HOUSES[h].emoji} ${HOUSES[h].name}
+     </button>`;
+  }).join('');
 }
 
 function switchLibraryHouse(h){
+  if(!isHouseUnlocked(h)){ toast(HOUSES[h].name + '尚未解鎖'); return; }
   currentLibraryHouse = h;
   renderPresetTabs();
   renderPresetGrid();
@@ -5129,7 +5256,7 @@ function renderGoalFormTargets(){
       ref.innerHTML = state.tasks.map(t => `<option value="${t.id}">${t.icon||'✨'} ${escapeHTML(t.name)}（${HOUSES[t.house].name}）</option>`).join('');
     }
   } else {
-    ref.innerHTML = HOUSE_ORDER.map(h => `<option value="${h}">${HOUSES[h].emoji} ${HOUSES[h].name}</option>`).join('');
+    ref.innerHTML = unlockedHouses().map(h => `<option value="${h}">${HOUSES[h].emoji} ${HOUSES[h].name}</option>`).join('');
   }
 }
 
@@ -5408,6 +5535,7 @@ function toggleTask(id){
   }
   saveState();
   checkAchievements();
+  maybeAutoUnlock();
   updateTheme();
   renderHouseRow();
   renderEveningPanel();
@@ -5428,6 +5556,7 @@ function checkLevelUp(house, before, after){
 /* ---------- Library: preset & custom ---------- */
 function addPresetTask(encoded){
   const t = JSON.parse(decodeURIComponent(encoded));
+  if(!isHouseUnlocked(t.house)){ toast(HOUSES[t.house].name + '尚未解鎖'); return; }
   const existing = state.tasks.find(x => x.name === t.name && x.house === t.house);
   if(existing){
     state.tasks = state.tasks.filter(x => x.id !== existing.id);
@@ -5481,6 +5610,7 @@ function addCustomTask(){
   const house = document.getElementById('custom-house').value;
   const pts = parseInt(document.getElementById('custom-pts').value, 10);
   if(!name){ toast('請輸入任務名稱'); return; }
+  if(!isHouseUnlocked(house)){ toast(HOUSES[house].name + '尚未解鎖'); return; }
   if(state.tasks.some(t => t.name === name)){ toast('同名任務已存在'); return; }
   state.tasks.push({
     id: 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
@@ -5558,6 +5688,11 @@ function parseBulkLine(line, rotateIdx){
     if(k) house = k;
   }
   if(!house) house = inferHouseByKeyword(name) || HOUSE_ORDER[rotateIdx % HOUSE_ORDER.length];
+  // Fall back to the first unlocked house if the inferred/chosen one is locked
+  if(!isHouseUnlocked(house)){
+    const unlocked = unlockedHouses();
+    house = unlocked[rotateIdx % unlocked.length];
+  }
   return { name, icon, house, pts };
 }
 
