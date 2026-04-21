@@ -1143,6 +1143,54 @@ body::before{
   font-size:.78rem; color: var(--text-dim);
 }
 
+/* Compact add-task row */
+.form-row.compact{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:nowrap;
+}
+.form-row.compact .input{ flex:1; min-width:0; margin:0 }
+.form-row.compact .select{ flex:0 0 72px; padding:11px 4px; font-size:.85rem; margin:0 }
+.form-row.compact .emoji-pick-btn{
+  flex: 0 0 48px;
+  width:48px; height:44px;
+  margin:0; padding:0;
+  font-size:1.3rem; line-height:1;
+}
+.form-row.compact .btn{
+  flex: 0 0 54px;
+  width:54px; height:44px;
+  margin:0; padding:0;
+  font-size:1.25rem;
+}
+
+/* Preset fold disclosure */
+.preset-fold{
+  margin-top: 8px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(10,8,20,0.25);
+}
+.preset-fold > summary{
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size:.88rem;
+  list-style: none;
+  padding: 2px 0;
+  user-select:none;
+}
+.preset-fold > summary::-webkit-details-marker{ display:none }
+.preset-fold > summary::after{
+  content: ' ▾';
+  color: var(--text-mute);
+  transition: transform .2s ease;
+  display:inline-block;
+}
+.preset-fold[open] > summary::after{ transform: rotate(180deg) }
+.preset-fold[open] > summary{ color: var(--text); margin-bottom: 6px }
+
 /* Emoji picker */
 .emoji-pick-btn{
   font-size:1.2rem;
@@ -2248,67 +2296,40 @@ body::before{
   <!-- ============ Library page ============ -->
   <section class="page" id="page-library">
     <div class="card">
-      <div class="card-title">預設任務 — 一鍵加入</div>
-      <div class="house-tabs" id="preset-tabs"></div>
-      <div class="preset-grid" id="preset-grid"></div>
+      <div class="card-title">我的任務</div>
+      <div class="lib-toolbar">
+        <input class="input lib-search" id="lib-search" placeholder="搜尋任務名稱或圖示" oninput="renderLibraryList()">
+        <select class="select lib-filter" id="lib-filter" onchange="renderLibraryList()">
+          <option value="all">全部學院</option>
+        </select>
+      </div>
+      <div id="library-list"></div>
     </div>
 
     <div class="card">
-      <div class="card-title">新增自訂任務</div>
-      <div class="form-row">
-        <select class="select" id="custom-house">
-          <option value="gryffindor">🦁 葛來芬多</option>
-          <option value="hufflepuff">🦡 赫夫帕夫</option>
-          <option value="slytherin">🐍 斯萊哲林</option>
-          <option value="ravenclaw">🦅 雷文克勞</option>
-        </select>
+      <div class="card-title">新增任務</div>
+      <div class="form-row compact">
+        <button type="button" class="btn ghost emoji-pick-btn" onclick="toggleEmojiPicker()" id="emoji-pick-btn">🔥</button>
+        <input class="input" id="custom-name" placeholder="任務名稱（例：跑 5 公里）" maxlength="28">
         <select class="select" id="custom-pts">
           <option value="5">5 分</option>
           <option value="10" selected>10 分</option>
           <option value="15">15 分</option>
           <option value="20">20 分</option>
         </select>
-      </div>
-      <div class="form-row">
-        <input class="input" id="custom-name" placeholder="例：凌晨 6 點跑步 5 公里" maxlength="28" style="flex:2.5">
-        <button type="button" class="btn ghost emoji-pick-btn" onclick="toggleEmojiPicker()" id="emoji-pick-btn" style="flex:.6;margin-top:0;padding:11px 0">🔥</button>
+        <button class="btn" onclick="addCustomTask()" id="custom-add-btn">＋</button>
         <input type="hidden" id="custom-icon" value="">
+        <select class="select" id="custom-house" style="display:none"></select>
       </div>
       <div class="emoji-picker" id="emoji-picker"></div>
-      <button class="btn ghost" onclick="addCustomTask()">＋ 加入任務庫</button>
-      <button class="btn ghost" onclick="openBulkImport()" style="margin-top:6px">📥 批量匯入任務</button>
-    </div>
 
-    <div class="card">
-      <div class="card-title">本月目標</div>
-      <p class="small" style="margin-bottom:8px">設定本月想達成的累積目標（月底自動結算，不跨月）。</p>
-      <div class="form-row">
-        <select class="select" id="goal-kind" onchange="renderGoalFormTargets()">
-          <option value="task">任務達成次數</option>
-          <option value="house">學院積分累積</option>
-        </select>
-        <input class="input" id="goal-target" type="number" min="1" max="999" value="10" style="flex:0.6">
-      </div>
-      <div class="form-row">
-        <select class="select" id="goal-ref" style="flex:2.5"></select>
-        <button class="btn ghost" onclick="addGoal()" style="flex:1; margin-top:0">＋ 加入目標</button>
-      </div>
-      <div id="goals-admin-list" style="margin-top:8px"></div>
-    </div>
+      <details class="preset-fold">
+        <summary>或從建議挑選 <span class="small">· 展開 16 個任務</span></summary>
+        <div class="house-tabs" id="preset-tabs" style="margin-top:10px"></div>
+        <div class="preset-grid" id="preset-grid"></div>
+      </details>
 
-    <div class="card">
-      <div class="card-title">我的任務庫</div>
-      <div class="lib-toolbar">
-        <input class="input lib-search" id="lib-search" placeholder="搜尋任務名稱或圖示" oninput="renderLibraryList()">
-        <select class="select lib-filter" id="lib-filter" onchange="renderLibraryList()">
-          <option value="all">全部學院</option>
-          <option value="gryffindor">🦁 葛來芬多</option>
-          <option value="hufflepuff">🦡 赫夫帕夫</option>
-          <option value="slytherin">🐍 斯萊哲林</option>
-          <option value="ravenclaw">🦅 雷文克勞</option>
-        </select>
-      </div>
-      <div id="library-list"></div>
+      <button class="btn ghost" onclick="openBulkImport()" style="margin-top:8px">📥 批量匯入任務</button>
     </div>
   </section>
 
@@ -2327,6 +2348,23 @@ body::before{
     <div class="card">
       <div class="card-title">本週統計</div>
       <div class="stats-grid" id="stats"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">本月目標</div>
+      <p class="small" style="margin-bottom:8px">設定本月想達成的累積目標（月底自動結算，不跨月）。</p>
+      <div class="form-row">
+        <select class="select" id="goal-kind" onchange="renderGoalFormTargets()">
+          <option value="task">任務達成次數</option>
+          <option value="house">學院積分累積</option>
+        </select>
+        <input class="input" id="goal-target" type="number" min="1" max="999" value="10" style="flex:0.6">
+      </div>
+      <div class="form-row">
+        <select class="select" id="goal-ref" style="flex:2.5"></select>
+        <button class="btn ghost" onclick="addGoal()" style="flex:1; margin-top:0">＋ 加入目標</button>
+      </div>
+      <div id="goals-admin-list" style="margin-top:8px"></div>
     </div>
 
     <div class="card">
@@ -4519,9 +4557,18 @@ function renderLibraryPage(){
 
 function renderCustomHouseOptions(){
   const sel = document.getElementById('custom-house');
-  if(!sel) return;
-  const unlocked = unlockedHouses();
-  sel.innerHTML = unlocked.map(h => `<option value="${h}">${HOUSES[h].emoji} ${HOUSES[h].name}</option>`).join('');
+  if(sel){
+    const unlocked = unlockedHouses();
+    sel.innerHTML = unlocked.map(h => `<option value="${h}">${HOUSES[h].emoji} ${HOUSES[h].name}</option>`).join('');
+  }
+  const filter = document.getElementById('lib-filter');
+  if(filter){
+    const prev = filter.value || 'all';
+    filter.innerHTML = '<option value="all">全部學院</option>'
+      + unlockedHouses().map(h => `<option value="${h}">${HOUSES[h].emoji} ${HOUSES[h].name}</option>`).join('');
+    // Preserve selection if still valid
+    if([...filter.options].some(o => o.value === prev)) filter.value = prev;
+  }
 }
 
 function renderPresetTabs(){
@@ -4531,14 +4578,21 @@ function renderPresetTabs(){
   if(!isHouseUnlocked(currentLibraryHouse)){
     currentLibraryHouse = currentPracticeHouse();
   }
-  el.innerHTML = HOUSE_ORDER.map(h => {
-    const locked = !isHouseUnlocked(h);
-    return `<button class="house-chip ${h===currentLibraryHouse?'active':''} ${locked?'locked':''}"
+  const unlocked = unlockedHouses();
+  // When only one house is unlocked, hide the tab bar entirely — nothing to switch
+  if(unlocked.length < 2){
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  el.style.display = '';
+  el.innerHTML = unlocked.map(h =>
+    `<button class="house-chip ${h===currentLibraryHouse?'active':''}"
        style="--hc:${HOUSES[h].color}"
-       onclick="${locked ? `toast('${HOUSES[h].name}尚未解鎖')` : `switchLibraryHouse('${h}')`}">
-       ${locked?'🔒 ':''}${HOUSES[h].emoji} ${HOUSES[h].name}
-     </button>`;
-  }).join('');
+       onclick="switchLibraryHouse('${h}')">
+       ${HOUSES[h].emoji} ${HOUSES[h].name}
+     </button>`
+  ).join('');
 }
 
 function switchLibraryHouse(h){
