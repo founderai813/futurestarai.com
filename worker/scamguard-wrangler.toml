@@ -1,0 +1,15 @@
+name = "scamguard-worker"
+main = "scamguard-worker.js"
+compatibility_date = "2025-01-01"
+
+# KV for crowdsourced blacklist
+# Create with:  wrangler kv:namespace create SCAMGUARD_KV
+# Then paste the returned id below.
+[[kv_namespaces]]
+binding = "SCAMGUARD_KV"
+id = "REPLACE_WITH_NAMESPACE_ID"
+
+# Secrets (set via `wrangler secret put <NAME>`):
+#   ANTHROPIC_API_KEY     — Claude API key（建議；無則降級為規則判斷）
+#   LINE_CHANNEL_SECRET   — LINE Messaging API channel secret（webhook 驗簽）
+#   LINE_CHANNEL_TOKEN    — LINE channel access token（reply 用）

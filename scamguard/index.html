@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScamGuard · 脆盾｜社群詐騙即時判讀</title>
+<meta name="description" content="把脆、IG、LINE 上看到的可疑訊息貼給我們，AI 幫你在 3 秒內判讀話術、給出風險分數與理由。支援 LINE Bot，手機隨手查。">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0b0b0f;
+    --surface: #14141a;
+    --surface2: #1c1c24;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f3;
+    --muted: #8a8a95;
+    --accent: #00d2ff;
+    --accent2: #7b2ff7;
+    --red: #ff4d6d;
+    --amber: #ffb020;
+    --green: #2dd4a7;
+    --radius: 14px;
+    --radius-sm: 10px;
+  }
+  html, body { background: var(--bg); color: var(--text); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', Roboto, sans-serif;
+    min-height: 100vh; padding: 2rem 1rem 4rem; line-height: 1.6;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+
+  .nav { font-size: 13px; color: var(--muted); margin-bottom: 2rem; }
+  .nav a { color: var(--muted); text-decoration: none; }
+  .nav a:hover { color: var(--accent); }
+
+  .hero { text-align: center; margin-bottom: 2.5rem; }
+  .badge {
+    display: inline-block; padding: 4px 12px; border-radius: 999px;
+    background: rgba(0, 210, 255, 0.1); color: var(--accent);
+    font-size: 12px; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 1rem;
+  }
+  h1 {
+    font-size: clamp(2rem, 6vw, 3rem); font-weight: 800; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #00d2ff, #7b2ff7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 0.75rem;
+  }
+  .tagline { font-size: 1.05rem; color: var(--muted); max-width: 560px; margin: 0 auto; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem;
+  }
+
+  textarea {
+    width: 100%; min-height: 140px; resize: vertical;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 0.9rem 1rem;
+    color: var(--text); font: inherit; font-size: 15px;
+    outline: none; transition: border-color 0.15s;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: #555; }
+
+  .sample-row {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; margin-bottom: 14px;
+  }
+  .sample {
+    font-size: 12px; padding: 4px 12px; border-radius: 999px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--muted); cursor: pointer; font-family: inherit;
+    transition: all 0.15s;
+  }
+  .sample:hover { color: var(--accent); border-color: var(--accent); }
+
+  .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 24px; font-size: 15px; font-weight: 600;
+    color: #fff; background: linear-gradient(135deg, #7b2ff7, #00d2ff);
+    border: none; border-radius: 999px; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s; font-family: inherit;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0, 210, 255, 0.3); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-ghost {
+    background: transparent; color: var(--muted); border: 1px solid var(--border2);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text); box-shadow: none; }
+  .spinner {
+    width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .endpoint {
+    font-size: 12px; color: var(--muted);
+    margin-top: 12px; display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap;
+  }
+  .endpoint input {
+    flex: 1; min-width: 200px; background: var(--surface2);
+    border: 1px solid var(--border2); color: var(--muted);
+    padding: 6px 10px; border-radius: 6px; font-family: ui-monospace, monospace;
+    font-size: 11px; outline: none;
+  }
+  .endpoint input:focus { color: var(--text); border-color: var(--accent); }
+
+  /* Result */
+  .result { margin-top: 1rem; display: none; }
+  .result.show { display: block; }
+  .result-head {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 1rem 1.25rem; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--surface);
+  }
+  .score-ring {
+    position: relative; width: 72px; height: 72px; flex-shrink: 0;
+  }
+  .score-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .score-ring .track { stroke: var(--surface2); stroke-width: 8; fill: none; }
+  .score-ring .bar { stroke-width: 8; fill: none; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+  .score-num {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700;
+  }
+  .result-label { font-size: 18px; font-weight: 700; }
+  .result-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .level-high { color: var(--red); }
+  .level-med { color: var(--amber); }
+  .level-low { color: var(--green); }
+  .bar-high { stroke: var(--red); }
+  .bar-med { stroke: var(--amber); }
+  .bar-low { stroke: var(--green); }
+
+  .reasons {
+    margin-top: 12px; padding: 1rem 1.25rem; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--surface);
+  }
+  .reasons h3 { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  .reasons ul { list-style: none; padding: 0; }
+  .reasons li {
+    padding: 6px 0; font-size: 14px; color: #d0d0d6;
+    border-bottom: 1px dashed var(--border);
+  }
+  .reasons li:last-child { border-bottom: none; }
+  .reasons li::before { content: "· "; color: var(--accent); font-weight: 700; }
+  .advice {
+    margin-top: 10px; padding: 10px 14px; border-radius: var(--radius-sm);
+    background: rgba(0, 210, 255, 0.08); border: 1px solid rgba(0, 210, 255, 0.2);
+    font-size: 14px;
+  }
+  .advice strong { color: var(--accent); }
+
+  /* Info sections */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 560px) { .grid-2 { grid-template-columns: 1fr; } }
+  .mini {
+    padding: 1.25rem; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--surface);
+  }
+  .mini h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .mini p { font-size: 13px; color: var(--muted); }
+
+  footer {
+    text-align: center; margin-top: 3rem; font-size: 12px; color: #555;
+  }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--accent); }
+
+  .chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .chip {
+    font-size: 11px; padding: 3px 10px; border-radius: 999px;
+    background: rgba(255, 77, 109, 0.12); border: 1px solid rgba(255, 77, 109, 0.3);
+    color: var(--red);
+  }
+
+  .error {
+    margin-top: 12px; padding: 10px 14px; border-radius: var(--radius-sm);
+    background: rgba(255, 77, 109, 0.1); border: 1px solid rgba(255, 77, 109, 0.3);
+    color: var(--red); font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="nav"><a href="/">← FuturestarAI</a></div>
+
+  <div class="hero">
+    <div class="badge">MVP · v0.1</div>
+    <h1>ScamGuard · 脆盾</h1>
+    <p class="tagline">
+      把你在脆、IG、LINE 看到的可疑訊息貼進來，AI 在 3 秒內給你風險分數、判讀理由與建議。支援 LINE Bot，手機隨手查。
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">試看看 · 貼一段可疑訊息</div>
+    <textarea id="text" placeholder="例如：『哈囉～我是財經老師的助理，現在有獨家帶單群組月收30%，加我 LINE: abc123 我帶你入群～』"></textarea>
+
+    <div class="sample-row">
+      <button class="sample" data-sample="哈囉～看你很有投資潛力！我是陳老師助理，現在有獨家帶單群組月收30%，加我 LINE: scamx999 我帶你入群～名額只剩3位！">範例：投資代操</button>
+      <button class="sample" data-sample="在家兼職徵人！日薪 3000 起，只要用手機幫我們的蝦皮賣場按讚評分就好，意者私訊+賴：parttime88">範例：刷單兼職</button>
+      <button class="sample" data-sample="您好，我是中華電信客服，偵測到您的帳戶被盜用並有分期消費紀錄，請立即撥打 02-xxxx 解除分期，否則將移送法辦。">範例：假客服</button>
+      <button class="sample" data-sample="一個人在台北真的好無聊ㄛ 有沒有想認識的 dm我 或加賴 lonely_girl_tw 聊聊～">範例：情感詐騙</button>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="analyze">
+        <span id="btn-text">分析這則訊息</span>
+      </button>
+      <button class="btn btn-ghost" id="clear">清除</button>
+    </div>
+
+    <div class="endpoint">
+      <span>API endpoint：</span>
+      <input id="endpoint" placeholder="https://scamguard-worker.<你的>.workers.dev" />
+    </div>
+
+    <div id="error" class="error" style="display:none"></div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-head">
+      <div class="score-ring">
+        <svg viewBox="0 0 80 80">
+          <circle class="track" cx="40" cy="40" r="32"></circle>
+          <circle id="bar" class="bar" cx="40" cy="40" r="32"
+                  stroke-dasharray="201.06" stroke-dashoffset="201.06"></circle>
+        </svg>
+        <div class="score-num" id="scoreNum">—</div>
+      </div>
+      <div style="flex:1; min-width: 160px;">
+        <div class="result-label" id="resultLabel">—</div>
+        <div class="result-sub" id="resultSub">風險分數 / 100</div>
+        <div class="chip-row" id="chips"></div>
+      </div>
+    </div>
+
+    <div class="reasons" id="reasons" style="display:none">
+      <h3>判讀理由</h3>
+      <ul id="reasonList"></ul>
+    </div>
+
+    <div class="advice" id="advice" style="display:none"></div>
+  </div>
+
+  <div class="grid-2" style="margin-top: 1.5rem;">
+    <div class="mini">
+      <h3>📱 LINE Bot</h3>
+      <p>部署 Worker 後綁定 LINE Messaging API，就能在 LINE 裡把訊息轉給機器人分析，也可以查／檢舉詐騙帳號。</p>
+    </div>
+    <div class="mini">
+      <h3>🛡 規則 + LLM 雙層判讀</h3>
+      <p>先用 20+ 條台灣社群詐騙話術規則比對，再用 Claude Haiku 判讀語意，兩層合成最終風險分數。</p>
+    </div>
+    <div class="mini">
+      <h3>👥 眾包黑名單</h3>
+      <p>用戶可在 LINE Bot 或網頁提交檢舉，被多人檢舉的帳號會進入警示名單，其他人查詢時會看到紅字警告。</p>
+    </div>
+    <div class="mini">
+      <h3>🔒 隱私</h3>
+      <p>只會送出你貼的那段文字給 API；不要求登入、不記錄你的 IP 關聯。檢舉資料僅保留帳號名與話術摘要。</p>
+    </div>
+  </div>
+
+  <footer>
+    ScamGuard · Futurestar AI ·
+    <a href="https://github.com/founderai813/futurestarai.com">原始碼</a> ·
+    遇到詐騙請撥 165 反詐騙專線
+  </footer>
+</div>
+
+<script>
+  const ENDPOINT_KEY = 'scamguard.endpoint';
+  const endpointInput = document.getElementById('endpoint');
+  endpointInput.value = localStorage.getItem(ENDPOINT_KEY) || '';
+  endpointInput.addEventListener('change', () => {
+    localStorage.setItem(ENDPOINT_KEY, endpointInput.value.trim());
+  });
+
+  const text = document.getElementById('text');
+  const btn = document.getElementById('analyze');
+  const btnText = document.getElementById('btn-text');
+  const clearBtn = document.getElementById('clear');
+  const errorEl = document.getElementById('error');
+  const resultEl = document.getElementById('result');
+  const scoreNum = document.getElementById('scoreNum');
+  const bar = document.getElementById('bar');
+  const resultLabel = document.getElementById('resultLabel');
+  const chips = document.getElementById('chips');
+  const reasonsWrap = document.getElementById('reasons');
+  const reasonList = document.getElementById('reasonList');
+  const adviceEl = document.getElementById('advice');
+
+  document.querySelectorAll('.sample').forEach((b) => {
+    b.addEventListener('click', () => { text.value = b.dataset.sample; text.focus(); });
+  });
+  clearBtn.addEventListener('click', () => {
+    text.value = ''; hideResult(); hideError(); text.focus();
+  });
+  btn.addEventListener('click', analyze);
+
+  async function analyze() {
+    hideError();
+    const content = text.value.trim();
+    if (!content) { showError('請先貼一段訊息。'); return; }
+    const endpoint = endpointInput.value.trim().replace(/\/$/, '');
+    if (!endpoint) {
+      showError('請先填入 API endpoint（部署 Worker 後會得到的 workers.dev 網址）。');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const resp = await fetch(`${endpoint}/analyze`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text: content, source: 'web' }),
+      });
+      if (!resp.ok) {
+        const msg = await resp.text().catch(() => '');
+        throw new Error(`API 回傳 ${resp.status}：${msg || '未知錯誤'}`);
+      }
+      const data = await resp.json();
+      renderResult(data);
+    } catch (err) {
+      showError(err.message || '連不上 API。');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderResult(d) {
+    const risk = Math.max(0, Math.min(100, d.risk || 0));
+    const level = d.level || (risk >= 70 ? 'high' : risk >= 35 ? 'medium' : 'low');
+    const isHigh = level === 'high';
+    const isMed = level === 'medium';
+    const labelText = isHigh ? '🔴 高風險' : isMed ? '🟡 可疑' : '🟢 低風險';
+    const cls = isHigh ? 'level-high' : isMed ? 'level-med' : 'level-low';
+    const barCls = isHigh ? 'bar-high' : isMed ? 'bar-med' : 'bar-low';
+
+    scoreNum.textContent = risk;
+    scoreNum.className = 'score-num ' + cls;
+    bar.setAttribute('class', 'bar ' + barCls);
+    const circumference = 201.06;
+    bar.style.strokeDashoffset = circumference * (1 - risk / 100);
+
+    resultLabel.textContent = labelText;
+    resultLabel.className = 'result-label ' + cls;
+
+    chips.innerHTML = '';
+    if (Array.isArray(d.matched)) {
+      for (const m of d.matched) {
+        const el = document.createElement('span');
+        el.className = 'chip';
+        el.textContent = m.label;
+        chips.appendChild(el);
+      }
+    }
+
+    reasonList.innerHTML = '';
+    if (Array.isArray(d.reasons) && d.reasons.length) {
+      for (const r of d.reasons) {
+        const li = document.createElement('li');
+        li.textContent = r;
+        reasonList.appendChild(li);
+      }
+      reasonsWrap.style.display = 'block';
+    } else {
+      reasonsWrap.style.display = 'none';
+    }
+
+    if (d.advice) {
+      adviceEl.innerHTML = '<strong>建議：</strong>' + escapeHtml(d.advice);
+      adviceEl.style.display = 'block';
+    } else {
+      adviceEl.style.display = 'none';
+    }
+
+    resultEl.classList.add('show');
+    resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function setLoading(on) {
+    btn.disabled = on;
+    if (on) {
+      btnText.innerHTML = '<span class="spinner"></span> 分析中';
+    } else {
+      btnText.textContent = '分析這則訊息';
+    }
+  }
+  function hideResult() { resultEl.classList.remove('show'); }
+  function showError(msg) { errorEl.textContent = msg; errorEl.style.display = 'block'; }
+  function hideError() { errorEl.style.display = 'none'; }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+</script>
+</body>
+</html>
