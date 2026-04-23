@@ -185,6 +185,14 @@
     font-size: 0.85rem;
   }
 
+  footer a {
+    color: var(--text-muted);
+    margin-left: 0.75rem;
+    transition: color 0.15s ease;
+  }
+
+  footer a:hover { color: var(--text-dim); }
+
   @media (max-width: 600px) {
     .hero { padding: 4rem 0 2.5rem; }
     .grid { grid-template-columns: 1fr; }
@@ -195,14 +203,11 @@
   <main class="container">
     <section class="hero">
       <h1>FuturestarAI</h1>
-      <p class="sub">Solo AI Builder · 10+ 個作品一次看完</p>
+      <p class="sub">Solo AI Builder · 用 AI 打造的作品集</p>
       <p class="who">嗨我是 <strong>Purple</strong>，一個人做 AI 工具給自己、也給你用。</p>
       <div class="links">
         <a class="link-btn" href="https://instagram.com/purplelight731" target="_blank" rel="noopener">
           <span>📷</span> Instagram
-        </a>
-        <a class="link-btn" href="https://github.com/founderai813" target="_blank" rel="noopener">
-          <span>⌘</span> GitHub
         </a>
       </div>
     </section>
@@ -236,13 +241,6 @@
           <span class="cta">打開 →</span>
         </a>
 
-        <a class="card" href="https://postlab.futurestarai.com" target="_blank" rel="noopener">
-          <div class="icon">✍️</div>
-          <h3>PostLab</h3>
-          <p class="desc">AI 生成社群貼文，讓寫文速度翻倍、靈感不斷檔。</p>
-          <span class="cta">打開 →</span>
-        </a>
-
         <a class="card" href="https://market-pulse.futurestarai.com" target="_blank" rel="noopener">
           <div class="icon">📊</div>
           <h3>Market Pulse 財經 AI 週報</h3>
@@ -254,20 +252,6 @@
           <div class="icon">🌴</div>
           <h3>Leave Chatbot 請假機器人</h3>
           <p class="desc">用 LINE 說一句話就請假，告別制式表單、自動通知主管。</p>
-          <span class="cta">打開 →</span>
-        </a>
-
-        <a class="card" href="https://line-summarizer.futurestarai.com" target="_blank" rel="noopener">
-          <div class="icon">📝</div>
-          <h3>LINE Summarizer</h3>
-          <p class="desc">把一整天炸開的 LINE 群組訊息，AI 濃縮成 3 行重點。</p>
-          <span class="cta">打開 →</span>
-        </a>
-
-        <a class="card" href="https://podcast-learning-tool.futurestarai.com" target="_blank" rel="noopener">
-          <div class="icon">🎧</div>
-          <h3>Podcast Learning Tool</h3>
-          <p class="desc">邊聽 Podcast 邊自動做 AI 筆記 — 知識進耳朵、重點進筆記。</p>
           <span class="cta">打開 →</span>
         </a>
 
@@ -284,6 +268,7 @@
 
   <footer>
     &copy; 2026 FuturestarAI · Made by Purple
+    <a href="https://github.com/founderai813" target="_blank" rel="noopener">GitHub</a>
   </footer>
 </body>
 </html>
