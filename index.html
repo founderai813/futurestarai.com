@@ -1,117 +1,289 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FuturestarAI</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FuturestarAI · Purple 的作品集</title>
+<meta name="description" content="Purple · Solo AI Builder · 10+ 個用 AI 打造的作品：PartyUp、JoinUp、Disciplina、PostLab 等。">
+<meta name="theme-color" content="#0a0a0a">
+<meta property="og:title" content="FuturestarAI · Purple 的作品集">
+<meta property="og:description" content="Solo AI Builder · 10+ 作品一次展示">
+<meta property="og:type" content="website">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #0a0a0a;
-            color: #e0e0e0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
+  :root {
+    --bg: #0a0a0a;
+    --panel: #141414;
+    --panel-hover: #1c1c1f;
+    --border: #2a2a2e;
+    --border-hover: #3a3a45;
+    --text: #e8e8ea;
+    --text-dim: #9a9a9f;
+    --text-muted: #6a6a6f;
+    --accent-1: #00d2ff;
+    --accent-2: #7b2ff7;
+  }
 
-        .container {
-            text-align: center;
-            max-width: 720px;
-            padding: 2rem;
-        }
+  html, body { height: 100%; }
 
-        h1 {
-            font-size: 3.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #00d2ff, #7b2ff7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
 
-        .tagline {
-            font-size: 1.25rem;
-            color: #888;
-            margin-bottom: 2.5rem;
-        }
+  a { color: inherit; text-decoration: none; }
 
-        .cta-button {
-            display: inline-block;
-            padding: 1rem 2.5rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #fff;
-            background: linear-gradient(135deg, #7b2ff7, #00d2ff);
-            border: none;
-            border-radius: 50px;
-            text-decoration: none;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
 
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(123, 47, 247, 0.4);
-        }
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: 6rem 0 4rem;
+    text-align: center;
+  }
 
-        .cta-row {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.75rem;
+  }
 
-        .cta-secondary {
-            display: inline-block;
-            padding: 1rem 2rem;
-            font-size: 1.05rem;
-            font-weight: 600;
-            color: #e0e0e0;
-            background: transparent;
-            border: 1px solid #2a2a2e;
-            border-radius: 50px;
-            text-decoration: none;
-            transition: transform 0.2s, border-color 0.2s, background 0.2s;
-        }
+  .hero .sub {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+  }
 
-        .cta-secondary:hover {
-            transform: translateY(-2px);
-            border-color: #00d2ff;
-            background: rgba(0, 210, 255, 0.05);
-        }
+  .hero .who {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+  }
 
-        .sub-note {
-            margin-top: 1.5rem;
-            font-size: 0.85rem;
-            color: #555;
-        }
+  .hero .who strong {
+    color: var(--text);
+    font-weight: 600;
+  }
 
-        footer {
-            position: fixed;
-            bottom: 1.5rem;
-            color: #555;
-            font-size: 0.85rem;
-        }
-    </style>
+  .links {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.1rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    transition: all 0.15s ease;
+  }
+
+  .link-btn:hover {
+    background: var(--panel-hover);
+    border-color: var(--border-hover);
+    color: var(--text);
+    transform: translateY(-1px);
+  }
+
+  /* ---------- Projects ---------- */
+  .projects-header {
+    text-align: center;
+    margin: 4rem 0 2rem;
+  }
+
+  .projects-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .projects-header p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    padding-bottom: 4rem;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .card:hover {
+    background: var(--panel-hover);
+    border-color: var(--border-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px -10px rgba(123, 47, 247, 0.25);
+  }
+
+  .card .icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    line-height: 1;
+  }
+
+  .card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+
+  .card .desc {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    flex: 1;
+    margin-bottom: 1rem;
+  }
+
+  .card .cta {
+    font-size: 0.85rem;
+    color: var(--accent-1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 500;
+  }
+
+  .card:hover .cta { color: var(--text); }
+
+  /* ---------- Footer ---------- */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem 0;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 600px) {
+    .hero { padding: 4rem 0 2.5rem; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>FuturestarAI</h1>
-        <p class="tagline">Building the future with AI</p>
-        <div class="cta-row">
-            <a href="https://joinup.futurestarai.com" class="cta-button">Join Us</a>
-            <a href="https://partyup.futurestarai.com" class="cta-secondary">PartyUp 🎉</a>
-            <a href="./disciplina.html" class="cta-secondary">Disciplina 📜</a>
-        </div>
-        <p class="sub-note">揪團神器 · 聚會互動 · 自律魔典</p>
-    </div>
-    <footer>&copy; 2026 FuturestarAI. All rights reserved.</footer>
+  <main class="container">
+    <section class="hero">
+      <h1>FuturestarAI</h1>
+      <p class="sub">Solo AI Builder · 10+ 個作品一次看完</p>
+      <p class="who">嗨我是 <strong>Purple</strong>，一個人做 AI 工具給自己、也給你用。</p>
+      <div class="links">
+        <a class="link-btn" href="https://instagram.com/purplelight731" target="_blank" rel="noopener">
+          <span>📷</span> Instagram
+        </a>
+        <a class="link-btn" href="https://github.com/founderai813" target="_blank" rel="noopener">
+          <span>⌘</span> GitHub
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="projects-header">
+        <h2>我的作品</h2>
+        <p>點卡片 → 打開實際作品</p>
+      </div>
+
+      <div class="grid">
+
+        <a class="card" href="https://partyup.futurestarai.com" target="_blank" rel="noopener">
+          <div class="icon">🎉</div>
+          <h3>PartyUp 派對工具</h3>
+          <p class="desc">遠端猜拳、抽籤、分組 — 讓聚會、課堂、直播瞬間嗨起來。</p>
+          <span class="cta">打開 →</span>
+        </a>
+
+        <a class="card" href="https://joinup.futurestarai.com" target="_blank" rel="noopener">
+          <div class="icon">👥</div>
+          <h3>JoinUp 揪團神器</h3>
+          <p class="desc">一鍵開團、揪人、自動通知 — 告別群組洗版式揪團。</p>
+          <span class="cta">打開 →</span>
+        </a>
+
+        <a class="card" href="/disciplina.html">
+          <div class="icon">✦</div>
+          <h3>Disciplina 自律魔典</h3>
+          <p class="desc">霍格華茲四大學院風格打卡 App，石內卜 AI 導師陪你堅持每一天。</p>
+          <span class="cta">打開 →</span>
+        </a>
+
+        <a class="card" href="https://postlab.futurestarai.com" target="_blank" rel="noopener">
+          <div class="icon">✍️</div>
+          <h3>PostLab</h3>
+          <p class="desc">AI 生成社群貼文，讓寫文速度翻倍、靈感不斷檔。</p>
+          <span class="cta">打開 →</span>
+        </a>
+
+        <a class="card" href="https://market-pulse.futurestarai.com" target="_blank" rel="noopener">
+          <div class="icon">📊</div>
+          <h3>Market Pulse 財經 AI 週報</h3>
+          <p class="desc">每週一封 AI 整理的財經摘要，讓你用 3 分鐘掌握市場脈動。</p>
+          <span class="cta">打開 →</span>
+        </a>
+
+        <a class="card" href="https://leave-chatbot.futurestarai.com" target="_blank" rel="noopener">
+          <div class="icon">🌴</div>
+          <h3>Leave Chatbot 請假機器人</h3>
+          <p class="desc">用 LINE 說一句話就請假，告別制式表單、自動通知主管。</p>
+          <span class="cta">打開 →</span>
+        </a>
+
+        <a class="card" href="https://line-summarizer.futurestarai.com" target="_blank" rel="noopener">
+          <div class="icon">📝</div>
+          <h3>LINE Summarizer</h3>
+          <p class="desc">把一整天炸開的 LINE 群組訊息，AI 濃縮成 3 行重點。</p>
+          <span class="cta">打開 →</span>
+        </a>
+
+        <a class="card" href="https://podcast-learning-tool.futurestarai.com" target="_blank" rel="noopener">
+          <div class="icon">🎧</div>
+          <h3>Podcast Learning Tool</h3>
+          <p class="desc">邊聽 Podcast 邊自動做 AI 筆記 — 知識進耳朵、重點進筆記。</p>
+          <span class="cta">打開 →</span>
+        </a>
+
+        <a class="card" href="https://wei-boss-chat.futurestarai.com" target="_blank" rel="noopener">
+          <div class="icon">💼</div>
+          <h3>Wei Boss Chat</h3>
+          <p class="desc">跟 AI 版的威 Boss 對話 — 職場解惑、老闆視角一鍵啟動。</p>
+          <span class="cta">打開 →</span>
+        </a>
+
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    &copy; 2026 FuturestarAI · Made by Purple
+  </footer>
 </body>
 </html>
