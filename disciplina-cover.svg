@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0814"/>
+      <stop offset="50%" stop-color="#120d20"/>
+      <stop offset="100%" stop-color="#06040d"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="20%" cy="20%" r="60%">
+      <stop offset="0%" stop-color="#26a69a" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#26a69a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="80%" cy="80%" r="60%">
+      <stop offset="0%" stop-color="#7b6cf6" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#7b6cf6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="brandText" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#26a69a"/>
+    </linearGradient>
+    <linearGradient id="aspectChip" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.06)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+
+  <!-- Stars -->
+  <g fill="#ffffff" opacity="0.55">
+    <circle cx="80" cy="60" r="1.4"/>
+    <circle cx="200" cy="120" r="1"/>
+    <circle cx="340" cy="80" r="1.6"/>
+    <circle cx="500" cy="40" r="1"/>
+    <circle cx="680" cy="100" r="1.4"/>
+    <circle cx="860" cy="60" r="1"/>
+    <circle cx="1020" cy="120" r="1.6"/>
+    <circle cx="1120" cy="80" r="1"/>
+    <circle cx="160" cy="540" r="1.4"/>
+    <circle cx="380" cy="580" r="1"/>
+    <circle cx="600" cy="540" r="1.6"/>
+    <circle cx="820" cy="580" r="1"/>
+    <circle cx="1040" cy="540" r="1.4"/>
+    <circle cx="40" cy="320" r="1"/>
+    <circle cx="1160" cy="340" r="1.6"/>
+  </g>
+
+  <!-- Brand title -->
+  <text x="600" y="180"
+        font-family="DejaVu Serif, Times New Roman, serif"
+        font-weight="700" font-size="120"
+        letter-spacing="14"
+        text-anchor="middle"
+        fill="url(#brandText)">DISCIPLINA</text>
+
+  <!-- Subtitle -->
+  <text x="600" y="240"
+        font-family="WenQuanYi Zen Hei, sans-serif"
+        font-weight="500" font-size="36"
+        letter-spacing="8"
+        text-anchor="middle"
+        fill="#a59dc2">自律魔典 · 四象修行</text>
+
+  <!-- Tagline -->
+  <text x="600" y="295"
+        font-family="WenQuanYi Zen Hei, sans-serif"
+        font-weight="400" font-size="26"
+        text-anchor="middle"
+        fill="#6c638a">每日立誓 · 晚間回報 · AI 導師指引</text>
+
+  <!-- Four houses row -->
+  <g transform="translate(160, 370)">
+    <!-- 青龍 -->
+    <g>
+      <circle cx="0" cy="0" r="60" fill="rgba(38,166,154,0.12)" stroke="#26a69a" stroke-width="2"/>
+      <text x="0" y="14" font-family="Noto Color Emoji, sans-serif" font-size="56" text-anchor="middle">🐲</text>
+      <text x="0" y="105" font-family="WenQuanYi Zen Hei, sans-serif" font-weight="600" font-size="22" text-anchor="middle" fill="#26a69a">青龍 · 勇</text>
+    </g>
+    <!-- 朱雀 -->
+    <g transform="translate(290, 0)">
+      <circle cx="0" cy="0" r="60" fill="rgba(255,77,77,0.12)" stroke="#ff4d4d" stroke-width="2"/>
+      <text x="0" y="14" font-family="Noto Color Emoji, sans-serif" font-size="56" text-anchor="middle">🔥</text>
+      <text x="0" y="105" font-family="WenQuanYi Zen Hei, sans-serif" font-weight="600" font-size="22" text-anchor="middle" fill="#ff4d4d">朱雀 · 義</text>
+    </g>
+    <!-- 白虎 -->
+    <g transform="translate(580, 0)">
+      <circle cx="0" cy="0" r="60" fill="rgba(245,197,24,0.12)" stroke="#f5c518" stroke-width="2"/>
+      <text x="0" y="14" font-family="Noto Color Emoji, sans-serif" font-size="56" text-anchor="middle">🐯</text>
+      <text x="0" y="105" font-family="WenQuanYi Zen Hei, sans-serif" font-weight="600" font-size="22" text-anchor="middle" fill="#f5c518">白虎 · 節</text>
+    </g>
+    <!-- 玄武 -->
+    <g transform="translate(870, 0)">
+      <circle cx="0" cy="0" r="60" fill="rgba(123,108,246,0.12)" stroke="#7b6cf6" stroke-width="2"/>
+      <text x="0" y="14" font-family="Noto Color Emoji, sans-serif" font-size="56" text-anchor="middle">🐢</text>
+      <text x="0" y="105" font-family="WenQuanYi Zen Hei, sans-serif" font-weight="600" font-size="22" text-anchor="middle" fill="#7b6cf6">玄武 · 智</text>
+    </g>
+  </g>
+
+  <!-- Bottom footer URL + features -->
+  <text x="600" y="575"
+        font-family="WenQuanYi Zen Hei, sans-serif"
+        font-weight="500" font-size="22"
+        text-anchor="middle"
+        fill="#6c638a">🤖 AI 導師 · ☁️ 雲端加密同步 · 🎯 階段式解鎖</text>
+
+  <text x="600" y="610"
+        font-family="DejaVu Serif, serif"
+        font-weight="500" font-size="20"
+        letter-spacing="4"
+        text-anchor="middle"
+        fill="#26a69a">futurestarai.com/disciplina.html</text>
+</svg>
