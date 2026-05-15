@@ -1651,7 +1651,7 @@ $('setCloud').onclick = () => openCloudSettings();
 $('setShare').onclick = () => openShareSettings();
 $('setPin').onclick = () => openPinSettings();
 $('setExport').onclick = () => openExportSettings();
-$('setImport').onclick = () => $('importFile').click();
+$('setImport').onclick = () => openImportWizard();
 $('setOCR').onclick = () => openOCRSettings();
 $('setReset').onclick = () => {
   if (!confirm('確定要清除所有資料嗎？此動作無法復原。')) return;
@@ -2138,13 +2138,465 @@ $('importFile').onchange = (e) => {
         saveState();
         toast('已匯入', 'success');
         init();
-      } else if (f.name.endsWith('.csv')) {
-        toast('CSV 匯入暫不支援（請用 JSON）', 'error');
       }
     } catch (err) { toast('匯入失敗：' + err.message, 'error'); }
   };
   r.readAsText(f);
 };
+
+/* ---------- Import Wizard (Excel/CSV + Image OCR) ---------- */
+let importState = {};
+
+function openImportWizard() {
+  importState = {};
+  openGenericModal({
+    title: '📥 匯入資料',
+    body: `
+      <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1rem;">從其他來源匯入交易紀錄</p>
+      <button class="btn btn-primary btn-block" id="g_impExcel" style="margin-bottom:0.5rem;">📊 Excel / CSV 檔案</button>
+      <button class="btn btn-primary btn-block" id="g_impImage" style="margin-bottom:0.5rem;">📷 照片 / 截圖（OCR 辨識）</button>
+      <button class="btn btn-secondary btn-block" id="g_impJson">📦 JSON 完整備份還原</button>
+      <p style="font-size:0.75rem;color:var(--text-muted);margin-top:1rem;line-height:1.6;">
+        💡 <strong>推薦順序</strong>：<br>
+        1. 先看你原本 App 能否匯出 Excel/CSV → 用方案 1（最準確）<br>
+        2. 沒辦法匯出 → 截圖用方案 2（OCR 辨識，可能要修正）<br>
+        3. 從本工具備份還原 → 用方案 3
+      </p>
+    `,
+    onSave: () => true,
+    saveLabel: '關閉',
+  });
+  setTimeout(() => {
+    $('g_impExcel').onclick = () => importStepExcel();
+    $('g_impImage').onclick = () => importStepImage();
+    $('g_impJson').onclick = () => $('importFile').click();
+  }, 0);
+}
+
+function importStepExcel() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.xlsx,.xls,.csv';
+  inp.onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    toast('解析檔案中...');
+    try {
+      await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+      const data = await f.arrayBuffer();
+      const wb = XLSX.read(data, { cellDates: true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+      if (rows.length < 2) { toast('檔案內容太少（至少要標題列 + 1 筆資料）', 'error'); return; }
+      importState.rows = rows.filter(r => r.some(c => c !== '' && c != null));
+      importState.headers = importState.rows[0].map(h => String(h).trim());
+      closeModal('modalGeneric');
+      setTimeout(showColumnMapping, 200);
+    } catch (err) { toast('解析失敗：' + err.message, 'error'); }
+  };
+  inp.click();
+}
+
+function showColumnMapping() {
+  const { headers, rows } = importState;
+  // Auto-guess columns by header name
+  const guess = (keywords) => {
+    for (const kw of keywords) {
+      const i = headers.findIndex(h => String(h).toLowerCase().includes(kw.toLowerCase()));
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
+  const gDate = guess(['日期', 'date', '時間', '時候']);
+  const gAmt = guess(['金額', 'amount', '價格', '價錢', '錢', 'price']);
+  const gType = guess(['類型', 'type', '收支', '收入支出', '進出']);
+  const gCat = guess(['分類', 'category', '類別', '項目']);
+  const gNote = guess(['備註', 'note', '描述', '說明', 'memo', 'desc', '商家', '店家', '名稱']);
+  const gAcc = guess(['帳戶', 'account', '錢包']);
+
+  const opts = (selected) => '<option value="-1">（不對應）</option>' + headers.map((h, i) => `<option value="${i}" ${selected === i ? 'selected' : ''}>${escapeHtml(h || '欄' + (i+1))}</option>`).join('');
+
+  const preview = rows.slice(1, 4).map(r => `<tr>${headers.map((_, i) => `<td style="padding:0.3rem 0.5rem;border:1px solid var(--border);font-size:0.7rem;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(String(r[i] || '').slice(0,20))}</td>`).join('')}</tr>`).join('');
+
+  openGenericModal({
+    title: `📊 欄位對應`,
+    body: `
+      <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.5rem;">共 <strong>${rows.length - 1}</strong> 筆資料 · 預覽前 3 筆</p>
+      <div style="overflow-x:auto;margin-bottom:1rem;border-radius:8px;border:1px solid var(--border);">
+        <table style="border-collapse:collapse;width:100%;background:var(--panel);">
+          <thead><tr>${headers.map(h => `<th style="padding:0.3rem 0.5rem;border:1px solid var(--border);background:var(--panel-soft);font-size:0.7rem;white-space:nowrap;">${escapeHtml(String(h).slice(0,12))}</th>`).join('')}</tr></thead>
+          <tbody>${preview}</tbody>
+        </table>
+      </div>
+      <p style="font-size:0.9rem;font-weight:700;margin-bottom:0.5rem;">🎯 指定哪一欄是什麼</p>
+      <div class="field"><label>日期欄位 <span style="color:var(--danger);">*必填</span></label><select id="m_date" class="select">${opts(gDate)}</select></div>
+      <div class="field"><label>金額欄位 <span style="color:var(--danger);">*必填</span></label><select id="m_amt" class="select">${opts(gAmt)}</select></div>
+      <div class="field"><label>類型欄位（收入/支出，無則全視為支出）</label><select id="m_type" class="select">${opts(gType)}</select></div>
+      <div class="field"><label>分類欄位</label><select id="m_cat" class="select">${opts(gCat)}</select></div>
+      <div class="field"><label>備註欄位</label><select id="m_note" class="select">${opts(gNote)}</select></div>
+      <div class="field"><label>帳戶欄位</label><select id="m_acc" class="select">${opts(gAcc)}</select></div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:1rem 0;">
+      <p style="font-size:0.9rem;font-weight:700;margin-bottom:0.5rem;">🛠️ 預設值（找不到對應時使用）</p>
+      <div class="field-row">
+        <div class="field"><label>預設帳戶</label><select id="m_defAcc" class="select">${state.accounts.map(a => `<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('')}</select></div>
+        <div class="field"><label>預設幣別</label><select id="m_defCur" class="select">${CURRENCIES.map(c => `<option value="${c.code}" ${state.settings.baseCurrency === c.code ? 'selected' : ''}>${c.code}</option>`).join('')}</select></div>
+      </div>
+      <label class="switch" style="display:inline-flex;align-items:center;gap:0.5rem;width:auto;margin-top:0.5rem;">
+        <input type="checkbox" id="m_smartCat" checked><span class="slider"></span>
+        <span style="margin-left:0.5rem;font-size:0.85rem;">智慧分類：依關鍵字自動歸類（例：星巴克→飲食）</span>
+      </label>
+    `,
+    onSave: () => { processExcelImport(); return false; },
+    saveLabel: '下一步：預覽',
+  });
+}
+
+function parseDate(val) {
+  if (!val && val !== 0) return null;
+  if (val instanceof Date) return val.toISOString().slice(0, 10);
+  if (typeof val === 'number' && val > 25000 && val < 60000) {
+    // Excel serial date
+    const d = new Date((val - 25569) * 86400 * 1000);
+    if (!isNaN(d)) return d.toISOString().slice(0, 10);
+  }
+  const s = String(val).trim();
+  // ISO YYYY-MM-DD or YYYY/MM/DD
+  let m = s.match(/(\d{4})[-\/\.](\d{1,2})[-\/\.](\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  // DD/MM/YYYY or MM/DD/YYYY (assume DD/MM if ambiguous in Taiwan context)
+  m = s.match(/^(\d{1,2})[-\/\.](\d{1,2})[-\/\.](\d{4})$/);
+  if (m) {
+    // try to detect: if first > 12, must be DD/MM
+    const a = parseInt(m[1]), b = parseInt(m[2]);
+    if (a > 12) return `${m[3]}-${b.toString().padStart(2,'0')}-${a.toString().padStart(2,'0')}`;
+    if (b > 12) return `${m[3]}-${a.toString().padStart(2,'0')}-${b.toString().padStart(2,'0')}`;
+    // ambiguous: assume MM/DD
+    return `${m[3]}-${a.toString().padStart(2,'0')}-${b.toString().padStart(2,'0')}`;
+  }
+  // 民國年 110/01/15
+  m = s.match(/^(\d{2,3})[-\/\.](\d{1,2})[-\/\.](\d{1,2})$/);
+  if (m && parseInt(m[1]) < 200) return `${parseInt(m[1])+1911}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  // YYYY年MM月DD日
+  m = s.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+  if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  // last resort: Date.parse
+  const d = new Date(s);
+  if (!isNaN(d) && d.getFullYear() > 1990 && d.getFullYear() < 2100) return d.toISOString().slice(0, 10);
+  return null;
+}
+
+const CATEGORY_KEYWORDS = {
+  '飲食': ['餐', '飯', '食', '咖啡', '便當', '飲料', '早餐', '午餐', '晚餐', '消夜', '小吃', '麵', '茶', '麥當勞', '肯德基', '星巴克', 'starbucks', '吃', '喝', '7-11', '7-eleven', '全家', 'familymart', '超商', '便利商店'],
+  '交通': ['車', '油', '捷運', '公車', '計程車', 'uber', '油費', '停車', '機車', '高鐵', '火車', '加油', 'taxi', '客運'],
+  '購物': ['購物', '買', 'amazon', 'shopee', 'pchome', '蝦皮', '網購', '衣服', '鞋', '包包', 'momo', '電商'],
+  '娛樂': ['電影', '遊戲', 'netflix', 'spotify', 'kkbox', '訂閱', '唱歌', 'ktv', 'youtube', 'disney'],
+  '居家': ['房租', '水電', '瓦斯', '網路', '電費', '水費', '家具', '日用', '清潔'],
+  '醫療': ['醫院', '診所', '藥', '健保', '看病', '掛號', '藥局'],
+  '教育': ['書', '學費', '課程', '補習', '教材'],
+  '人情': ['紅包', '禮物', '婚禮', '彌月', '禮金'],
+  '旅遊': ['機票', '飯店', '旅館', '車票', '住宿', 'airbnb', 'booking'],
+  '投資': ['股票', '基金', 'etf', '定存'],
+  '薪水': ['薪', '工資', 'salary', 'payroll'],
+  '獎金': ['獎金', 'bonus', '紅利', '年終'],
+  '副業': ['接案', '兼職', '外快'],
+};
+
+function matchCategoryByKeyword(text, cats) {
+  if (!text) return null;
+  const t = String(text).toLowerCase();
+  for (const cat of cats) {
+    const kws = CATEGORY_KEYWORDS[cat.name] || [];
+    kws.push(cat.name);
+    for (const kw of kws) {
+      if (t.includes(String(kw).toLowerCase())) return cat.id;
+    }
+  }
+  return null;
+}
+
+function processExcelImport() {
+  const { rows } = importState;
+  const m = {
+    date: parseInt($('m_date').value),
+    amt: parseInt($('m_amt').value),
+    type: parseInt($('m_type').value),
+    cat: parseInt($('m_cat').value),
+    note: parseInt($('m_note').value),
+    acc: parseInt($('m_acc').value),
+  };
+  if (m.date < 0 || m.amt < 0) { toast('必須指定日期和金額欄位', 'error'); return; }
+  const defAcc = $('m_defAcc').value;
+  const defCur = $('m_defCur').value;
+  const smart = $('m_smartCat').checked;
+
+  const parsedTxs = [];
+  const errors = [];
+  rows.slice(1).forEach((r, idx) => {
+    const rowNum = idx + 2;
+    const dateVal = r[m.date];
+    const amtVal = r[m.amt];
+    if ((dateVal === '' || dateVal == null) && (amtVal === '' || amtVal == null)) return; // skip empty
+    const date = parseDate(dateVal);
+    if (!date) { errors.push(`第 ${rowNum} 列：日期格式無法解析「${dateVal}」`); return; }
+    const amtRaw = String(amtVal).replace(/[^0-9.\-]/g, '');
+    let amt = parseFloat(amtRaw);
+    if (!isFinite(amt) || amt === 0) { errors.push(`第 ${rowNum} 列：金額無效「${amtVal}」`); return; }
+
+    // determine type
+    let type = 'expense';
+    if (m.type >= 0) {
+      const t = String(r[m.type] || '').trim();
+      if (/收入|income|收|\+/i.test(t)) type = 'income';
+      else if (/轉帳|transfer/i.test(t)) type = 'transfer';
+      else type = 'expense';
+    } else {
+      // infer from sign
+      if (amt > 0) type = 'expense';
+      if (String(amtVal).trim().startsWith('+')) type = 'income';
+    }
+    if (amt < 0) {
+      type = type === 'income' ? 'expense' : 'income'; // negative flips
+      amt = Math.abs(amt);
+    }
+
+    const note = m.note >= 0 ? String(r[m.note] || '').trim() : '';
+
+    // category
+    let categoryId = null;
+    const catText = m.cat >= 0 ? String(r[m.cat] || '').trim() : '';
+    const cats = state.categories[type] || state.categories.expense;
+    if (catText) {
+      const exact = cats.find(c => c.name === catText);
+      if (exact) categoryId = exact.id;
+      else if (smart) {
+        const fuzzy = cats.find(c => catText.includes(c.name) || c.name.includes(catText));
+        if (fuzzy) categoryId = fuzzy.id;
+        else {
+          const kwMatch = matchCategoryByKeyword(catText, cats);
+          if (kwMatch) categoryId = kwMatch;
+        }
+      }
+    }
+    if (!categoryId && smart && note) {
+      const kwMatch = matchCategoryByKeyword(note, cats);
+      if (kwMatch) categoryId = kwMatch;
+    }
+    if (!categoryId) {
+      categoryId = (cats.find(c => c.name === '其他') || cats[cats.length - 1])?.id;
+    }
+
+    // account
+    let accountId = defAcc;
+    if (m.acc >= 0) {
+      const accText = String(r[m.acc] || '').trim();
+      if (accText) {
+        const found = state.accounts.find(a => a.name === accText || accText.includes(a.name) || a.name.includes(accText));
+        if (found) accountId = found.id;
+      }
+    }
+
+    if (type === 'transfer') {
+      errors.push(`第 ${rowNum} 列：轉帳類型暫不支援匯入，已略過`);
+      return;
+    }
+
+    parsedTxs.push({
+      id: uid(),
+      type,
+      amount: amt,
+      date,
+      currency: defCur,
+      accountId,
+      categoryId,
+      note,
+      location: '',
+      recurring: 'none',
+      receipt: null,
+      createdAt: Date.now() + idx,
+    });
+  });
+
+  importState.parsedTxs = parsedTxs;
+  importState.errors = errors;
+  closeModal('modalGeneric');
+  setTimeout(showImportPreview, 200);
+}
+
+function showImportPreview() {
+  const { parsedTxs, errors } = importState;
+  if (parsedTxs.length === 0) {
+    openGenericModal({
+      title: '匯入結果',
+      body: `
+        <div class="empty"><div class="ico">⚠️</div><div class="t">沒有可匯入的資料</div></div>
+        ${errors.length ? `<details open><summary>錯誤 (${errors.length})</summary><pre style="font-size:0.7rem;white-space:pre-wrap;max-height:200px;overflow-y:auto;background:var(--panel-soft);padding:0.5rem;border-radius:8px;">${escapeHtml(errors.slice(0,20).join('\n'))}</pre></details>` : ''}
+      `,
+      onSave: () => true, saveLabel: '關閉',
+    });
+    return;
+  }
+  const rowsHtml = parsedTxs.slice(0, 50).map((tx, i) => {
+    const cat = findCat(tx.categoryId);
+    const acc = findAcc(tx.accountId);
+    const typeLabel = { expense: '支出', income: '收入' }[tx.type];
+    const typeColor = tx.type === 'income' ? 'var(--income)' : 'var(--expense)';
+    return `<tr>
+      <td style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;"><label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;"><input type="checkbox" data-imp="${i}" checked style="margin:0;"></label></td>
+      <td style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;white-space:nowrap;">${tx.date}</td>
+      <td style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;color:${typeColor};font-weight:600;">${typeLabel}</td>
+      <td style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;text-align:right;font-weight:600;">${tx.amount}</td>
+      <td style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;white-space:nowrap;">${cat?.icon || ''} ${escapeHtml(cat?.name || '-')}</td>
+      <td style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(tx.note)}</td>
+      <td style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;white-space:nowrap;">${escapeHtml(acc?.name || '-')}</td>
+    </tr>`;
+  }).join('');
+
+  openGenericModal({
+    title: `預覽匯入 (${parsedTxs.length} 筆)`,
+    body: `
+      <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.5rem;">✅ 解析成功 <strong>${parsedTxs.length}</strong> 筆${parsedTxs.length > 50 ? '（顯示前 50 筆）' : ''}　可取消勾選排除個別項目</p>
+      ${errors.length ? `<details style="margin-bottom:0.5rem;"><summary style="color:var(--warn);font-size:0.85rem;">⚠️ ${errors.length} 筆解析失敗（點開查看）</summary><pre style="font-size:0.7rem;white-space:pre-wrap;max-height:120px;overflow-y:auto;background:var(--panel-soft);padding:0.5rem;border-radius:8px;">${escapeHtml(errors.slice(0,30).join('\n'))}</pre></details>` : ''}
+      <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--border);max-height:50vh;overflow-y:auto;">
+        <table style="border-collapse:collapse;width:100%;background:var(--panel);">
+          <thead style="position:sticky;top:0;background:var(--panel-soft);"><tr>
+            <th style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;">✓</th>
+            <th style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;">日期</th>
+            <th style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;">類型</th>
+            <th style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;">金額</th>
+            <th style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;">分類</th>
+            <th style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;">備註</th>
+            <th style="padding:0.3rem;border:1px solid var(--border);font-size:0.7rem;">帳戶</th>
+          </tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    `,
+    onSave: () => {
+      const selected = parsedTxs.filter((_, i) => {
+        const cb = document.querySelector(`[data-imp="${i}"]`);
+        return !cb || cb.checked;
+      });
+      if (selected.length === 0) { toast('沒有勾選任何資料', 'error'); return false; }
+      state.transactions.push(...selected);
+      saveState();
+      toast(`已匯入 ${selected.length} 筆`, 'success');
+      switchTab(getActiveTab());
+      return true;
+    },
+    saveLabel: `✅ 確認匯入`,
+  });
+}
+
+/* ---------- Image OCR Import ---------- */
+function importStepImage() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'image/*';
+  inp.onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    closeModal('modalGeneric');
+    setTimeout(() => {
+      openGenericModal({
+        title: '📷 OCR 辨識中',
+        body: `
+          <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.5rem;">辨識可能需要 10-60 秒（依圖片大小）</p>
+          <div class="bud-bar"><div id="g_ocrBar2" class="bud-bar-fill" style="width:0%;background:linear-gradient(90deg,var(--primary),var(--secondary));"></div></div>
+          <p id="g_ocrStat2" style="font-size:0.8rem;color:var(--text-dim);margin-top:0.4rem;">載入引擎...</p>
+          <p style="font-size:0.75rem;color:var(--text-muted);margin-top:1rem;">💡 截圖品質越清楚，辨識率越高</p>
+        `,
+        onSave: () => true, saveLabel: '取消',
+      });
+    }, 100);
+    try {
+      await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+      const { data: { text } } = await Tesseract.recognize(f, 'eng+chi_tra', {
+        logger: m => {
+          if (m.status === 'recognizing text' && $('g_ocrBar2')) {
+            $('g_ocrBar2').style.width = (m.progress * 100) + '%';
+            $('g_ocrStat2').textContent = `辨識中... ${Math.round(m.progress * 100)}%`;
+          } else if ($('g_ocrStat2')) {
+            $('g_ocrStat2').textContent = m.status || '處理中...';
+          }
+        },
+      });
+      parseImageText(text);
+    } catch (err) { toast('辨識失敗：' + err.message, 'error'); closeModal('modalGeneric'); }
+  };
+  inp.click();
+}
+
+function parseImageText(text) {
+  const lines = text.split(/\n+/).map(l => l.trim()).filter(l => l.length > 2);
+  const parsed = [];
+  let currentDate = todayISO();
+  lines.forEach(line => {
+    // detect a standalone date header line
+    const dateOnly = line.match(/^(\d{4}[-\/\.]\d{1,2}[-\/\.]\d{1,2}|\d{1,2}[-\/\.]\d{1,2})\s*(週[一二三四五六日])?$/);
+    if (dateOnly) {
+      const d = parseDate(dateOnly[1]);
+      if (d) { currentDate = d; return; }
+    }
+    // try to find amount in line
+    const amtMatch = line.match(/[\$NT￥]{0,3}\s*([-+]?\s*\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|[-+]?\s*\d+(?:\.\d{1,2})?)/);
+    if (!amtMatch) return;
+    const amtStr = amtMatch[1].replace(/[\s,]/g, '');
+    let amt = parseFloat(amtStr);
+    if (!isFinite(amt) || amt === 0 || Math.abs(amt) > 10000000) return;
+    let type = 'expense';
+    if (amt < 0 || /[-]/.test(amtMatch[0])) { type = 'expense'; amt = Math.abs(amt); }
+    if (/[+]|收入/.test(line)) type = 'income';
+
+    // try to find date inside line
+    const dateInLine = line.match(/(\d{4}[-\/\.]\d{1,2}[-\/\.]\d{1,2}|\d{1,2}[-\/\.]\d{1,2})/);
+    let date = currentDate;
+    if (dateInLine) {
+      const d = parseDate(dateInLine[1]);
+      if (d) date = d;
+    }
+    // note = line minus date and amount
+    let note = line;
+    if (dateInLine) note = note.replace(dateInLine[0], '');
+    note = note.replace(amtMatch[0], '').replace(/\s+/g, ' ').trim().slice(0, 50);
+    if (note.length < 1) note = '匯入';
+
+    parsed.push({ date, amount: amt, note, type });
+  });
+
+  if (parsed.length === 0) {
+    closeModal('modalGeneric');
+    setTimeout(() => {
+      openGenericModal({
+        title: 'OCR 結果',
+        body: `
+          <div class="empty"><div class="ico">😅</div><div class="t">沒辨識到可用資料</div></div>
+          <details><summary style="font-size:0.85rem;">查看原始辨識文字</summary><pre style="font-size:0.7rem;white-space:pre-wrap;max-height:200px;overflow-y:auto;background:var(--panel-soft);padding:0.5rem;border-radius:8px;margin-top:0.5rem;">${escapeHtml(text)}</pre></details>
+          <p style="font-size:0.8rem;color:var(--text-dim);margin-top:0.75rem;">💡 建議改用 Excel/CSV 匯入會更準確</p>
+        `,
+        onSave: () => true, saveLabel: '關閉',
+      });
+    }, 200);
+    return;
+  }
+
+  importState.parsedTxs = parsed.map((it, i) => ({
+    id: uid(),
+    type: it.type,
+    amount: it.amount,
+    date: it.date,
+    currency: state.settings.baseCurrency,
+    accountId: state.accounts[0]?.id,
+    categoryId: matchCategoryByKeyword(it.note, state.categories[it.type] || state.categories.expense)
+      || (state.categories[it.type] || state.categories.expense).find(c => c.name === '其他')?.id
+      || (state.categories[it.type] || state.categories.expense)[0]?.id,
+    note: it.note,
+    location: '',
+    recurring: 'none',
+    receipt: null,
+    createdAt: Date.now() + i,
+  }));
+  importState.errors = [];
+  closeModal('modalGeneric');
+  setTimeout(showImportPreview, 200);
+}
 
 /* ---------- OCR (Tesseract.js) ---------- */
 async function openOCRSettings() {
