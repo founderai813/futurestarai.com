@@ -356,6 +356,72 @@ body::before{
   40%,60%{transform:translateX(3px)}
 }
 
+/* Compact home strip: mentor + house glance in one card */
+.home-strip{ padding:14px 16px }
+.strip-mentor{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin-bottom:12px;
+}
+.strip-mentor .mentor-avatar{
+  width:48px;height:48px;
+  border-width:2px;
+  box-shadow:0 0 14px var(--accent-soft);
+}
+.strip-mentor-body{ flex:1; min-width:0 }
+.strip-mentor-body .mentor-name{
+  font-size:.72rem;
+  margin-bottom:2px;
+}
+.strip-mentor-body .mentor-line{
+  font-size:.85rem;
+  line-height:1.5;
+  color:var(--text-dim);
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.strip-mentor-actions{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  flex-shrink:0;
+}
+.home-strip .house-row{ gap:6px }
+.home-strip .house-cell{ padding:8px 4px 10px }
+.home-strip .house-cell .house-emoji{ font-size:1.1rem; margin-bottom:1px }
+.home-strip .house-cell .house-name{ font-size:.58rem; margin-bottom:1px }
+.home-strip .house-cell .house-pts{ font-size:1rem }
+.home-strip .house-cell .house-rank{ display:none }
+.home-strip .house-cell .house-bar{ margin-top:4px; height:2px }
+
+/* Collapsible advanced section on home */
+.home-advanced{
+  margin-top:14px;
+  border-top:1px dashed var(--border);
+  padding-top:8px;
+}
+.home-advanced > summary{
+  font-family:'Cinzel', serif;
+  font-size:.74rem;
+  letter-spacing:.14em;
+  color:var(--text-mute);
+  cursor:pointer;
+  padding:8px 4px;
+  list-style:none;
+  user-select:none;
+}
+.home-advanced > summary::-webkit-details-marker{ display:none }
+.home-advanced > summary::before{
+  content:'▸ ';
+  color:var(--accent);
+  margin-right:2px;
+}
+.home-advanced[open] > summary::before{ content:'▾ ' }
+.home-advanced .card{ margin-top:10px }
+
 /* Achievements grid */
 .badge-grid{
   display:grid;
@@ -2261,43 +2327,33 @@ body::before{
 
   <!-- ============ Home page ============ -->
   <section class="page active" id="page-home">
-    <!-- Mentor card -->
-    <div class="card">
-      <div class="mentor">
+    <!-- Compact strip: mentor + house glance -->
+    <div class="card home-strip">
+      <div class="strip-mentor">
         <div class="mentor-avatar" id="mentor-avatar-home" onclick="openChat()" style="cursor:pointer"></div>
-        <div class="mentor-body">
+        <div class="strip-mentor-body">
           <div class="mentor-name">PROF. SEVERUS</div>
           <div class="mentor-line" id="mentor-line">——</div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+        <div class="strip-mentor-actions">
           <button class="chat-open-btn" onclick="speakMentorLine()" aria-label="朗讀">🔊</button>
           <button class="chat-open-btn" onclick="openChat()" aria-label="與導師對話">💬</button>
         </div>
       </div>
       <div id="scolding-box"></div>
-    </div>
-
-    <!-- House points -->
-    <div class="card">
-      <div class="card-title">四院積分</div>
       <div class="house-row" id="house-row"></div>
     </div>
 
-    <!-- Weekly challenge -->
+    <!-- Weekly challenge (auto-hidden when empty) -->
     <div class="card" id="challenge-card" style="display:none">
       <div class="card-title">本週挑戰</div>
       <div id="challenge-body"></div>
     </div>
 
-    <!-- Monthly goals -->
+    <!-- Monthly goals (auto-hidden when empty) -->
     <div class="card" id="goals-card" style="display:none">
       <div class="card-title">本月目標</div>
       <div id="goals-list"></div>
-    </div>
-
-    <!-- Daily quote -->
-    <div class="card">
-      <div class="quote" id="daily-quote">——</div>
     </div>
 
     <!-- Day tabs -->
@@ -2321,6 +2377,14 @@ body::before{
       <div id="evening-list"></div>
       <button class="btn ghost" onclick="generateShareCard()" style="margin-top:10px">📸 產生今日戰報卡</button>
     </div>
+
+    <!-- Advanced / ambient extras (collapsed by default) -->
+    <details class="home-advanced">
+      <summary>進階 · 每日金句</summary>
+      <div class="card">
+        <div class="quote" id="daily-quote">——</div>
+      </div>
+    </details>
   </section>
 
   <!-- ============ Library page ============ -->
