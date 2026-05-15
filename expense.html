@@ -1,0 +1,2276 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>記帳本 · Expense Tracker</title>
+<meta name="description" content="活潑彩色的記帳工具 — 多帳戶、多幣別、預算、雲端同步、收據 OCR、共享帳本。">
+<meta name="theme-color" content="#ff6b9d">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #fff5f7;
+    --bg-grad: linear-gradient(135deg, #ffeaf1 0%, #fff5e6 50%, #e8f5ff 100%);
+    --panel: #ffffff;
+    --panel-soft: #fdf7fa;
+    --border: #f0e0e8;
+    --text: #2d1b3d;
+    --text-dim: #6b5b7a;
+    --text-muted: #a094ab;
+    --primary: #ff6b9d;
+    --primary-dark: #e85a8a;
+    --secondary: #6c5ce7;
+    --accent-1: #ffd93d;
+    --accent-2: #4ecdc4;
+    --accent-3: #ff8e53;
+    --accent-4: #95e1d3;
+    --income: #2ecc71;
+    --expense: #ff6b9d;
+    --transfer: #6c5ce7;
+    --warn: #ff9f43;
+    --danger: #ee5253;
+    --shadow-sm: 0 2px 8px rgba(255, 107, 157, 0.08);
+    --shadow: 0 6px 24px rgba(255, 107, 157, 0.12);
+    --shadow-lg: 0 12px 40px rgba(108, 92, 231, 0.18);
+    --radius: 18px;
+    --radius-sm: 12px;
+  }
+
+  html, body { height: 100%; overscroll-behavior-y: none; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', sans-serif;
+    background: var(--bg-grad);
+    background-attachment: fixed;
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 90px;
+    min-height: 100vh;
+  }
+
+  button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  input, select, textarea { font: inherit; }
+  a { color: inherit; text-decoration: none; }
+
+  .app {
+    max-width: 540px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  /* ---------- Header ---------- */
+  .header {
+    padding: 1.25rem 0 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header h1 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header-actions { display: flex; gap: 0.5rem; }
+  .icon-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--panel);
+    box-shadow: var(--shadow-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .icon-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .icon-btn.dot::after {
+    content: ''; position: absolute; top: 8px; right: 8px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent-3); border: 2px solid var(--panel);
+  }
+  .icon-btn { position: relative; }
+
+  /* ---------- Cards ---------- */
+  .card {
+    background: var(--panel);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .card-pad { padding: 1.25rem; }
+  .card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-title .more { font-size: 0.8rem; color: var(--primary); cursor: pointer; font-weight: 600; }
+
+  /* ---------- Balance Hero ---------- */
+  .balance-hero {
+    background: linear-gradient(135deg, #ff6b9d 0%, #6c5ce7 100%);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+  }
+  .balance-hero::before {
+    content: ''; position: absolute;
+    top: -50%; right: -20%;
+    width: 200px; height: 200px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+    filter: blur(40px);
+  }
+  .balance-hero .label { font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.25rem; position: relative; }
+  .balance-hero .amount {
+    font-size: 2.1rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    position: relative;
+    letter-spacing: -0.02em;
+  }
+  .balance-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    position: relative;
+  }
+  .balance-row .item { background: rgba(255,255,255,0.18); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); backdrop-filter: blur(10px); }
+  .balance-row .item .l { font-size: 0.7rem; opacity: 0.85; margin-bottom: 0.15rem; }
+  .balance-row .item .v { font-size: 1.05rem; font-weight: 700; }
+
+  /* ---------- Stat grid ---------- */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .stat-card {
+    background: var(--panel);
+    border-radius: var(--radius-sm);
+    padding: 0.85rem 1rem;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card .ico {
+    position: absolute;
+    right: -8px; bottom: -8px;
+    font-size: 3rem;
+    opacity: 0.1;
+  }
+  .stat-card .lbl { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.2rem; }
+  .stat-card .val { font-size: 1.1rem; font-weight: 800; }
+  .val.income { color: var(--income); }
+  .val.expense { color: var(--expense); }
+
+  /* ---------- Transactions ---------- */
+  .tx-group { margin-bottom: 1rem; }
+  .tx-group-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding: 0.5rem 0.25rem;
+    display: flex;
+    justify-content: space-between;
+  }
+  .tx-list { background: var(--panel); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+  .tx-item {
+    display: flex;
+    align-items: center;
+    padding: 0.85rem 1rem;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .tx-item:last-child { border-bottom: none; }
+  .tx-item:active { background: var(--panel-soft); }
+  .tx-icon {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .tx-info { flex: 1; min-width: 0; }
+  .tx-name { font-weight: 600; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tx-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
+  .tx-amount { font-weight: 700; font-size: 1rem; text-align: right; flex-shrink: 0; }
+  .tx-amount.income { color: var(--income); }
+  .tx-amount.expense { color: var(--expense); }
+  .tx-amount.transfer { color: var(--transfer); }
+
+  .empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+  }
+  .empty .ico { font-size: 3rem; margin-bottom: 0.75rem; opacity: 0.5; }
+  .empty .t { font-size: 0.95rem; }
+
+  /* ---------- Budget bars ---------- */
+  .bud-item { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+  .bud-item:last-child { border-bottom: none; }
+  .bud-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+  .bud-name { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600; }
+  .bud-amount { font-size: 0.8rem; color: var(--text-dim); font-weight: 600; }
+  .bud-bar { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .bud-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent-2), var(--secondary));
+    transition: width 0.5s ease;
+  }
+  .bud-bar-fill.warn { background: linear-gradient(90deg, var(--accent-1), var(--accent-3)); }
+  .bud-bar-fill.over { background: linear-gradient(90deg, var(--accent-3), var(--danger)); }
+
+  /* ---------- Tabs (Bottom Nav) ---------- */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom));
+    display: flex;
+    justify-content: space-around;
+    z-index: 90;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.04);
+  }
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.35rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    border-radius: 10px;
+    transition: color 0.15s, transform 0.15s;
+  }
+  .nav-btn .ic { font-size: 1.3rem; }
+  .nav-btn.active { color: var(--primary); transform: translateY(-2px); }
+  .nav-btn.fab {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    margin-top: -22px;
+    box-shadow: var(--shadow-lg);
+    flex: 0 0 56px;
+  }
+  .nav-btn.fab .ic { font-size: 1.7rem; }
+  .nav-btn.fab.active { color: white; transform: translateY(-4px); }
+
+  /* ---------- Views ---------- */
+  .view { display: none; padding-top: 0.5rem; }
+  .view.active { display: block; animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ---------- Sub-tabs ---------- */
+  .sub-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+    padding: 0.25rem 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  .sub-tabs::-webkit-scrollbar { display: none; }
+  .chip {
+    padding: 0.45rem 0.95rem;
+    background: var(--panel);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    box-shadow: var(--shadow-sm);
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .chip.active { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(45, 27, 61, 0.55);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-backdrop.show { display: flex; animation: fadeIn 0.2s ease; }
+  .modal {
+    background: var(--bg);
+    width: 100%;
+    max-width: 540px;
+    max-height: 92vh;
+    border-radius: 24px 24px 0 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-header {
+    padding: 1rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-header h3 { font-size: 1.05rem; font-weight: 700; }
+  .modal-body { padding: 1rem 1.25rem; overflow-y: auto; flex: 1; }
+  .modal-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  /* ---------- Forms ---------- */
+  .seg {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    background: var(--panel-soft);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    margin-bottom: 1rem;
+  }
+  .seg-btn {
+    padding: 0.55rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .seg-btn.active.expense { background: var(--expense); color: white; }
+  .seg-btn.active.income { background: var(--income); color: white; }
+  .seg-btn.active.transfer { background: var(--transfer); color: white; }
+
+  .field { margin-bottom: 0.9rem; }
+  .field label { display: block; font-size: 0.78rem; color: var(--text-dim); margin-bottom: 0.35rem; font-weight: 600; }
+  .input, .select, .textarea {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 0.95rem;
+    transition: border-color 0.15s;
+  }
+  .input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--primary); }
+  .input.amt {
+    font-size: 1.6rem;
+    font-weight: 800;
+    text-align: right;
+    padding: 0.8rem 1rem;
+  }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .cat-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.6rem 0.3rem;
+    background: var(--panel);
+    border-radius: var(--radius-sm);
+    border: 2px solid transparent;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.15s;
+  }
+  .cat-btn .ic {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+  }
+  .cat-btn .nm { font-size: 0.7rem; font-weight: 600; color: var(--text-dim); }
+  .cat-btn.active { border-color: var(--primary); transform: scale(1.05); }
+  .cat-btn.active .nm { color: var(--primary); }
+
+  .btn {
+    padding: 0.8rem 1.2rem;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: transform 0.1s, box-shadow 0.15s;
+    flex: 1;
+    text-align: center;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; box-shadow: var(--shadow); }
+  .btn-secondary { background: var(--panel-soft); color: var(--text-dim); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-block { width: 100%; }
+
+  /* ---------- Account list ---------- */
+  .acc-card {
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    color: white;
+    margin-bottom: 0.75rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .acc-card::after {
+    content: ''; position: absolute;
+    bottom: -30px; right: -30px;
+    width: 120px; height: 120px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 50%;
+  }
+  .acc-card .nm { font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.2rem; position: relative; }
+  .acc-card .bal { font-size: 1.5rem; font-weight: 800; position: relative; letter-spacing: -0.01em; }
+  .acc-card .ty { font-size: 0.7rem; opacity: 0.8; margin-top: 0.4rem; position: relative; }
+
+  /* ---------- Settings list ---------- */
+  .setting-list { background: var(--panel); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; margin-bottom: 1rem; }
+  .setting-row {
+    padding: 0.9rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-row:active { background: var(--panel-soft); }
+  .setting-row .ic { font-size: 1.2rem; width: 32px; text-align: center; }
+  .setting-row .nm { flex: 1; font-size: 0.95rem; }
+  .setting-row .val { color: var(--text-muted); font-size: 0.85rem; }
+  .setting-row .arr { color: var(--text-muted); font-size: 1.2rem; }
+
+  .switch { position: relative; width: 44px; height: 26px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: var(--border); border-radius: 999px; transition: 0.2s; }
+  .slider::before { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: 0.2s; }
+  .switch input:checked + .slider { background: var(--primary); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+
+  /* ---------- Filter row ---------- */
+  .filter-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    align-items: center;
+  }
+  .filter-row .input, .filter-row .select { flex: 1; padding: 0.55rem 0.8rem; font-size: 0.88rem; }
+
+  /* ---------- PIN Lock ---------- */
+  .lock-screen {
+    position: fixed; inset: 0;
+    background: var(--bg-grad);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .lock-icon { font-size: 4rem; margin-bottom: 1rem; }
+  .lock-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .lock-sub { color: var(--text-dim); margin-bottom: 2rem; }
+  .pin-dots { display: flex; gap: 0.85rem; margin-bottom: 2rem; }
+  .pin-dot {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    transition: all 0.15s;
+  }
+  .pin-dot.filled { background: var(--primary); border-color: var(--primary); }
+  .pin-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 70px);
+    gap: 1rem;
+  }
+  .pin-key {
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    background: var(--panel);
+    box-shadow: var(--shadow-sm);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s;
+  }
+  .pin-key:active { transform: scale(0.92); background: var(--panel-soft); }
+
+  /* ---------- Misc ---------- */
+  .pill {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    background: var(--panel-soft);
+    border-radius: 999px;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+  .pill.income { background: rgba(46,204,113,0.15); color: var(--income); }
+  .pill.expense { background: rgba(255,107,157,0.15); color: var(--expense); }
+  .toast {
+    position: fixed;
+    top: 1.5rem; left: 50%;
+    transform: translateX(-50%) translateY(-150%);
+    background: var(--text);
+    color: white;
+    padding: 0.7rem 1.2rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 300;
+    box-shadow: var(--shadow-lg);
+    transition: transform 0.3s ease;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { background: var(--income); }
+  .toast.error { background: var(--danger); }
+
+  .chart-wrap { position: relative; height: 240px; }
+  .chart-wrap.lg { height: 280px; }
+
+  .receipt-thumb {
+    width: 60px; height: 60px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  details { margin-bottom: 0.75rem; }
+  details summary { cursor: pointer; padding: 0.6rem 0; font-weight: 600; font-size: 0.9rem; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before { content: '▶ '; font-size: 0.7rem; transition: transform 0.2s; display: inline-block; }
+  details[open] summary::before { transform: rotate(90deg); }
+
+  .cat-row {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.6rem 0.75rem; background: var(--panel-soft);
+    border-radius: var(--radius-sm); margin-bottom: 0.4rem;
+  }
+  .cat-row .ic-bubble {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+  }
+  .cat-row .name { flex: 1; font-size: 0.9rem; font-weight: 600; }
+  .cat-row .x { color: var(--text-muted); padding: 0.25rem 0.5rem; }
+
+  @media (max-width: 380px) {
+    .stat-grid { grid-template-columns: 1fr; }
+    .pin-pad { grid-template-columns: repeat(3, 60px); gap: 0.8rem; }
+    .pin-key { width: 60px; height: 60px; font-size: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PIN Lock Screen -->
+<div class="lock-screen" id="lockScreen" style="display:none;">
+  <div class="lock-icon">🔐</div>
+  <div class="lock-title" id="lockTitle">輸入 PIN 碼</div>
+  <div class="lock-sub" id="lockSub">請輸入 4 位數字解鎖</div>
+  <div class="pin-dots" id="pinDots"></div>
+  <div class="pin-pad" id="pinPad"></div>
+</div>
+
+<div class="app" id="app">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>💰 記帳本</h1>
+    <div class="header-actions">
+      <button class="icon-btn" id="searchBtn" title="搜尋">🔍</button>
+      <button class="icon-btn" id="notifBtn" title="通知">🔔</button>
+    </div>
+  </div>
+
+  <!-- ===== Dashboard View ===== -->
+  <div class="view active" id="view-dashboard">
+    <div class="balance-hero">
+      <div class="label">總資產（本幣）</div>
+      <div class="amount" id="totalBalance">--</div>
+      <div class="balance-row">
+        <div class="item">
+          <div class="l">本月收入</div>
+          <div class="v" id="monthIncome">--</div>
+        </div>
+        <div class="item">
+          <div class="l">本月支出</div>
+          <div class="v" id="monthExpense">--</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="lbl">本月結餘</div>
+        <div class="val" id="monthNet">--</div>
+        <div class="ico">📈</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">今日花費</div>
+        <div class="val expense" id="todayExpense">--</div>
+        <div class="ico">📅</div>
+      </div>
+    </div>
+
+    <!-- Budget progress -->
+    <div class="card">
+      <div class="card-pad">
+        <div class="card-title">
+          <span>📊 本月預算</span>
+          <span class="more" data-tab="settings" data-sub="budgets">設定 →</span>
+        </div>
+        <div id="budgetList"></div>
+      </div>
+    </div>
+
+    <!-- Recent transactions -->
+    <div class="card-title" style="padding: 0 0.25rem;">
+      <span>最近交易</span>
+      <span class="more" data-tab="records">查看全部 →</span>
+    </div>
+    <div id="recentTx"></div>
+  </div>
+
+  <!-- ===== Records View ===== -->
+  <div class="view" id="view-records">
+    <div class="filter-row">
+      <select class="select" id="filterType">
+        <option value="all">全部類型</option>
+        <option value="expense">支出</option>
+        <option value="income">收入</option>
+        <option value="transfer">轉帳</option>
+      </select>
+      <select class="select" id="filterAccount">
+        <option value="all">全部帳戶</option>
+      </select>
+    </div>
+    <div class="filter-row">
+      <input type="text" class="input" id="filterSearch" placeholder="🔍 搜尋備註、商家...">
+    </div>
+    <div id="txList"></div>
+  </div>
+
+  <!-- ===== Stats View ===== -->
+  <div class="view" id="view-stats">
+    <div class="sub-tabs">
+      <button class="chip active" data-period="month">本月</button>
+      <button class="chip" data-period="last">上月</button>
+      <button class="chip" data-period="year">本年</button>
+      <button class="chip" data-period="all">全部</button>
+    </div>
+
+    <div class="card">
+      <div class="card-pad">
+        <div class="card-title"><span>支出分類</span><span id="statTotalExpense" class="pill expense">$0</span></div>
+        <div class="chart-wrap"><canvas id="chartCategory"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-pad">
+        <div class="card-title"><span>收支趨勢</span></div>
+        <div class="chart-wrap lg"><canvas id="chartTrend"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-pad">
+        <div class="card-title"><span>淨值變化</span></div>
+        <div class="chart-wrap"><canvas id="chartNetWorth"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-pad">
+        <div class="card-title"><span>分類排行</span></div>
+        <div id="catRanking"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Accounts View ===== -->
+  <div class="view" id="view-accounts">
+    <button class="btn btn-primary btn-block" id="addAccountBtn" style="margin-bottom:1rem;">＋ 新增帳戶</button>
+    <button class="btn btn-secondary btn-block" id="transferBtn" style="margin-bottom:1rem;">🔄 帳戶間轉帳</button>
+    <div id="accountList"></div>
+  </div>
+
+  <!-- ===== Settings View ===== -->
+  <div class="view" id="view-settings">
+    <div class="setting-list">
+      <div class="setting-row" id="setCategories">
+        <div class="ic">🏷️</div><div class="nm">分類管理</div><div class="arr">›</div>
+      </div>
+      <div class="setting-row" id="setBudgets">
+        <div class="ic">📊</div><div class="nm">預算設定</div><div class="arr">›</div>
+      </div>
+      <div class="setting-row" id="setRecurring">
+        <div class="ic">🔁</div><div class="nm">定期交易</div><div class="arr">›</div>
+      </div>
+      <div class="setting-row" id="setCurrency">
+        <div class="ic">💱</div><div class="nm">本幣</div><div class="val" id="curCurrency">TWD</div><div class="arr">›</div>
+      </div>
+    </div>
+
+    <div class="setting-list">
+      <div class="setting-row" id="setCloud">
+        <div class="ic">☁️</div><div class="nm">雲端同步</div><div class="val" id="cloudStatus">未啟用</div><div class="arr">›</div>
+      </div>
+      <div class="setting-row" id="setShare">
+        <div class="ic">👥</div><div class="nm">共享帳本</div><div class="arr">›</div>
+      </div>
+      <div class="setting-row">
+        <div class="ic">🔔</div><div class="nm">每日記帳提醒</div>
+        <label class="switch"><input type="checkbox" id="setNotif"><span class="slider"></span></label>
+      </div>
+      <div class="setting-row" id="setPin">
+        <div class="ic">🔐</div><div class="nm">PIN 鎖</div><div class="val" id="pinStatus">未設定</div><div class="arr">›</div>
+      </div>
+    </div>
+
+    <div class="setting-list">
+      <div class="setting-row" id="setExport">
+        <div class="ic">📤</div><div class="nm">匯出資料 (CSV / JSON)</div><div class="arr">›</div>
+      </div>
+      <div class="setting-row" id="setImport">
+        <div class="ic">📥</div><div class="nm">匯入資料</div><div class="arr">›</div>
+      </div>
+      <div class="setting-row" id="setOCR">
+        <div class="ic">📷</div><div class="nm">收據 OCR 掃描</div><div class="arr">›</div>
+      </div>
+      <div class="setting-row" id="setReset">
+        <div class="ic">🗑️</div><div class="nm" style="color: var(--danger);">清除所有資料</div><div class="arr">›</div>
+      </div>
+    </div>
+
+    <p style="text-align:center; color: var(--text-muted); font-size: 0.8rem; padding: 1rem 0 2rem;">
+      v1.0 · FuturestarAI ·
+      <a href="index.html" style="color: var(--primary);">← 回首頁</a>
+    </p>
+  </div>
+</div>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" data-tab="dashboard"><span class="ic">🏠</span><span>首頁</span></button>
+  <button class="nav-btn" data-tab="records"><span class="ic">📋</span><span>明細</span></button>
+  <button class="nav-btn fab" id="quickAdd"><span class="ic">＋</span></button>
+  <button class="nav-btn" data-tab="stats"><span class="ic">📊</span><span>統計</span></button>
+  <button class="nav-btn" data-tab="accounts"><span class="ic">💳</span><span>帳戶</span></button>
+  <button class="nav-btn" data-tab="settings"><span class="ic">⚙️</span><span>設定</span></button>
+</nav>
+
+<!-- ===== Add Transaction Modal ===== -->
+<div class="modal-backdrop" id="modalAdd">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="addTitle">新增記帳</h3>
+      <button class="icon-btn" onclick="closeModal('modalAdd')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="seg">
+        <button class="seg-btn active expense" data-type="expense">支出</button>
+        <button class="seg-btn income" data-type="income">收入</button>
+        <button class="seg-btn transfer" data-type="transfer">轉帳</button>
+      </div>
+
+      <div class="field">
+        <label>金額</label>
+        <input type="number" class="input amt" id="txAmount" placeholder="0" step="0.01">
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>日期</label>
+          <input type="date" class="input" id="txDate">
+        </div>
+        <div class="field">
+          <label>幣別</label>
+          <select class="select" id="txCurrency"></select>
+        </div>
+      </div>
+
+      <div class="field" id="catField">
+        <label>分類</label>
+        <div class="cat-grid" id="catPicker"></div>
+      </div>
+
+      <div class="field" id="accField">
+        <label id="accLabel">帳戶</label>
+        <select class="select" id="txAccount"></select>
+      </div>
+
+      <div class="field" id="toAccField" style="display:none;">
+        <label>轉入帳戶</label>
+        <select class="select" id="txToAccount"></select>
+      </div>
+
+      <div class="field">
+        <label>備註 / 商家</label>
+        <input type="text" class="input" id="txNote" placeholder="例：星巴克拿鐵">
+      </div>
+
+      <details>
+        <summary>更多選項</summary>
+        <div class="field">
+          <label>📍 地點（可選）</label>
+          <div style="display:flex;gap:0.5rem;">
+            <input type="text" class="input" id="txLocation" placeholder="自動取得或手動輸入">
+            <button class="btn btn-secondary" style="flex:0 0 auto;padding:0.7rem 0.9rem;" id="getLocBtn">📍</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>📎 收據照片</label>
+          <input type="file" accept="image/*" capture="environment" class="input" id="txReceipt" style="padding:0.5rem;">
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;">拍照後可在「設定 → 收據 OCR」自動辨識金額</div>
+          <img id="receiptPreview" class="receipt-thumb" style="display:none;margin-top:0.5rem;width:80px;height:80px;">
+        </div>
+        <div class="field">
+          <label>🔁 定期重複</label>
+          <select class="select" id="txRecurring">
+            <option value="none">不重複</option>
+            <option value="daily">每天</option>
+            <option value="weekly">每週</option>
+            <option value="monthly">每月</option>
+            <option value="yearly">每年</option>
+          </select>
+        </div>
+      </details>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="deleteTxBtn" style="display:none;">刪除</button>
+      <button class="btn btn-primary" id="saveTxBtn">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Generic Modal (Account / Category / Budget etc.) ===== -->
+<div class="modal-backdrop" id="modalGeneric">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="genericTitle">標題</h3>
+      <button class="icon-btn" onclick="closeModal('modalGeneric')">✕</button>
+    </div>
+    <div class="modal-body" id="genericBody"></div>
+    <div class="modal-footer" id="genericFooter">
+      <button class="btn btn-primary btn-block" id="genericSave">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Hidden file input for import -->
+<input type="file" id="importFile" accept=".json,.csv" style="display:none;">
+
+<!-- Firebase (loaded on demand) -->
+<script>
+/* =====================================================================
+   記帳本 Expense Tracker — single-file app
+   - localStorage by default
+   - Firebase (compat v9) loaded on demand for cloud sync & share
+   - Tesseract.js loaded on demand for OCR
+   ===================================================================== */
+
+/* ---------- Currencies (static rates fallback) ---------- */
+const CURRENCIES = [
+  { code: 'TWD', name: '新台幣', symbol: 'NT$' },
+  { code: 'USD', name: '美元', symbol: '$' },
+  { code: 'JPY', name: '日圓', symbol: '¥' },
+  { code: 'EUR', name: '歐元', symbol: '€' },
+  { code: 'CNY', name: '人民幣', symbol: '¥' },
+  { code: 'HKD', name: '港幣', symbol: 'HK$' },
+  { code: 'KRW', name: '韓圓', symbol: '₩' },
+  { code: 'GBP', name: '英鎊', symbol: '£' },
+];
+// Approx rates to TWD (fallback only). User can edit in settings.
+const DEFAULT_RATES = { TWD: 1, USD: 32, JPY: 0.21, EUR: 35, CNY: 4.4, HKD: 4.1, KRW: 0.024, GBP: 41 };
+
+/* ---------- Default categories ---------- */
+const DEFAULT_CATEGORIES = {
+  expense: [
+    { id: 'food', name: '飲食', icon: '🍱', color: '#ff6b9d' },
+    { id: 'transport', name: '交通', icon: '🚗', color: '#4ecdc4' },
+    { id: 'shopping', name: '購物', icon: '🛍️', color: '#ffd93d' },
+    { id: 'entertain', name: '娛樂', icon: '🎮', color: '#a29bfe' },
+    { id: 'living', name: '居家', icon: '🏠', color: '#ff8e53' },
+    { id: 'medical', name: '醫療', icon: '💊', color: '#95e1d3' },
+    { id: 'edu', name: '教育', icon: '📚', color: '#6c5ce7' },
+    { id: 'social', name: '人情', icon: '🎁', color: '#fd79a8' },
+    { id: 'travel', name: '旅遊', icon: '✈️', color: '#0abde3' },
+    { id: 'invest', name: '投資', icon: '📈', color: '#26de81' },
+    { id: 'other-e', name: '其他', icon: '📝', color: '#a094ab' },
+  ],
+  income: [
+    { id: 'salary', name: '薪水', icon: '💵', color: '#2ecc71' },
+    { id: 'bonus', name: '獎金', icon: '🎉', color: '#ffd93d' },
+    { id: 'invest-in', name: '投資', icon: '📈', color: '#4ecdc4' },
+    { id: 'side', name: '副業', icon: '💼', color: '#6c5ce7' },
+    { id: 'gift', name: '禮金', icon: '💝', color: '#ff6b9d' },
+    { id: 'refund', name: '退款', icon: '↩️', color: '#95e1d3' },
+    { id: 'other-i', name: '其他', icon: '📝', color: '#a094ab' },
+  ],
+};
+
+const DEFAULT_ACCOUNTS = [
+  { id: 'cash', name: '現金', type: 'cash', currency: 'TWD', initial: 0, color: '#ff6b9d' },
+  { id: 'bank', name: '銀行', type: 'bank', currency: 'TWD', initial: 0, color: '#6c5ce7' },
+];
+
+/* ---------- State ---------- */
+let state = loadState();
+let chartCategory, chartTrend, chartNetWorth;
+let editingTx = null;
+let pinInput = '';
+let pinMode = 'unlock'; // unlock | setup-1 | setup-2
+
+function loadState() {
+  const raw = localStorage.getItem('expenseAppV1');
+  if (raw) {
+    try { return JSON.parse(raw); } catch {}
+  }
+  return {
+    transactions: [],
+    accounts: structuredClone(DEFAULT_ACCOUNTS),
+    categories: structuredClone(DEFAULT_CATEGORIES),
+    budgets: {}, // { categoryId: amount }
+    recurring: [], // [{ id, txTemplate, frequency, nextDate, lastRun }]
+    settings: {
+      baseCurrency: 'TWD',
+      rates: { ...DEFAULT_RATES },
+      pin: null,
+      notif: false,
+      cloud: { enabled: false, config: null, uid: null, sharedBook: null },
+    },
+  };
+}
+function saveState() {
+  localStorage.setItem('expenseAppV1', JSON.stringify(state));
+  if (state.settings.cloud.enabled && window.cloudSyncDebounced) window.cloudSyncDebounced();
+}
+
+/* ---------- Utilities ---------- */
+const $ = (id) => document.getElementById(id);
+const fmt = (n, cur) => {
+  cur = cur || state.settings.baseCurrency;
+  const c = CURRENCIES.find(x => x.code === cur);
+  const sym = c ? c.symbol : '';
+  const v = Math.round(Math.abs(n) * 100) / 100;
+  const sign = n < 0 ? '-' : '';
+  return sign + sym + v.toLocaleString('en-US', { minimumFractionDigits: cur === 'JPY' || cur === 'KRW' ? 0 : 0, maximumFractionDigits: 2 });
+};
+const toBase = (amount, currency) => {
+  if (!currency || currency === state.settings.baseCurrency) return amount;
+  const rate = state.settings.rates[currency] || 1;
+  const baseRate = state.settings.rates[state.settings.baseCurrency] || 1;
+  return amount * rate / baseRate;
+};
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const toast = (msg, type = '') => {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  clearTimeout(t._tm);
+  t._tm = setTimeout(() => t.classList.remove('show'), 2200);
+};
+const findCat = (id) => {
+  for (const t of ['expense', 'income']) {
+    const c = state.categories[t].find(c => c.id === id);
+    if (c) return { ...c, type: t };
+  }
+  return null;
+};
+const findAcc = (id) => state.accounts.find(a => a.id === id);
+
+/* ---------- Period helpers ---------- */
+function isInPeriod(dateStr, period) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  if (period === 'month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  if (period === 'last') {
+    const m = (now.getMonth() + 11) % 12;
+    const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    return d.getFullYear() === y && d.getMonth() === m;
+  }
+  if (period === 'year') return d.getFullYear() === now.getFullYear();
+  return true; // all
+}
+function isToday(dateStr) {
+  return dateStr === todayISO();
+}
+
+/* ---------- Account balance ---------- */
+function accountBalance(accId) {
+  const acc = findAcc(accId);
+  if (!acc) return 0;
+  let bal = acc.initial || 0;
+  state.transactions.forEach(tx => {
+    if (tx.type === 'expense' && tx.accountId === accId) bal -= tx.amount;
+    else if (tx.type === 'income' && tx.accountId === accId) bal += tx.amount;
+    else if (tx.type === 'transfer') {
+      if (tx.accountId === accId) bal -= tx.amount;
+      if (tx.toAccountId === accId) bal += tx.amount;
+    }
+  });
+  return bal;
+}
+function totalNet() {
+  return state.accounts.reduce((sum, a) => sum + toBase(accountBalance(a.id), a.currency), 0);
+}
+
+/* ---------- Render: Dashboard ---------- */
+function renderDashboard() {
+  $('totalBalance').textContent = fmt(totalNet());
+  // Month totals (in base currency)
+  let inc = 0, exp = 0, todayExp = 0;
+  state.transactions.forEach(tx => {
+    const baseAmt = toBase(tx.amount, tx.currency);
+    if (isInPeriod(tx.date, 'month')) {
+      if (tx.type === 'income') inc += baseAmt;
+      else if (tx.type === 'expense') exp += baseAmt;
+    }
+    if (isToday(tx.date) && tx.type === 'expense') todayExp += baseAmt;
+  });
+  $('monthIncome').textContent = fmt(inc);
+  $('monthExpense').textContent = fmt(exp);
+  const net = inc - exp;
+  const netEl = $('monthNet');
+  netEl.textContent = fmt(net);
+  netEl.className = 'val ' + (net >= 0 ? 'income' : 'expense');
+  $('todayExpense').textContent = fmt(todayExp);
+
+  // Budgets
+  const bl = $('budgetList');
+  const budEntries = Object.entries(state.budgets);
+  if (budEntries.length === 0) {
+    bl.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:0.5rem 0;">尚未設定預算，<span style="color:var(--primary);cursor:pointer;" onclick="openBudgetSettings()">立即設定 →</span></div>';
+  } else {
+    bl.innerHTML = budEntries.map(([catId, budget]) => {
+      const cat = findCat(catId);
+      if (!cat) return '';
+      const spent = state.transactions
+        .filter(tx => tx.type === 'expense' && tx.categoryId === catId && isInPeriod(tx.date, 'month'))
+        .reduce((s, tx) => s + toBase(tx.amount, tx.currency), 0);
+      const pct = Math.min(100, (spent / budget) * 100);
+      const cls = pct > 100 ? 'over' : pct > 80 ? 'warn' : '';
+      return `<div class="bud-item">
+        <div class="bud-row">
+          <span class="bud-name"><span style="color:${cat.color}">${cat.icon}</span>${cat.name}</span>
+          <span class="bud-amount">${fmt(spent)} / ${fmt(budget)}</span>
+        </div>
+        <div class="bud-bar"><div class="bud-bar-fill ${cls}" style="width:${Math.min(100, pct)}%"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Recent transactions (last 5)
+  const recent = [...state.transactions].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt).slice(0, 5);
+  $('recentTx').innerHTML = recent.length ? renderTxList(recent) : `<div class="empty"><div class="ico">📝</div><div class="t">還沒有記帳紀錄<br>點下方 ＋ 開始</div></div>`;
+}
+
+/* ---------- Render: Transactions list ---------- */
+function renderTxList(txs) {
+  // Group by date
+  const groups = {};
+  txs.forEach(tx => {
+    if (!groups[tx.date]) groups[tx.date] = [];
+    groups[tx.date].push(tx);
+  });
+  const sorted = Object.keys(groups).sort().reverse();
+  return sorted.map(date => {
+    let dayInc = 0, dayExp = 0;
+    groups[date].forEach(tx => {
+      const b = toBase(tx.amount, tx.currency);
+      if (tx.type === 'income') dayInc += b;
+      else if (tx.type === 'expense') dayExp += b;
+    });
+    const d = new Date(date);
+    const wk = ['日','一','二','三','四','五','六'][d.getDay()];
+    return `<div class="tx-group">
+      <div class="tx-group-date">
+        <span>${date} 週${wk}</span>
+        <span>${dayInc > 0 ? '<span style="color:var(--income)">+' + fmt(dayInc) + '</span> ' : ''}${dayExp > 0 ? '<span style="color:var(--expense)">-' + fmt(dayExp) + '</span>' : ''}</span>
+      </div>
+      <div class="tx-list">
+        ${groups[date].map(renderTxItem).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderTxItem(tx) {
+  const acc = findAcc(tx.accountId);
+  let icon, name, color, prefix;
+  if (tx.type === 'transfer') {
+    const toAcc = findAcc(tx.toAccountId);
+    icon = '🔄'; color = '#6c5ce7';
+    name = `${acc?.name || '?'} → ${toAcc?.name || '?'}`;
+    prefix = '';
+  } else {
+    const cat = findCat(tx.categoryId);
+    icon = cat?.icon || '📝';
+    color = cat?.color || '#a094ab';
+    name = tx.note || cat?.name || '';
+    prefix = tx.type === 'income' ? '+' : '-';
+  }
+  const amtCls = tx.type;
+  return `<div class="tx-item" onclick="editTx('${tx.id}')">
+    <div class="tx-icon" style="background:${color}22;color:${color}">${icon}</div>
+    <div class="tx-info">
+      <div class="tx-name">${escapeHtml(name) || '無備註'}</div>
+      <div class="tx-meta">${acc?.name || ''} ${tx.location ? '· 📍' + escapeHtml(tx.location) : ''} ${tx.receipt ? '· 📎' : ''}</div>
+    </div>
+    <div class="tx-amount ${amtCls}">${prefix}${fmt(tx.amount, tx.currency)}</div>
+  </div>`;
+}
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function renderRecords() {
+  const t = $('filterType').value;
+  const a = $('filterAccount').value;
+  const q = $('filterSearch').value.trim().toLowerCase();
+  let txs = state.transactions.slice();
+  if (t !== 'all') txs = txs.filter(x => x.type === t);
+  if (a !== 'all') txs = txs.filter(x => x.accountId === a || x.toAccountId === a);
+  if (q) txs = txs.filter(x => (x.note || '').toLowerCase().includes(q) || (x.location || '').toLowerCase().includes(q));
+  txs.sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+  $('txList').innerHTML = txs.length ? renderTxList(txs) : `<div class="empty"><div class="ico">🔍</div><div class="t">沒有符合的紀錄</div></div>`;
+}
+
+/* ---------- Render: Stats ---------- */
+let currentStatsPeriod = 'month';
+function renderStats() {
+  const txs = state.transactions.filter(x => isInPeriod(x.date, currentStatsPeriod));
+  const expTxs = txs.filter(x => x.type === 'expense');
+  const totalExp = expTxs.reduce((s, x) => s + toBase(x.amount, x.currency), 0);
+  $('statTotalExpense').textContent = fmt(totalExp);
+
+  // Category pie
+  const catTotals = {};
+  expTxs.forEach(tx => {
+    catTotals[tx.categoryId] = (catTotals[tx.categoryId] || 0) + toBase(tx.amount, tx.currency);
+  });
+  const catData = Object.entries(catTotals).map(([id, val]) => {
+    const c = findCat(id) || { name: '未知', color: '#999', icon: '?' };
+    return { id, val, name: c.name, color: c.color, icon: c.icon };
+  }).sort((a, b) => b.val - a.val);
+
+  if (chartCategory) chartCategory.destroy();
+  chartCategory = new Chart($('chartCategory'), {
+    type: 'doughnut',
+    data: {
+      labels: catData.map(c => c.name),
+      datasets: [{
+        data: catData.map(c => c.val),
+        backgroundColor: catData.map(c => c.color),
+        borderWidth: 0,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      cutout: '60%',
+    },
+  });
+
+  // Trend (line by month over last 6 months / or week of month)
+  let labels = [], incomeData = [], expenseData = [];
+  if (currentStatsPeriod === 'month' || currentStatsPeriod === 'last') {
+    // by day of month
+    const now = new Date();
+    const targetMonth = currentStatsPeriod === 'last' ? (now.getMonth() + 11) % 12 : now.getMonth();
+    const targetYear = currentStatsPeriod === 'last' && now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const days = new Date(targetYear, targetMonth + 1, 0).getDate();
+    for (let i = 1; i <= days; i++) {
+      labels.push(i);
+      const dStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      let di = 0, de = 0;
+      state.transactions.forEach(tx => {
+        if (tx.date === dStr) {
+          const b = toBase(tx.amount, tx.currency);
+          if (tx.type === 'income') di += b;
+          else if (tx.type === 'expense') de += b;
+        }
+      });
+      incomeData.push(di); expenseData.push(de);
+    }
+  } else {
+    // by month over last 12
+    const now = new Date();
+    const months = currentStatsPeriod === 'year' ? 12 : 12;
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      labels.push(`${d.getMonth() + 1}月`);
+      let mi = 0, me = 0;
+      state.transactions.forEach(tx => {
+        const td = new Date(tx.date);
+        if (td.getFullYear() === d.getFullYear() && td.getMonth() === d.getMonth()) {
+          const b = toBase(tx.amount, tx.currency);
+          if (tx.type === 'income') mi += b;
+          else if (tx.type === 'expense') me += b;
+        }
+      });
+      incomeData.push(mi); expenseData.push(me);
+    }
+  }
+
+  if (chartTrend) chartTrend.destroy();
+  chartTrend = new Chart($('chartTrend'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: '收入', data: incomeData, borderColor: '#2ecc71', backgroundColor: 'rgba(46,204,113,0.15)', fill: true, tension: 0.35, borderWidth: 2 },
+        { label: '支出', data: expenseData, borderColor: '#ff6b9d', backgroundColor: 'rgba(255,107,157,0.15)', fill: true, tension: 0.35, borderWidth: 2 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } },
+    },
+  });
+
+  // Net worth over last 12 months
+  const nwLabels = [], nwData = [];
+  const now = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i + 1, 0); // end of month
+    nwLabels.push(`${d.getMonth() + 1}月`);
+    // compute net worth at end of this month
+    let nw = 0;
+    state.accounts.forEach(acc => {
+      let bal = acc.initial || 0;
+      state.transactions.forEach(tx => {
+        if (tx.date > d.toISOString().slice(0, 10)) return;
+        if (tx.type === 'expense' && tx.accountId === acc.id) bal -= tx.amount;
+        else if (tx.type === 'income' && tx.accountId === acc.id) bal += tx.amount;
+        else if (tx.type === 'transfer') {
+          if (tx.accountId === acc.id) bal -= tx.amount;
+          if (tx.toAccountId === acc.id) bal += tx.amount;
+        }
+      });
+      nw += toBase(bal, acc.currency);
+    });
+    nwData.push(nw);
+  }
+  if (chartNetWorth) chartNetWorth.destroy();
+  chartNetWorth = new Chart($('chartNetWorth'), {
+    type: 'bar',
+    data: {
+      labels: nwLabels,
+      datasets: [{ label: '淨值', data: nwData, backgroundColor: 'rgba(108,92,231,0.7)', borderRadius: 6 }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: false, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } },
+    },
+  });
+
+  // Category ranking
+  const max = catData[0]?.val || 1;
+  $('catRanking').innerHTML = catData.length ? catData.map(c => {
+    const pct = (c.val / max) * 100;
+    return `<div style="margin-bottom:0.6rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;font-size:0.85rem;">
+        <span><span style="color:${c.color}">${c.icon}</span> ${c.name}</span>
+        <span style="font-weight:700">${fmt(c.val)}</span>
+      </div>
+      <div class="bud-bar"><div class="bud-bar-fill" style="width:${pct}%;background:${c.color};"></div></div>
+    </div>`;
+  }).join('') : '<div class="empty"><div class="t">本期間無支出</div></div>';
+}
+
+/* ---------- Render: Accounts ---------- */
+function renderAccounts() {
+  const al = $('accountList');
+  if (state.accounts.length === 0) {
+    al.innerHTML = `<div class="empty"><div class="ico">💳</div><div class="t">尚無帳戶</div></div>`;
+    return;
+  }
+  al.innerHTML = state.accounts.map((a, i) => {
+    const bal = accountBalance(a.id);
+    const c = CURRENCIES.find(x => x.code === a.currency);
+    const grad1 = a.color || '#ff6b9d';
+    const grad2 = ['#6c5ce7', '#4ecdc4', '#ffd93d', '#ff8e53'][i % 4];
+    const typeLabel = { cash: '💵 現金', bank: '🏦 銀行', credit: '💳 信用卡', invest: '📈 投資', other: '📦 其他' }[a.type] || a.type;
+    return `<div class="acc-card" style="background:linear-gradient(135deg, ${grad1}, ${grad2})" onclick="editAccount('${a.id}')">
+      <div class="nm">${escapeHtml(a.name)}</div>
+      <div class="bal">${c?.symbol || ''}${bal.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+      <div class="ty">${typeLabel} · ${a.currency}</div>
+    </div>`;
+  }).join('');
+
+  // Update filter & tx form selects
+  const filterAcc = $('filterAccount');
+  filterAcc.innerHTML = '<option value="all">全部帳戶</option>' + state.accounts.map(a => `<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('');
+  $('txAccount').innerHTML = state.accounts.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${a.currency})</option>`).join('');
+  $('txToAccount').innerHTML = state.accounts.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${a.currency})</option>`).join('');
+}
+
+/* ---------- Render: Currency pickers ---------- */
+function renderCurrencies() {
+  $('txCurrency').innerHTML = CURRENCIES.map(c => `<option value="${c.code}">${c.code} ${c.symbol}</option>`).join('');
+  $('curCurrency').textContent = state.settings.baseCurrency;
+}
+
+/* ---------- Render: Category picker in Add form ---------- */
+let pickedType = 'expense';
+let pickedCat = null;
+function renderCatPicker() {
+  if (pickedType === 'transfer') return;
+  const cats = state.categories[pickedType];
+  if (!pickedCat || !cats.find(c => c.id === pickedCat)) pickedCat = cats[0]?.id;
+  $('catPicker').innerHTML = cats.map(c => `
+    <button class="cat-btn ${c.id === pickedCat ? 'active' : ''}" data-cat="${c.id}">
+      <div class="ic" style="background:${c.color}22;color:${c.color}">${c.icon}</div>
+      <div class="nm">${escapeHtml(c.name)}</div>
+    </button>`).join('');
+  document.querySelectorAll('#catPicker .cat-btn').forEach(b => {
+    b.onclick = () => { pickedCat = b.dataset.cat; renderCatPicker(); };
+  });
+}
+
+/* ---------- Tab switching ---------- */
+function switchTab(tab) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  $('view-' + tab).classList.add('active');
+  document.querySelectorAll('.nav-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  if (tab === 'dashboard') renderDashboard();
+  if (tab === 'records') renderRecords();
+  if (tab === 'stats') renderStats();
+  if (tab === 'accounts') renderAccounts();
+  if (tab === 'settings') renderSettings();
+  window.scrollTo(0, 0);
+}
+
+/* ---------- Modals ---------- */
+function openModal(id) { $(id).classList.add('show'); }
+function closeModal(id) { $(id).classList.remove('show'); }
+document.querySelectorAll('.modal-backdrop').forEach(b => {
+  b.addEventListener('click', (e) => { if (e.target === b) b.classList.remove('show'); });
+});
+
+/* ---------- Add/Edit Transaction ---------- */
+function openAddTx(tx = null) {
+  editingTx = tx;
+  $('addTitle').textContent = tx ? '編輯記帳' : '新增記帳';
+  $('deleteTxBtn').style.display = tx ? 'block' : 'none';
+  pickedType = tx?.type || 'expense';
+  pickedCat = tx?.categoryId || null;
+  setSegment(pickedType);
+  $('txAmount').value = tx?.amount || '';
+  $('txDate').value = tx?.date || todayISO();
+  $('txCurrency').value = tx?.currency || state.settings.baseCurrency;
+  $('txNote').value = tx?.note || '';
+  $('txLocation').value = tx?.location || '';
+  $('txRecurring').value = tx?.recurring || 'none';
+  $('receiptPreview').style.display = tx?.receipt ? 'block' : 'none';
+  if (tx?.receipt) $('receiptPreview').src = tx.receipt;
+  $('txReceipt').value = '';
+  if (tx) {
+    $('txAccount').value = tx.accountId || state.accounts[0]?.id;
+    if (tx.type === 'transfer') $('txToAccount').value = tx.toAccountId || state.accounts[1]?.id;
+  } else {
+    $('txAccount').value = state.accounts[0]?.id;
+    $('txToAccount').value = state.accounts[1]?.id || state.accounts[0]?.id;
+  }
+  renderCatPicker();
+  openModal('modalAdd');
+  setTimeout(() => $('txAmount').focus(), 200);
+}
+function editTx(id) {
+  const tx = state.transactions.find(x => x.id === id);
+  if (tx) openAddTx(tx);
+}
+function setSegment(type) {
+  pickedType = type;
+  document.querySelectorAll('#modalAdd .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  if (type === 'transfer') {
+    $('catField').style.display = 'none';
+    $('toAccField').style.display = 'block';
+    $('accLabel').textContent = '從帳戶';
+  } else {
+    $('catField').style.display = 'block';
+    $('toAccField').style.display = 'none';
+    $('accLabel').textContent = '帳戶';
+    renderCatPicker();
+  }
+}
+document.querySelectorAll('#modalAdd .seg-btn').forEach(b => {
+  b.onclick = () => setSegment(b.dataset.type);
+});
+$('saveTxBtn').onclick = () => {
+  const amount = parseFloat($('txAmount').value);
+  if (!amount || amount <= 0) return toast('請輸入金額', 'error');
+  const tx = {
+    id: editingTx?.id || uid(),
+    type: pickedType,
+    amount,
+    date: $('txDate').value || todayISO(),
+    currency: $('txCurrency').value,
+    accountId: $('txAccount').value,
+    note: $('txNote').value.trim(),
+    location: $('txLocation').value.trim(),
+    recurring: $('txRecurring').value,
+    receipt: $('receiptPreview').style.display !== 'none' ? $('receiptPreview').src : null,
+    createdAt: editingTx?.createdAt || Date.now(),
+  };
+  if (pickedType === 'transfer') {
+    tx.toAccountId = $('txToAccount').value;
+    if (tx.accountId === tx.toAccountId) return toast('來源與目的帳戶不可相同', 'error');
+  } else {
+    if (!pickedCat) return toast('請選擇分類', 'error');
+    tx.categoryId = pickedCat;
+  }
+  if (editingTx) {
+    const i = state.transactions.findIndex(x => x.id === editingTx.id);
+    state.transactions[i] = tx;
+  } else {
+    state.transactions.push(tx);
+    // setup recurring
+    if (tx.recurring && tx.recurring !== 'none') {
+      state.recurring.push({
+        id: uid(),
+        template: { ...tx, id: null, recurring: 'none' },
+        frequency: tx.recurring,
+        lastRun: tx.date,
+      });
+    }
+  }
+  saveState();
+  closeModal('modalAdd');
+  toast(editingTx ? '已更新' : '已新增', 'success');
+  switchTab(getActiveTab());
+};
+$('deleteTxBtn').onclick = () => {
+  if (!editingTx) return;
+  if (!confirm('確定刪除這筆記帳？')) return;
+  state.transactions = state.transactions.filter(x => x.id !== editingTx.id);
+  saveState();
+  closeModal('modalAdd');
+  toast('已刪除', 'success');
+  switchTab(getActiveTab());
+};
+$('txReceipt').onchange = (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    // compress
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const max = 800;
+      let { width, height } = img;
+      if (width > max || height > max) {
+        const ratio = Math.min(max / width, max / height);
+        width *= ratio; height *= ratio;
+      }
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      $('receiptPreview').src = dataUrl;
+      $('receiptPreview').style.display = 'block';
+    };
+    img.src = r.result;
+  };
+  r.readAsDataURL(f);
+};
+$('getLocBtn').onclick = () => {
+  if (!navigator.geolocation) return toast('瀏覽器不支援定位', 'error');
+  toast('取得位置中...');
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      $('txLocation').value = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+      toast('已取得位置', 'success');
+    },
+    () => toast('無法取得位置', 'error')
+  );
+};
+
+/* ---------- Quick Add (FAB) ---------- */
+$('quickAdd').onclick = () => openAddTx();
+
+/* ---------- Bottom nav ---------- */
+document.querySelectorAll('.nav-btn[data-tab]').forEach(b => {
+  b.onclick = () => switchTab(b.dataset.tab);
+});
+function getActiveTab() {
+  return document.querySelector('.nav-btn.active[data-tab]')?.dataset.tab || 'dashboard';
+}
+
+/* ---------- Records filters ---------- */
+['filterType', 'filterAccount', 'filterSearch'].forEach(id => {
+  $(id).addEventListener('input', renderRecords);
+});
+
+/* ---------- Stats period ---------- */
+document.querySelectorAll('#view-stats .chip').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('#view-stats .chip').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    currentStatsPeriod = b.dataset.period;
+    renderStats();
+  };
+});
+
+/* ---------- Account modal ---------- */
+function editAccount(id) {
+  const acc = id ? state.accounts.find(a => a.id === id) : null;
+  openGenericModal({
+    title: acc ? '編輯帳戶' : '新增帳戶',
+    body: `
+      <div class="field"><label>帳戶名稱</label><input id="g_name" class="input" value="${escapeHtml(acc?.name || '')}" placeholder="例：玉山銀行"></div>
+      <div class="field"><label>類型</label>
+        <select id="g_type" class="select">
+          <option value="cash" ${acc?.type === 'cash' ? 'selected' : ''}>💵 現金</option>
+          <option value="bank" ${acc?.type === 'bank' ? 'selected' : ''}>🏦 銀行</option>
+          <option value="credit" ${acc?.type === 'credit' ? 'selected' : ''}>💳 信用卡</option>
+          <option value="invest" ${acc?.type === 'invest' ? 'selected' : ''}>📈 投資</option>
+          <option value="other" ${acc?.type === 'other' ? 'selected' : ''}>📦 其他</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>幣別</label><select id="g_cur" class="select">${CURRENCIES.map(c => `<option value="${c.code}" ${(acc?.currency || 'TWD') === c.code ? 'selected' : ''}>${c.code}</option>`).join('')}</select></div>
+        <div class="field"><label>初始餘額</label><input id="g_init" class="input" type="number" step="0.01" value="${acc?.initial ?? 0}"></div>
+      </div>
+      <div class="field"><label>顏色</label><input id="g_color" class="input" type="color" value="${acc?.color || '#ff6b9d'}" style="height:42px;padding:4px;"></div>
+      ${acc ? '<button class="btn btn-danger btn-block" id="g_del">刪除帳戶</button>' : ''}
+    `,
+    onSave: () => {
+      const name = $('g_name').value.trim();
+      if (!name) return toast('請輸入名稱', 'error');
+      const data = {
+        id: acc?.id || uid(),
+        name,
+        type: $('g_type').value,
+        currency: $('g_cur').value,
+        initial: parseFloat($('g_init').value) || 0,
+        color: $('g_color').value,
+      };
+      if (acc) state.accounts[state.accounts.findIndex(x => x.id === acc.id)] = data;
+      else state.accounts.push(data);
+      saveState();
+      renderAccounts(); renderDashboard();
+      return true;
+    },
+    onDelete: acc ? () => {
+      if (state.accounts.length <= 1) return toast('至少需要一個帳戶', 'error');
+      if (!confirm(`刪除帳戶「${acc.name}」？相關交易也會被刪除。`)) return false;
+      state.transactions = state.transactions.filter(x => x.accountId !== acc.id && x.toAccountId !== acc.id);
+      state.accounts = state.accounts.filter(x => x.id !== acc.id);
+      saveState(); renderAccounts(); renderDashboard();
+      return true;
+    } : null,
+  });
+}
+$('addAccountBtn').onclick = () => editAccount(null);
+$('transferBtn').onclick = () => {
+  if (state.accounts.length < 2) return toast('至少需要兩個帳戶才能轉帳', 'error');
+  openAddTx();
+  setSegment('transfer');
+};
+
+/* ---------- Generic Modal helper ---------- */
+function openGenericModal({ title, body, onSave, onDelete, saveLabel = '儲存' }) {
+  $('genericTitle').textContent = title;
+  $('genericBody').innerHTML = body;
+  $('genericFooter').innerHTML = `
+    ${onDelete ? '<button class="btn btn-danger" id="g_delBtn">刪除</button>' : ''}
+    <button class="btn btn-primary" id="g_saveBtn" style="flex:1">${saveLabel}</button>
+  `;
+  $('g_saveBtn').onclick = () => {
+    const r = onSave();
+    if (r !== false) closeModal('modalGeneric');
+  };
+  if (onDelete) $('g_delBtn').onclick = () => {
+    const r = onDelete();
+    if (r !== false) closeModal('modalGeneric');
+  };
+  // attach delete listener for inline-rendered btn
+  setTimeout(() => {
+    const innerDel = $('g_del');
+    if (innerDel && onDelete) innerDel.onclick = () => { const r = onDelete(); if (r !== false) closeModal('modalGeneric'); };
+  }, 0);
+  openModal('modalGeneric');
+}
+
+/* ---------- Settings ---------- */
+function renderSettings() {
+  $('curCurrency').textContent = state.settings.baseCurrency;
+  $('cloudStatus').textContent = state.settings.cloud.enabled ? '已啟用' : '未啟用';
+  $('pinStatus').textContent = state.settings.pin ? '已設定' : '未設定';
+  $('setNotif').checked = state.settings.notif;
+}
+
+$('setCategories').onclick = () => openCategorySettings();
+$('setBudgets').onclick = () => openBudgetSettings();
+$('setRecurring').onclick = () => openRecurringSettings();
+$('setCurrency').onclick = () => openCurrencySettings();
+$('setCloud').onclick = () => openCloudSettings();
+$('setShare').onclick = () => openShareSettings();
+$('setPin').onclick = () => openPinSettings();
+$('setExport').onclick = () => openExportSettings();
+$('setImport').onclick = () => $('importFile').click();
+$('setOCR').onclick = () => openOCRSettings();
+$('setReset').onclick = () => {
+  if (!confirm('確定要清除所有資料嗎？此動作無法復原。')) return;
+  if (!confirm('再次確認：所有交易、帳戶、設定都會被刪除。繼續？')) return;
+  localStorage.removeItem('expenseAppV1');
+  location.reload();
+};
+
+$('setNotif').onchange = async (e) => {
+  if (e.target.checked) {
+    if (!('Notification' in window)) { e.target.checked = false; return toast('瀏覽器不支援通知', 'error'); }
+    const p = await Notification.requestPermission();
+    if (p !== 'granted') { e.target.checked = false; return toast('未授權通知', 'error'); }
+    state.settings.notif = true;
+    scheduleDailyReminder();
+    toast('每日 21:00 提醒已啟用', 'success');
+  } else {
+    state.settings.notif = false;
+    if (window._reminderTm) clearTimeout(window._reminderTm);
+  }
+  saveState();
+};
+
+function scheduleDailyReminder() {
+  if (window._reminderTm) clearTimeout(window._reminderTm);
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(21, 0, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  window._reminderTm = setTimeout(() => {
+    if (state.settings.notif && Notification.permission === 'granted') {
+      new Notification('💰 記帳本提醒', { body: '今天還沒記帳嗎？打開來記一下吧！' });
+    }
+    scheduleDailyReminder();
+  }, next - now);
+}
+
+/* ---------- Category settings ---------- */
+function openCategorySettings() {
+  const renderCats = (type) => state.categories[type].map(c => `
+    <div class="cat-row">
+      <div class="ic-bubble" style="background:${c.color}22;color:${c.color}">${c.icon}</div>
+      <div class="name">${escapeHtml(c.name)}</div>
+      <button class="x" onclick="deleteCategory('${type}','${c.id}')">✕</button>
+    </div>
+  `).join('');
+  openGenericModal({
+    title: '分類管理',
+    body: `
+      <h4 style="font-size:0.9rem;margin-bottom:0.5rem;color:var(--expense);">支出分類</h4>
+      <div id="catListExpense">${renderCats('expense')}</div>
+      <button class="btn btn-secondary btn-block" onclick="addCategory('expense')" style="margin-bottom:1rem;">＋ 新增支出分類</button>
+
+      <h4 style="font-size:0.9rem;margin-bottom:0.5rem;color:var(--income);">收入分類</h4>
+      <div id="catListIncome">${renderCats('income')}</div>
+      <button class="btn btn-secondary btn-block" onclick="addCategory('income')">＋ 新增收入分類</button>
+    `,
+    onSave: () => true,
+    saveLabel: '完成',
+  });
+}
+function addCategory(type) {
+  const name = prompt(`新增${type === 'expense' ? '支出' : '收入'}分類名稱：`);
+  if (!name) return;
+  const icon = prompt('Emoji 圖示：', '📝') || '📝';
+  const colors = ['#ff6b9d','#4ecdc4','#ffd93d','#a29bfe','#ff8e53','#95e1d3','#6c5ce7','#fd79a8','#0abde3','#26de81'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  state.categories[type].push({ id: uid(), name, icon, color });
+  saveState();
+  openCategorySettings();
+}
+function deleteCategory(type, id) {
+  if (state.categories[type].length <= 1) return toast('至少需要一個分類', 'error');
+  if (state.transactions.some(tx => tx.categoryId === id)) {
+    if (!confirm('此分類已有交易紀錄，刪除後相關交易將失去分類。確定刪除？')) return;
+  }
+  state.categories[type] = state.categories[type].filter(c => c.id !== id);
+  saveState();
+  openCategorySettings();
+}
+
+/* ---------- Budget settings ---------- */
+function openBudgetSettings() {
+  const rows = state.categories.expense.map(c => `
+    <div class="field" style="display:flex;align-items:center;gap:0.75rem;">
+      <div style="width:36px;height:36px;border-radius:50%;background:${c.color}22;color:${c.color};display:flex;align-items:center;justify-content:center;flex-shrink:0;">${c.icon}</div>
+      <div style="flex:1;">
+        <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.2rem;">${escapeHtml(c.name)}</div>
+        <input type="number" class="input" data-bcat="${c.id}" value="${state.budgets[c.id] || ''}" placeholder="不設定" style="padding:0.5rem 0.7rem;">
+      </div>
+    </div>
+  `).join('');
+  openGenericModal({
+    title: '本月預算（每分類）',
+    body: rows || '<div class="empty"><div class="t">先新增分類</div></div>',
+    onSave: () => {
+      document.querySelectorAll('[data-bcat]').forEach(inp => {
+        const v = parseFloat(inp.value);
+        if (v > 0) state.budgets[inp.dataset.bcat] = v;
+        else delete state.budgets[inp.dataset.bcat];
+      });
+      saveState();
+      renderDashboard();
+      toast('預算已儲存', 'success');
+      return true;
+    },
+  });
+}
+
+/* ---------- Recurring transactions settings ---------- */
+function openRecurringSettings() {
+  if (state.recurring.length === 0) {
+    openGenericModal({
+      title: '定期交易',
+      body: '<div class="empty"><div class="ico">🔁</div><div class="t">尚無定期交易<br><br>在新增記帳時設定「定期重複」即可建立</div></div>',
+      onSave: () => true, saveLabel: '關閉',
+    });
+    return;
+  }
+  const rows = state.recurring.map(r => {
+    const tpl = r.template;
+    const c = tpl.type !== 'transfer' ? findCat(tpl.categoryId) : null;
+    return `<div class="cat-row">
+      <div class="ic-bubble" style="background:${c?.color || '#6c5ce7'}22;color:${c?.color || '#6c5ce7'}">${c?.icon || '🔄'}</div>
+      <div class="name">${escapeHtml(tpl.note || c?.name || '轉帳')}<br><span style="font-size:0.7rem;color:var(--text-muted);">${fmt(tpl.amount, tpl.currency)} · ${r.frequency === 'daily' ? '每日' : r.frequency === 'weekly' ? '每週' : r.frequency === 'monthly' ? '每月' : '每年'}</span></div>
+      <button class="x" onclick="deleteRecurring('${r.id}')">✕</button>
+    </div>`;
+  }).join('');
+  openGenericModal({
+    title: '定期交易',
+    body: rows,
+    onSave: () => true, saveLabel: '關閉',
+  });
+}
+function deleteRecurring(id) {
+  if (!confirm('停止此定期交易？')) return;
+  state.recurring = state.recurring.filter(r => r.id !== id);
+  saveState();
+  openRecurringSettings();
+}
+// Run recurring on load
+function runRecurring() {
+  const today = todayISO();
+  let added = 0;
+  state.recurring.forEach(r => {
+    let last = new Date(r.lastRun);
+    while (true) {
+      const next = new Date(last);
+      if (r.frequency === 'daily') next.setDate(next.getDate() + 1);
+      else if (r.frequency === 'weekly') next.setDate(next.getDate() + 7);
+      else if (r.frequency === 'monthly') next.setMonth(next.getMonth() + 1);
+      else if (r.frequency === 'yearly') next.setFullYear(next.getFullYear() + 1);
+      const nextStr = next.toISOString().slice(0, 10);
+      if (nextStr > today) break;
+      state.transactions.push({
+        ...r.template,
+        id: uid(),
+        date: nextStr,
+        createdAt: Date.now(),
+        recurring: 'none',
+      });
+      r.lastRun = nextStr;
+      last = next;
+      added++;
+      if (added > 365) break; // safety
+    }
+  });
+  if (added > 0) {
+    saveState();
+    toast(`已自動補上 ${added} 筆定期交易`, 'success');
+  }
+}
+
+/* ---------- Currency settings ---------- */
+function openCurrencySettings() {
+  const rateRows = CURRENCIES.filter(c => c.code !== state.settings.baseCurrency).map(c => `
+    <div class="field-row">
+      <div class="field" style="margin-bottom:0;display:flex;align-items:center;font-size:0.9rem;font-weight:600;">1 ${c.code} =</div>
+      <div class="field" style="margin-bottom:0;"><input type="number" class="input" data-rate="${c.code}" value="${state.settings.rates[c.code] || ''}" step="0.0001" placeholder="匯率"></div>
+    </div>
+  `).join('');
+  openGenericModal({
+    title: '幣別設定',
+    body: `
+      <div class="field">
+        <label>本幣（預設顯示）</label>
+        <select id="g_base" class="select">${CURRENCIES.map(c => `<option value="${c.code}" ${state.settings.baseCurrency === c.code ? 'selected' : ''}>${c.code} ${c.name}</option>`).join('')}</select>
+      </div>
+      <h4 style="font-size:0.85rem;margin:1rem 0 0.5rem;color:var(--text-dim);">匯率（兌本幣）</h4>
+      ${rateRows}
+      <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">匯率僅作換算顯示，請定期更新。</p>
+    `,
+    onSave: () => {
+      state.settings.baseCurrency = $('g_base').value;
+      document.querySelectorAll('[data-rate]').forEach(inp => {
+        const v = parseFloat(inp.value);
+        if (v > 0) state.settings.rates[inp.dataset.rate] = v;
+      });
+      state.settings.rates[state.settings.baseCurrency] = 1;
+      saveState();
+      renderDashboard();
+      return true;
+    },
+  });
+}
+
+/* ---------- Cloud sync settings (Firebase) ---------- */
+function openCloudSettings() {
+  const cur = state.settings.cloud;
+  openGenericModal({
+    title: '☁️ 雲端同步',
+    body: `
+      <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.75rem;">使用 Firebase 將資料同步到雲端，並可在多裝置存取或共享帳本。</p>
+      <details ${cur.config ? '' : 'open'}>
+        <summary>Firebase 設定步驟</summary>
+        <ol style="font-size:0.8rem;color:var(--text-dim);padding-left:1.2rem;line-height:1.7;margin:0.5rem 0;">
+          <li>到 <a href="https://console.firebase.google.com" target="_blank" style="color:var(--primary);">Firebase Console</a> 建立專案</li>
+          <li>啟用 Authentication → Anonymous 登入</li>
+          <li>建立 Firestore 資料庫（測試模式）</li>
+          <li>專案設定 → 加入網頁應用，複製 <code>firebaseConfig</code></li>
+          <li>貼到下方並儲存</li>
+        </ol>
+      </details>
+      <div class="field">
+        <label>Firebase Config (JSON)</label>
+        <textarea id="g_fbConfig" class="textarea" rows="6" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", ...}'>${cur.config ? JSON.stringify(cur.config, null, 2) : ''}</textarea>
+      </div>
+      <div class="field">
+        <label class="switch" style="display:inline-flex;align-items:center;gap:0.5rem;width:auto;">
+          <input type="checkbox" id="g_cloudEnable" ${cur.enabled ? 'checked' : ''}>
+          <span class="slider"></span>
+          <span style="margin-left:0.5rem;">啟用雲端同步</span>
+        </label>
+      </div>
+      ${cur.uid ? `<p style="font-size:0.75rem;color:var(--text-muted);">使用者 ID：<code>${cur.uid}</code><br>分享此 ID 給家人/伴侶以共享帳本</p>` : ''}
+    `,
+    onSave: async () => {
+      const cfgRaw = $('g_fbConfig').value.trim();
+      const enable = $('g_cloudEnable').checked;
+      if (enable && !cfgRaw) { toast('請填入 Firebase Config', 'error'); return false; }
+      if (cfgRaw) {
+        try {
+          state.settings.cloud.config = JSON.parse(cfgRaw);
+        } catch { toast('Config JSON 格式錯誤', 'error'); return false; }
+      }
+      state.settings.cloud.enabled = enable;
+      saveState();
+      if (enable) {
+        toast('連線中...');
+        const ok = await initFirebase();
+        if (ok) {
+          toast('已啟用雲端同步', 'success');
+          await cloudSync();
+        }
+      } else {
+        toast('已關閉雲端同步');
+      }
+      renderSettings();
+      return true;
+    },
+  });
+}
+
+/* ---------- Firebase loader & sync ---------- */
+async function loadScript(src) {
+  return new Promise((res, rej) => {
+    if (document.querySelector(`script[src="${src}"]`)) return res();
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+let firebaseApp, firebaseAuth, firebaseDB;
+async function initFirebase() {
+  try {
+    await loadScript('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+    await loadScript('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js');
+    await loadScript('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js');
+    if (!firebase.apps.length) firebaseApp = firebase.initializeApp(state.settings.cloud.config);
+    firebaseAuth = firebase.auth();
+    firebaseDB = firebase.firestore();
+    const cred = await firebaseAuth.signInAnonymously();
+    state.settings.cloud.uid = cred.user.uid;
+    saveState();
+    return true;
+  } catch (e) {
+    console.error(e);
+    toast('Firebase 連線失敗：' + e.message, 'error');
+    state.settings.cloud.enabled = false;
+    saveState();
+    return false;
+  }
+}
+async function cloudSync() {
+  if (!firebaseDB || !state.settings.cloud.uid) return;
+  const docId = state.settings.cloud.sharedBook || state.settings.cloud.uid;
+  try {
+    await firebaseDB.collection('books').doc(docId).set({
+      transactions: state.transactions,
+      accounts: state.accounts,
+      categories: state.categories,
+      budgets: state.budgets,
+      recurring: state.recurring,
+      updatedAt: Date.now(),
+    });
+  } catch (e) { console.error(e); }
+}
+window.cloudSyncDebounced = (() => {
+  let tm; return () => { clearTimeout(tm); tm = setTimeout(cloudSync, 1500); };
+})();
+async function cloudFetch() {
+  if (!firebaseDB) return;
+  const docId = state.settings.cloud.sharedBook || state.settings.cloud.uid;
+  try {
+    const snap = await firebaseDB.collection('books').doc(docId).get();
+    if (snap.exists) {
+      const d = snap.data();
+      state.transactions = d.transactions || [];
+      state.accounts = d.accounts || state.accounts;
+      state.categories = d.categories || state.categories;
+      state.budgets = d.budgets || {};
+      state.recurring = d.recurring || [];
+      saveState();
+      toast('已從雲端拉取', 'success');
+      switchTab(getActiveTab());
+    }
+  } catch (e) { console.error(e); }
+}
+
+/* ---------- Share book ---------- */
+function openShareSettings() {
+  if (!state.settings.cloud.enabled || !state.settings.cloud.uid) {
+    openGenericModal({
+      title: '👥 共享帳本',
+      body: '<div class="empty"><div class="ico">☁️</div><div class="t">請先啟用雲端同步</div></div>',
+      onSave: () => true, saveLabel: '關閉',
+    });
+    return;
+  }
+  openGenericModal({
+    title: '👥 共享帳本',
+    body: `
+      <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.75rem;">與家人或伴侶共享同一本帳本。</p>
+      <div class="field">
+        <label>你的 ID（分享給對方）</label>
+        <input class="input" value="${state.settings.cloud.uid}" readonly onclick="this.select();navigator.clipboard?.writeText(this.value);toast('已複製','success')">
+      </div>
+      <div class="field">
+        <label>連結到對方的帳本 ID</label>
+        <input id="g_shareId" class="input" value="${state.settings.cloud.sharedBook || ''}" placeholder="貼上對方的 ID">
+      </div>
+      <p style="font-size:0.75rem;color:var(--text-muted);">連結後將拉取對方的帳本，本機資料會被覆蓋。</p>
+    `,
+    onSave: async () => {
+      const sid = $('g_shareId').value.trim();
+      state.settings.cloud.sharedBook = sid || null;
+      saveState();
+      if (sid) { await cloudFetch(); }
+      toast(sid ? '已連結共享帳本' : '已取消共享', 'success');
+      return true;
+    },
+  });
+}
+
+/* ---------- PIN settings ---------- */
+function openPinSettings() {
+  if (state.settings.pin) {
+    if (confirm('已設定 PIN 碼。要移除嗎？')) {
+      state.settings.pin = null;
+      saveState();
+      renderSettings();
+      toast('已移除 PIN', 'success');
+    }
+  } else {
+    pinMode = 'setup-1';
+    pinInput = '';
+    showLock();
+    $('lockTitle').textContent = '設定 PIN 碼';
+    $('lockSub').textContent = '輸入 4 位數字';
+    updatePinDots();
+  }
+}
+
+/* ---------- Lock screen ---------- */
+function showLock() { $('lockScreen').style.display = 'flex'; $('app').style.display = 'none'; }
+function hideLock() { $('lockScreen').style.display = 'none'; $('app').style.display = 'block'; }
+
+function initPinPad() {
+  const keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
+  $('pinPad').innerHTML = keys.map(k => k === '' ? '<div></div>' : `<button class="pin-key" data-k="${k}">${k}</button>`).join('');
+  document.querySelectorAll('.pin-key').forEach(b => {
+    b.onclick = () => handlePinKey(b.dataset.k);
+  });
+}
+function updatePinDots() {
+  $('pinDots').innerHTML = [0,1,2,3].map(i => `<div class="pin-dot ${i < pinInput.length ? 'filled' : ''}"></div>`).join('');
+}
+function handlePinKey(k) {
+  if (k === '⌫') { pinInput = pinInput.slice(0, -1); updatePinDots(); return; }
+  if (pinInput.length >= 4) return;
+  pinInput += k;
+  updatePinDots();
+  if (pinInput.length === 4) setTimeout(checkPin, 150);
+}
+let firstPin = '';
+function checkPin() {
+  if (pinMode === 'unlock') {
+    if (pinInput === state.settings.pin) { pinInput = ''; updatePinDots(); hideLock(); init(); }
+    else { toast('PIN 錯誤', 'error'); pinInput = ''; updatePinDots(); }
+  } else if (pinMode === 'setup-1') {
+    firstPin = pinInput;
+    pinInput = '';
+    pinMode = 'setup-2';
+    $('lockTitle').textContent = '再次確認';
+    $('lockSub').textContent = '請再輸入一次';
+    updatePinDots();
+  } else if (pinMode === 'setup-2') {
+    if (pinInput === firstPin) {
+      state.settings.pin = pinInput;
+      saveState();
+      toast('PIN 已設定', 'success');
+      pinInput = ''; firstPin = '';
+      hideLock();
+      renderSettings();
+    } else {
+      toast('兩次輸入不符', 'error');
+      pinInput = ''; firstPin = ''; pinMode = 'setup-1';
+      $('lockTitle').textContent = '設定 PIN 碼';
+      $('lockSub').textContent = '輸入 4 位數字';
+      updatePinDots();
+    }
+  }
+}
+
+/* ---------- Export / Import ---------- */
+function openExportSettings() {
+  openGenericModal({
+    title: '📤 匯出資料',
+    body: `
+      <button class="btn btn-primary btn-block" id="g_expJson" style="margin-bottom:0.5rem;">匯出 JSON（完整備份）</button>
+      <button class="btn btn-secondary btn-block" id="g_expCsv">匯出 CSV（交易紀錄）</button>
+    `,
+    onSave: () => true,
+    saveLabel: '關閉',
+  });
+  setTimeout(() => {
+    $('g_expJson').onclick = () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, `expense-backup-${todayISO()}.json`);
+      toast('已匯出', 'success');
+    };
+    $('g_expCsv').onclick = () => {
+      const rows = [['日期','類型','金額','幣別','分類','帳戶','備註','地點']];
+      state.transactions.forEach(tx => {
+        const cat = tx.type !== 'transfer' ? findCat(tx.categoryId)?.name : '轉帳';
+        const acc = findAcc(tx.accountId)?.name || '';
+        const toAcc = tx.toAccountId ? '→' + (findAcc(tx.toAccountId)?.name || '') : '';
+        rows.push([tx.date, tx.type, tx.amount, tx.currency, cat || '', acc + toAcc, tx.note || '', tx.location || '']);
+      });
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv' });
+      downloadBlob(blob, `expense-${todayISO()}.csv`);
+      toast('已匯出 CSV', 'success');
+    };
+  }, 0);
+}
+function downloadBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+$('importFile').onchange = (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      if (f.name.endsWith('.json')) {
+        if (!confirm('匯入會覆蓋目前所有資料，繼續？')) return;
+        const data = JSON.parse(r.result);
+        if (!data.transactions) throw new Error('格式錯誤');
+        state = data;
+        saveState();
+        toast('已匯入', 'success');
+        init();
+      } else if (f.name.endsWith('.csv')) {
+        toast('CSV 匯入暫不支援（請用 JSON）', 'error');
+      }
+    } catch (err) { toast('匯入失敗：' + err.message, 'error'); }
+  };
+  r.readAsText(f);
+};
+
+/* ---------- OCR (Tesseract.js) ---------- */
+async function openOCRSettings() {
+  openGenericModal({
+    title: '📷 收據 OCR 掃描',
+    body: `
+      <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.75rem;">上傳收據照片，自動辨識金額與商家。</p>
+      <div class="field">
+        <input type="file" id="g_ocrFile" class="input" accept="image/*" capture="environment" style="padding:0.5rem;">
+      </div>
+      <img id="g_ocrPreview" style="max-width:100%;border-radius:var(--radius-sm);display:none;margin-bottom:0.75rem;">
+      <div id="g_ocrProgress" style="display:none;">
+        <div class="bud-bar"><div id="g_ocrBar" class="bud-bar-fill" style="width:0%;background:linear-gradient(90deg,var(--primary),var(--secondary));"></div></div>
+        <p id="g_ocrStatus" style="font-size:0.8rem;color:var(--text-dim);margin-top:0.4rem;">辨識中...</p>
+      </div>
+      <div id="g_ocrResult" style="display:none;">
+        <div class="field"><label>辨識結果</label><textarea id="g_ocrText" class="textarea" rows="5" readonly></textarea></div>
+        <div class="field"><label>提取金額</label><input id="g_ocrAmount" class="input" type="number" step="0.01"></div>
+        <button class="btn btn-primary btn-block" id="g_ocrUse">使用此金額新增記帳</button>
+      </div>
+    `,
+    onSave: () => true,
+    saveLabel: '關閉',
+  });
+  setTimeout(() => {
+    $('g_ocrFile').onchange = async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      const url = URL.createObjectURL(f);
+      $('g_ocrPreview').src = url;
+      $('g_ocrPreview').style.display = 'block';
+      $('g_ocrProgress').style.display = 'block';
+      $('g_ocrStatus').textContent = '載入 OCR 引擎...';
+      try {
+        await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+        $('g_ocrStatus').textContent = '辨識中...';
+        const { data: { text } } = await Tesseract.recognize(f, 'eng+chi_tra', {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              $('g_ocrBar').style.width = (m.progress * 100) + '%';
+              $('g_ocrStatus').textContent = `辨識中... ${Math.round(m.progress * 100)}%`;
+            }
+          },
+        });
+        $('g_ocrProgress').style.display = 'none';
+        $('g_ocrResult').style.display = 'block';
+        $('g_ocrText').value = text;
+        // Try to extract largest number
+        const nums = text.match(/\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+\.\d{1,2}|\d{2,}/g) || [];
+        const cleaned = nums.map(n => parseFloat(n.replace(/,/g, ''))).filter(n => n > 0 && n < 1000000);
+        const max = Math.max(...cleaned, 0);
+        $('g_ocrAmount').value = max || '';
+        $('g_ocrUse').onclick = () => {
+          closeModal('modalGeneric');
+          openAddTx();
+          setTimeout(() => {
+            $('txAmount').value = $('g_ocrAmount').value;
+            $('txNote').value = '收據掃描';
+            // attach receipt
+            const reader = new FileReader();
+            reader.onload = () => {
+              const img = new Image();
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const max = 800;
+                let { width, height } = img;
+                if (width > max || height > max) { const r = Math.min(max/width, max/height); width *= r; height *= r; }
+                canvas.width = width; canvas.height = height;
+                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                $('receiptPreview').src = canvas.toDataURL('image/jpeg', 0.7);
+                $('receiptPreview').style.display = 'block';
+              };
+              img.src = reader.result;
+            };
+            reader.readAsDataURL(f);
+          }, 250);
+        };
+      } catch (err) {
+        $('g_ocrStatus').textContent = '辨識失敗：' + err.message;
+      }
+    };
+  }, 0);
+}
+
+/* ---------- Init ---------- */
+function init() {
+  renderCurrencies();
+  renderAccounts(); // also populates selects
+  runRecurring();
+  renderDashboard();
+  renderSettings();
+  if (state.settings.notif && 'Notification' in window && Notification.permission === 'granted') {
+    scheduleDailyReminder();
+  }
+  if (state.settings.cloud.enabled && state.settings.cloud.config) {
+    initFirebase().then(ok => { if (ok) cloudFetch(); });
+  }
+}
+
+initPinPad();
+// PIN gate
+if (state.settings.pin) {
+  pinMode = 'unlock';
+  showLock();
+} else {
+  init();
+}
+
+// Search button → focus records search
+$('searchBtn').onclick = () => { switchTab('records'); setTimeout(() => $('filterSearch').focus(), 200); };
+// Notif button → trigger test notification
+$('notifBtn').onclick = () => {
+  if (!('Notification' in window)) return toast('瀏覽器不支援通知', 'error');
+  if (Notification.permission === 'granted') {
+    new Notification('💰 記帳本', { body: '通知功能正常運作！' });
+  } else {
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') new Notification('💰 記帳本', { body: '已開啟通知' });
+    });
+  }
+};
+
+// Dashboard "more" buttons
+document.querySelectorAll('.card-title .more').forEach(b => {
+  b.onclick = () => switchTab(b.dataset.tab);
+});
+
+</script>
+</body>
+</html>
