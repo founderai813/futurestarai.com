@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR 智慧面試助手 · FuturestarAI</title>
+<meta name="description" content="履歷解析、面試錄製、表情與語氣即時分析、行為與技能加權評分、候選人比較 — 一站式 HR 面試輔助工具。">
+<meta name="theme-color" content="#0a0e12">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root{
+  --bg:#0a0e12; --panel:#12171c; --panel2:#171d24; --panel-hover:#1c232b;
+  --border:#232b33; --border-hover:#33404b;
+  --text:#e7ecf0; --text-dim:#9aa7b0; --text-muted:#68757e;
+  --accent-1:#22d3a5; --accent-2:#4f7cff; --warn:#f5a524; --bad:#f5545b; --good:#22d3a5;
+  --radius:12px;
+}
+html,body{height:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans TC',sans-serif;
+  background:var(--bg); color:var(--text); line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;}
+button, input, select, textarea{ font-family:inherit; }
+.wrap{ max-width:1180px; margin:0 auto; padding:0 1.25rem 4rem; }
+header.top{
+  padding:1.5rem 0 1rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;
+  border-bottom:1px solid var(--border); margin-bottom:1.25rem;
+}
+header.top h1{ font-size:1.35rem; font-weight:800; display:flex; align-items:center; gap:.5rem; }
+header.top h1 .badge{
+  font-size:.7rem; font-weight:600; background:linear-gradient(135deg,var(--accent-1),var(--accent-2));
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+header.top .home{ font-size:.85rem; color:var(--text-muted); }
+header.top .home:hover{ color:var(--text-dim); }
+
+nav.tabs{
+  display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:1.5rem; position:sticky; top:0; z-index:20;
+  background:var(--bg); padding:.6rem 0;
+}
+nav.tabs button{
+  padding:.5rem .9rem; border-radius:999px; border:1px solid var(--border); background:var(--panel);
+  color:var(--text-dim); font-size:.85rem; cursor:pointer; transition:.15s;
+}
+nav.tabs button:hover{ background:var(--panel-hover); color:var(--text); border-color:var(--border-hover); }
+nav.tabs button.active{ background:linear-gradient(135deg,var(--accent-1),var(--accent-2)); color:#04120e; font-weight:700; border-color:transparent; }
+
+section.tab{ display:none; }
+section.tab.active{ display:block; animation:fade .25s ease; }
+@keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+
+.card{
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+  padding:1.25rem; margin-bottom:1rem;
+}
+.card h2{ font-size:1.05rem; margin-bottom:.9rem; display:flex; align-items:center; gap:.5rem; }
+.card h3{ font-size:.95rem; margin:.9rem 0 .5rem; color:var(--text-dim); }
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+.grid4{ display:grid; grid-template-columns:repeat(4,1fr); gap:.75rem; }
+@media (max-width:800px){ .grid2,.grid3,.grid4{ grid-template-columns:1fr 1fr; } }
+@media (max-width:520px){ .grid2,.grid3,.grid4{ grid-template-columns:1fr; } }
+
+label{ display:block; font-size:.8rem; color:var(--text-dim); margin-bottom:.3rem; }
+.field{ margin-bottom:.85rem; }
+input[type=text], input[type=number], input[type=email], input[type=url], select, textarea{
+  width:100%; padding:.55rem .7rem; background:var(--panel2); border:1px solid var(--border);
+  border-radius:8px; color:var(--text); font-size:.9rem;
+}
+input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--accent-2); }
+textarea{ resize:vertical; min-height:90px; }
+.hint{ font-size:.75rem; color:var(--text-muted); margin-top:.3rem; }
+
+.btn{
+  display:inline-flex; align-items:center; gap:.4rem; padding:.55rem 1rem; border-radius:8px;
+  border:1px solid var(--border); background:var(--panel2); color:var(--text); font-size:.85rem;
+  cursor:pointer; transition:.15s;
+}
+.btn:hover{ background:var(--panel-hover); border-color:var(--border-hover); }
+.btn.primary{ background:linear-gradient(135deg,var(--accent-1),var(--accent-2)); color:#04120e; font-weight:700; border-color:transparent; }
+.btn.primary:hover{ filter:brightness(1.08); }
+.btn.danger{ border-color:#4a2226; color:#ff8a8f; }
+.btn.danger:hover{ background:#2a1416; }
+.btn:disabled{ opacity:.45; cursor:not-allowed; }
+.btnrow{ display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.5rem; }
+
+.chip{
+  display:inline-flex; align-items:center; gap:.35rem; padding:.3rem .6rem; border-radius:999px;
+  background:var(--panel2); border:1px solid var(--border); font-size:.78rem; margin:.15rem .25rem .15rem 0;
+}
+.chip button{ background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:.85rem; padding:0; }
+.chipwrap{ margin:.4rem 0; }
+
+.scorebar{ height:8px; border-radius:999px; background:var(--panel2); overflow:hidden; }
+.scorebar > i{ display:block; height:100%; background:linear-gradient(90deg,var(--accent-1),var(--accent-2)); }
+.scorecard{ background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:.9rem; }
+.scorecard .num{ font-size:1.8rem; font-weight:800; }
+.scorecard .lbl{ font-size:.78rem; color:var(--text-dim); margin-bottom:.4rem; }
+
+table{ width:100%; border-collapse:collapse; font-size:.85rem; }
+th, td{ padding:.55rem .6rem; border-bottom:1px solid var(--border); text-align:left; }
+th{ color:var(--text-dim); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.03em; cursor:pointer; }
+tr:hover td{ background:var(--panel-hover); }
+.tblwrap{ overflow-x:auto; }
+
+video.preview{ width:100%; max-height:360px; background:#000; border-radius:10px; display:block; }
+canvas.overlay{ display:none; }
+.camwrap{ position:relative; }
+.livebadge{
+  position:absolute; top:.6rem; left:.6rem; background:rgba(245,84,91,.9); color:#fff; font-size:.72rem;
+  padding:.2rem .55rem; border-radius:999px; font-weight:700; display:none; align-items:center; gap:.3rem;
+}
+.livebadge.on{ display:inline-flex; }
+.livebadge .dot{ width:6px; height:6px; border-radius:50%; background:#fff; animation:pulse 1s infinite; }
+@keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+.qbank .catname{ font-weight:700; color:var(--accent-1); font-size:.82rem; margin:.7rem 0 .35rem; }
+.qitem{ display:flex; align-items:flex-start; gap:.5rem; padding:.4rem 0; border-bottom:1px dashed var(--border); font-size:.87rem; }
+.qitem input[type=checkbox]{ margin-top:.2rem; }
+.qitem.done span{ text-decoration:line-through; color:var(--text-muted); }
+
+.transcript{
+  max-height:220px; overflow-y:auto; background:#000; border-radius:8px; padding:.75rem; font-size:.85rem;
+  color:#c8f5e6; line-height:1.7; white-space:pre-wrap;
+}
+.transcript .interim{ color:#6b7f7a; }
+
+.metricrow{ display:flex; justify-content:space-between; font-size:.82rem; padding:.3rem 0; border-bottom:1px dashed var(--border); }
+.metricrow b{ color:var(--text); }
+
+.badge-tag{ font-size:.7rem; padding:.15rem .5rem; border-radius:6px; background:var(--panel2); border:1px solid var(--border); color:var(--text-dim); }
+.status{ font-size:.8rem; color:var(--text-muted); }
+.status.ok{ color:var(--good); }
+.status.err{ color:var(--bad); }
+
+.tag-select{ display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+
+footer.foot{ text-align:center; color:var(--text-muted); font-size:.8rem; padding:2rem 0 0; }
+
+@media print{
+  nav.tabs, header.top, .noprint{ display:none !important; }
+  body{ background:#fff; color:#000; }
+  .card{ border:1px solid #ccc; background:#fff; break-inside:avoid; }
+  section.tab{ display:none !important; }
+  section.tab.print-active{ display:block !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>🧑‍💼 HR 智慧面試助手 <span class="badge">BETA</span></h1>
+    <a class="home" href="./index.html">← 回作品集</a>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="job" class="active">1. 職缺與權重</button>
+    <button data-tab="resume">2. 履歷解析</button>
+    <button data-tab="interview">3. 面試錄製</button>
+    <button data-tab="feedback">4. 即時回饋</button>
+    <button data-tab="report">5. 評分報告</button>
+    <button data-tab="compare">6. 候選人比較</button>
+    <button data-tab="settings">⚙️ 設定</button>
+  </nav>
+
+  <!-- ============ TAB 1: JOB ============ -->
+  <section class="tab active" data-tab="job">
+    <div class="card">
+      <h2>📋 職缺設定</h2>
+      <div class="field">
+        <label>選擇職缺</label>
+        <div class="btnrow" style="margin-top:0;">
+          <select id="jobSelect" style="flex:1"></select>
+          <button class="btn" id="btnNewJob">＋ 新增職缺</button>
+          <button class="btn danger" id="btnDelJob">刪除此職缺</button>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>職缺名稱</label>
+          <input type="text" id="jobTitle" placeholder="例如：資深前端工程師">
+        </div>
+        <div class="field">
+          <label>新增所需技能／關鍵字（Enter 新增）</label>
+          <input type="text" id="jobSkillInput" placeholder="例如：React、溝通協調、專案管理">
+        </div>
+      </div>
+      <div class="chipwrap" id="jobSkillChips"></div>
+    </div>
+
+    <div class="card">
+      <h2>⚖️ 評分權重配置</h2>
+      <p class="hint" style="margin-bottom:.75rem;">拖曳調整四個構面的相對重要性，系統會自動正規化為 100%。</p>
+      <div id="weightSliders"></div>
+      <div class="hint" id="weightSummary" style="margin-top:.6rem;"></div>
+    </div>
+
+    <div class="card">
+      <h2>🎯 職能基準值（用於候選人比較的參考線，選填）</h2>
+      <div class="grid4" id="benchmarkInputs"></div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 2: RESUME ============ -->
+  <section class="tab" data-tab="resume">
+    <div class="card">
+      <h2>📄 上傳履歷（支援 PDF / Word .docx）</h2>
+      <div class="field">
+        <label>候選人姓名</label>
+        <input type="text" id="candName" placeholder="王小明">
+      </div>
+      <input type="file" id="resumeFile" accept=".pdf,.docx" class="btn">
+      <div class="btnrow">
+        <button class="btn primary" id="btnParseResume">解析履歷</button>
+        <span class="status" id="resumeStatus"></span>
+      </div>
+      <div class="field" style="margin-top:1rem;">
+        <label>或直接貼上／編輯履歷純文字（解析失敗時可用此欄位手動輸入）</label>
+        <textarea id="resumeText" style="min-height:140px;" placeholder="履歷內容將自動填入此處，亦可手動貼上..."></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🧬 結構化候選人資料</h2>
+      <div class="grid2">
+        <div class="field"><label>Email</label><input type="text" id="rName_email" readonly></div>
+        <div class="field"><label>電話</label><input type="text" id="rName_phone" readonly></div>
+      </div>
+      <div class="field"><label>年資（估計）</label><input type="text" id="rName_years" readonly></div>
+      <h3>學歷</h3><ul id="rEducation"></ul>
+      <h3>工作經歷</h3><ul id="rExperience"></ul>
+      <h3>偵測到的技能</h3><div id="rSkills" class="chipwrap"></div>
+      <div class="btnrow">
+        <button class="btn" id="btnAiParse">🤖 用 AI 重新結構化（需設定 AI 端點）</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🎯 履歷 × 職缺技能匹配度</h2>
+      <div class="scorecard" style="max-width:220px;">
+        <div class="lbl">技能匹配分數</div>
+        <div class="num" id="skillMatchNum">--</div>
+        <div class="scorebar"><i id="skillMatchBar" style="width:0%"></i></div>
+      </div>
+      <div class="grid2" style="margin-top:.9rem;">
+        <div><h3>✅ 命中技能</h3><div id="matchedSkills" class="chipwrap"></div></div>
+        <div><h3>⚠️ 缺少技能</h3><div id="missingSkills" class="chipwrap"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 3: INTERVIEW ============ -->
+  <section class="tab" data-tab="interview">
+    <div class="card">
+      <h2>🎥 面試錄製</h2>
+      <div class="grid2">
+        <div>
+          <div class="camwrap">
+            <video id="videoEl" class="preview" autoplay playsinline></video>
+            <span class="livebadge" id="liveBadge"><span class="dot"></span>LIVE</span>
+          </div>
+          <canvas id="overlayCanvas" class="overlay"></canvas>
+          <div class="btnrow">
+            <button class="btn" id="btnStartCam">📷 開啟鏡頭</button>
+            <button class="btn" id="btnStartRec" disabled>⏺ 開始錄影</button>
+            <button class="btn danger" id="btnStopRec" disabled>⏹ 停止</button>
+            <button class="btn" id="btnDownloadRec" disabled>⬇ 下載錄影</button>
+          </div>
+          <div class="btnrow">
+            <label class="btn" style="cursor:pointer;">📁 或上傳已錄製影片
+              <input type="file" id="uploadVideo" accept="video/*" style="display:none;">
+            </label>
+            <span class="status" id="camStatus"></span>
+          </div>
+          <p class="hint">錄影僅保留在本次瀏覽器工作階段，請記得下載保存。上傳影片模式無法即時語音辨識，可於下方手動貼上逐字稿以計算語速等指標。</p>
+        </div>
+        <div>
+          <h3>語音辨識語言</h3>
+          <select id="sttLang">
+            <option value="zh-TW">中文（繁體）</option>
+            <option value="zh-CN">中文（简体）</option>
+            <option value="en-US">English (US)</option>
+          </select>
+          <h3>即時逐字稿</h3>
+          <div class="transcript" id="transcriptBox">（尚未開始）</div>
+          <div class="field" style="margin-top:.6rem;">
+            <label>手動貼上逐字稿（上傳影片模式，或語音辨識不支援時使用）</label>
+            <textarea id="manualTranscript" placeholder="可貼上事先準備好的逐字稿內容..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card qbank">
+      <h2>❓ 面試提問庫</h2>
+      <div id="questionBank"></div>
+      <div class="field" style="margin-top:.8rem;">
+        <label>新增自訂問題</label>
+        <input type="text" id="customQInput" placeholder="輸入問題後按 Enter 加入清單">
+      </div>
+    </div>
+
+    <div class="btnrow">
+      <button class="btn primary" id="btnFinishInterview">✅ 結束面試並計算指標</button>
+    </div>
+  </section>
+
+  <!-- ============ TAB 4: FEEDBACK ============ -->
+  <section class="tab" data-tab="feedback">
+    <div class="card">
+      <h2>📊 即時回饋儀表板</h2>
+      <p class="hint" style="margin-bottom:.8rem;">面試錄製中會即時更新；結束面試後顯示最終彙總數據。</p>
+      <div class="grid4" id="liveMetricCards"></div>
+      <div class="grid2" style="margin-top:1rem;">
+        <div>
+          <h3>表情分布</h3>
+          <canvas id="emotionChart" width="360" height="220"></canvas>
+        </div>
+        <div>
+          <h3>語氣 / 音量走勢</h3>
+          <canvas id="toneChart" width="360" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 5: REPORT ============ -->
+  <section class="tab" data-tab="report">
+    <div class="card">
+      <h2>🏆 綜合評分</h2>
+      <div class="grid4" id="reportScoreCards"></div>
+      <h3>面試官主觀評分（0–100）</h3>
+      <input type="number" id="interviewerScore" min="0" max="100" value="70" style="max-width:160px;">
+      <div class="btnrow noprint">
+        <button class="btn primary" id="btnRecalcReport">🔄 重新計算</button>
+      </div>
+      <h3 style="margin-top:1.2rem;">加權總分</h3>
+      <div class="scorecard" style="max-width:260px;">
+        <div class="lbl">Overall Weighted Score</div>
+        <div class="num" id="overallScore">--</div>
+        <div class="scorebar"><i id="overallBar" style="width:0%"></i></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🤖 綜合分析與建議摘要</h2>
+      <div class="btnrow noprint">
+        <button class="btn" id="btnGenSummary">✨ 產生 AI 摘要（若無 AI 端點則使用規則式摘要）</button>
+        <span class="status" id="summaryStatus"></span>
+      </div>
+      <div id="summaryOutput" style="margin-top:.8rem;"></div>
+    </div>
+
+    <div class="card noprint">
+      <h2>💾 儲存與匯出</h2>
+      <div class="btnrow">
+        <button class="btn primary" id="btnSaveCandidate">💾 儲存此候選人報告</button>
+        <button class="btn" id="btnPrintReport">🖨 列印 / 匯出 PDF</button>
+        <button class="btn" id="btnExportJson">⬇ 匯出 JSON</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 6: COMPARE ============ -->
+  <section class="tab" data-tab="compare">
+    <div class="card">
+      <h2>📈 候選人比較</h2>
+      <div class="tag-select">
+        <label style="margin:0;">篩選職缺：</label>
+        <select id="compareJobFilter"></select>
+        <button class="btn danger" id="btnClearCandidates">清空全部候選人資料</button>
+      </div>
+      <div class="tblwrap" style="margin-top:1rem;">
+        <table id="compareTable">
+          <thead><tr>
+            <th data-k="name">姓名</th><th data-k="job">職缺</th><th data-k="skillMatch">技能匹配</th>
+            <th data-k="communication">溝通表現</th><th data-k="behavioral">行為指標</th>
+            <th data-k="interviewer">面試官評分</th><th data-k="overall">加權總分</th><th data-k="date">日期</th><th></th>
+          </tr></thead>
+          <tbody id="compareTbody"></tbody>
+        </table>
+      </div>
+      <h3>雷達圖比較（勾選最多 5 位）</h3>
+      <canvas id="radarChart" width="420" height="360"></canvas>
+    </div>
+  </section>
+
+  <!-- ============ TAB 7: SETTINGS ============ -->
+  <section class="tab" data-tab="settings">
+    <div class="card">
+      <h2>⚙️ AI 端點設定</h2>
+      <p class="hint">選填。若要啟用 AI 履歷結構化與智慧摘要生成，請部署 <code>worker/hr-interview-proxy.js</code>（見 repo 的 worker 目錄）並填入其網址。未設定時，系統會自動改用內建規則式（heuristic）分析，所有核心功能仍可正常使用。</p>
+      <div class="field" style="margin-top:.8rem;">
+        <label>AI 代理端點 URL</label>
+        <input type="url" id="aiEndpoint" placeholder="https://hr-interview-proxy.xxx.workers.dev">
+      </div>
+      <button class="btn primary" id="btnSaveSettings">儲存設定</button>
+      <span class="status" id="settingsStatus"></span>
+    </div>
+    <div class="card">
+      <h2>🗑 資料管理</h2>
+      <p class="hint">所有資料（職缺、候選人報告、設定）僅儲存在本機瀏覽器 localStorage，不會上傳到任何伺服器（AI 分析呼叫除外，且僅傳送文字內容）。</p>
+      <button class="btn danger" id="btnResetAll">清除所有本機資料</button>
+    </div>
+  </section>
+
+  <footer class="foot">© 2026 FuturestarAI · HR 智慧面試助手</footer>
+</div>
+
+<script>
+/* ============================================================
+   HR 智慧面試助手 — single-file vanilla web app
+   Storage: localStorage only. AI calls: optional user-configured
+   Cloudflare Worker proxy (see worker/hr-interview-proxy.js).
+   ============================================================ */
+'use strict';
+
+/* ---------------- Constants ---------------- */
+const LS = {
+  jobs: 'hri_jobs', activeJob: 'hri_active_job', candidates: 'hri_candidates', settings: 'hri_settings'
+};
+const DEFAULT_WEIGHTS = { technical: 25, communication: 25, behavioral: 20, interviewer: 30 };
+const SKILL_DICTIONARY = [
+  'JavaScript','TypeScript','Python','Java','C++','C#','Go','Rust','PHP','Ruby','Swift','Kotlin',
+  'React','Vue','Angular','Node.js','Next.js','Svelte','jQuery','HTML','CSS','Sass','Tailwind',
+  'SQL','MySQL','PostgreSQL','MongoDB','Redis','NoSQL','GraphQL','REST API',
+  'AWS','Azure','GCP','Docker','Kubernetes','CI/CD','Git','Linux','DevOps',
+  'Excel','PowerPoint','Word','Photoshop','Illustrator','Figma','Sketch','UI/UX 設計',
+  'SEO','SEM','數位行銷','社群經營','內容行銷','品牌策略','廣告投放',
+  '專案管理','產品管理','敏捷開發','Scrum','需求分析',
+  '溝通協調','團隊合作','領導能力','跨部門溝通','問題解決','時間管理','抗壓性',
+  '數據分析','機器學習','深度學習','資料視覺化','統計分析','A/B 測試',
+  '客戶服務','業務開發','銷售談判','顧客關係管理 CRM',
+  '財務分析','會計','預算編列','稅務',
+  '人力資源','招募','績效管理','員工關係','薪酬福利',
+  '法務','合約審閱','法規遵循',
+  '英文','日文','多國語言能力','簡報技巧'
+];
+const FILLER_WORDS = ['嗯','啊','那個','就是說','就是','然後然後','欸','其實其實','um','uh','like','you know','so yeah','basically'];
+const QUESTION_BANK = [
+  { cat:'開場破冰', qs:['請簡單自我介紹，並分享一個你最自豪的工作成就。','是什麼吸引你應徵這個職位？'] },
+  { cat:'行為面試（STAR）', qs:[
+    '請分享一次你與團隊意見不合時，如何處理與溝通的經驗。',
+    '描述一個你面對緊迫截止日期的情境，你如何安排優先順序？',
+    '請舉例說明你曾經犯錯後如何補救與學習。',
+    '分享一次你主動承擔額外責任的經驗。'
+  ] },
+  { cat:'專業技能', qs:[
+    '針對這個職位所需的核心技能，請說明你過去如何應用它解決實際問題。',
+    '你如何持續學習與更新你的專業知識？',
+    '請描述你參與過最複雜的專案或系統，你的角色是什麼？'
+  ] },
+  { cat:'情境判斷', qs:[
+    '如果你發現同事的工作成果有明顯錯誤，你會如何處理？',
+    '若主管交辦的任務與你原本的規劃衝突，你會怎麼做？'
+  ] },
+  { cat:'文化契合與收尾', qs:[
+    '你理想中的工作環境與團隊氛圍是什麼樣子？',
+    '你對這個職位或公司還有什麼想了解或想問的？'
+  ] }
+];
+
+/* ---------------- Small utils ---------------- */
+function $(sel, root){ return (root||document).querySelector(sel); }
+function $all(sel, root){ return Array.from((root||document).querySelectorAll(sel)); }
+function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function round(v){ return Math.round(v); }
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function readJson(key, fallback){ try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } }
+function writeJson(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){ console.warn('storage write failed', e); } }
+function toast(msg){
+  const el = document.createElement('div');
+  el.textContent = msg;
+  el.style.cssText = 'position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%);background:#171d24;border:1px solid #33404b;color:#e7ecf0;padding:.6rem 1rem;border-radius:8px;font-size:.85rem;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.4);';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 2600);
+}
+const scriptCache = {};
+function loadScriptOnce(src){
+  if (scriptCache[src]) return scriptCache[src];
+  scriptCache[src] = new Promise((resolve, reject)=>{
+    const s = document.createElement('script');
+    s.src = src; s.onload = ()=>resolve(); s.onerror = ()=>reject(new Error('load failed: '+src));
+    document.head.appendChild(s);
+  });
+  return scriptCache[src];
+}
+
+/* ---------------- State ---------------- */
+let jobs = readJson(LS.jobs, null);
+if (!jobs || !jobs.length){
+  jobs = [{ id: uid(), title:'一般職缺', skills:['溝通協調','團隊合作','問題解決'], weights:{...DEFAULT_WEIGHTS}, benchmark:{technical:70,communication:70,behavioral:70,interviewer:70} }];
+  writeJson(LS.jobs, jobs);
+}
+let activeJobId = localStorage.getItem(LS.activeJob) || jobs[0].id;
+if (!jobs.find(j=>j.id===activeJobId)) activeJobId = jobs[0].id;
+
+let candidates = readJson(LS.candidates, []);
+let settings = readJson(LS.settings, { aiEndpoint:'' });
+
+let resumeParsed = { name:'', email:'', phone:'', years:'', education:[], experience:[], skills:[] };
+let skillMatch = { pct:0, matched:[], missing:[] };
+
+let interview = {
+  transcriptFinal: '', transcriptStartTs: null, wordTimestamps: [],
+  faceSamples: [], pitchSamples: [], volumeSamples: [],
+  fillerCount: 0, pauseTotalSec: 0, lastFinalTs: null,
+  durationSec: 0, mode: null /* 'camera' | 'upload' */,
+  finished: false
+};
+let metrics = null; // computed after "finish interview"
+let currentReport = null;
+
+function activeJob(){ return jobs.find(j=>j.id===activeJobId) || jobs[0]; }
+
+/* ---------------- Tabs ---------------- */
+$all('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    $all('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    $all('section.tab').forEach(s=>s.classList.remove('active'));
+    btn.classList.add('active');
+    $(`section.tab[data-tab="${btn.dataset.tab}"]`).classList.add('active');
+    if (btn.dataset.tab === 'report') renderReportTab();
+    if (btn.dataset.tab === 'compare') renderCompareTab();
+  });
+});
+
+/* ============================================================
+   TAB 1: JOB & WEIGHTS
+   ============================================================ */
+function renderJobSelect(){
+  const sel = $('#jobSelect');
+  sel.innerHTML = jobs.map(j=>`<option value="${j.id}" ${j.id===activeJobId?'selected':''}>${escapeHtml(j.title)}</option>`).join('');
+}
+function renderJobForm(){
+  const job = activeJob();
+  $('#jobTitle').value = job.title;
+  renderSkillChips(job);
+  renderWeightSliders(job);
+  renderBenchmarkInputs(job);
+}
+function renderSkillChips(job){
+  $('#jobSkillChips').innerHTML = job.skills.map((s,i)=>
+    `<span class="chip">${escapeHtml(s)} <button data-i="${i}" class="rmskill">×</button></span>`
+  ).join('') || '<span class="hint">尚未新增技能</span>';
+  $all('.rmskill').forEach(b=>b.addEventListener('click', ()=>{
+    job.skills.splice(+b.dataset.i, 1); persistJobs(); renderSkillChips(job); computeSkillMatch();
+  }));
+}
+$('#jobSkillInput').addEventListener('keydown', e=>{
+  if (e.key === 'Enter'){
+    e.preventDefault();
+    const v = e.target.value.trim();
+    if (v){ const job = activeJob(); if(!job.skills.includes(v)) job.skills.push(v); persistJobs(); renderSkillChips(job); computeSkillMatch(); }
+    e.target.value = '';
+  }
+});
+$('#jobTitle').addEventListener('input', e=>{ activeJob().title = e.target.value; persistJobs(); renderJobSelect(); });
+$('#jobSelect').addEventListener('change', e=>{ activeJobId = e.target.value; localStorage.setItem(LS.activeJob, activeJobId); renderJobForm(); computeSkillMatch(); });
+$('#btnNewJob').addEventListener('click', ()=>{
+  const nj = { id: uid(), title:'新職缺', skills:[], weights:{...DEFAULT_WEIGHTS}, benchmark:{technical:70,communication:70,behavioral:70,interviewer:70} };
+  jobs.push(nj); activeJobId = nj.id; persistJobs(); localStorage.setItem(LS.activeJob, activeJobId);
+  renderJobSelect(); renderJobForm();
+});
+$('#btnDelJob').addEventListener('click', ()=>{
+  if (jobs.length <= 1){ toast('至少需保留一個職缺'); return; }
+  if (!confirm('確定刪除此職缺？（不會刪除已儲存的候選人報告）')) return;
+  jobs = jobs.filter(j=>j.id!==activeJobId);
+  activeJobId = jobs[0].id; persistJobs(); localStorage.setItem(LS.activeJob, activeJobId);
+  renderJobSelect(); renderJobForm();
+});
+function persistJobs(){ writeJson(LS.jobs, jobs); }
+
+const WEIGHT_LABELS = { technical:'專業技能匹配度', communication:'溝通表現', behavioral:'行為指標', interviewer:'面試官主觀評分' };
+function renderWeightSliders(job){
+  const box = $('#weightSliders');
+  box.innerHTML = Object.keys(WEIGHT_LABELS).map(k=>`
+    <div class="field">
+      <label>${WEIGHT_LABELS[k]}：<b id="wv_${k}">${job.weights[k]}</b></label>
+      <input type="range" min="0" max="100" value="${job.weights[k]}" data-k="${k}" class="wslider">
+    </div>`).join('');
+  $all('.wslider', box).forEach(sl=>sl.addEventListener('input', ()=>{
+    job.weights[sl.dataset.k] = +sl.value;
+    $(`#wv_${sl.dataset.k}`).textContent = sl.value;
+    persistJobs(); renderWeightSummary(job);
+  }));
+  renderWeightSummary(job);
+}
+function normalizedWeights(job){
+  const sum = Object.values(job.weights).reduce((a,b)=>a+b,0) || 1;
+  const out = {};
+  for (const k in job.weights) out[k] = job.weights[k] / sum * 100;
+  return out;
+}
+function renderWeightSummary(job){
+  const nw = normalizedWeights(job);
+  $('#weightSummary').textContent = '正規化後權重： ' +
+    Object.keys(WEIGHT_LABELS).map(k=>`${WEIGHT_LABELS[k]} ${nw[k].toFixed(0)}%`).join('　·　');
+}
+function renderBenchmarkInputs(job){
+  const box = $('#benchmarkInputs');
+  box.innerHTML = Object.keys(WEIGHT_LABELS).map(k=>`
+    <div class="field">
+      <label>${WEIGHT_LABELS[k]} 基準</label>
+      <input type="number" min="0" max="100" value="${job.benchmark[k]}" data-k="${k}" class="bmark">
+    </div>`).join('');
+  $all('.bmark', box).forEach(inp=>inp.addEventListener('input', ()=>{
+    job.benchmark[inp.dataset.k] = clamp(+inp.value||0,0,100); persistJobs();
+  }));
+}
+
+/* ============================================================
+   TAB 2: RESUME PARSING
+   ============================================================ */
+async function extractTextFromPDF(file){
+  await loadScriptOnce('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js');
+  const pdfjsLib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  const buf = await file.arrayBuffer();
+  const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+  let text = '';
+  for (let i=1; i<=doc.numPages; i++){
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(it=>it.str).join(' ') + '\n';
+  }
+  return text;
+}
+async function extractTextFromDocx(file){
+  await loadScriptOnce('https://cdn.jsdelivr.net/npm/mammoth@1.11.0/mammoth.browser.min.js');
+  const buf = await file.arrayBuffer();
+  const result = await window.mammoth.extractRawText({ arrayBuffer: buf });
+  return result.value || '';
+}
+
+function parseResumeHeuristic(text, jobSkillsExtra){
+  const out = { name:'', email:'', phone:'', years:'', education:[], experience:[], skills:[] };
+  const emailM = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  if (emailM) out.email = emailM[0];
+  const phoneM = text.match(/(\+?886[-\s]?)?0?9\d{2}[-\s]?\d{3}[-\s]?\d{3}|\(?\d{2,4}\)?[-\s]?\d{3,4}[-\s]?\d{4}/);
+  if (phoneM) out.phone = phoneM[0];
+  const yearsM = text.match(/(\d{1,2})\s*[年年資]+\s*(相關)?\s*(工作)?\s*經(驗|歷)/) || text.match(/(\d{1,2})\+?\s*years?/i);
+  if (yearsM) out.years = yearsM[1] + ' 年（估計）';
+
+  const lines = text.split(/\n|(?<=[。；])/).map(l=>l.trim()).filter(Boolean);
+  const eduKeys = ['大學','碩士','博士','學士','研究所','university','college','bachelor','master','phd','高中','科技大學'];
+  const expKeys = ['公司','經理','工程師','擔任','任職','負責','專員','總監','主管','實習','年 - ','~','－'];
+  lines.forEach(l=>{
+    const low = l.toLowerCase();
+    if (eduKeys.some(k=>low.includes(k.toLowerCase())) && l.length < 120) out.education.push(l);
+    else if (expKeys.some(k=>l.includes(k)) && l.length < 160) out.experience.push(l);
+  });
+  out.education = out.education.slice(0, 8);
+  out.experience = out.experience.slice(0, 12);
+
+  const dict = Array.from(new Set([...SKILL_DICTIONARY, ...(jobSkillsExtra||[])]));
+  const low = text.toLowerCase();
+  out.skills = dict.filter(s => low.includes(s.toLowerCase()));
+  return out;
+}
+
+async function callAiEndpoint(task, payload){
+  const endpoint = settings.aiEndpoint;
+  if (!endpoint) return null;
+  try{
+    const res = await fetch(endpoint, {
+      method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ task, payload })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    return data.result || null;
+  }catch(e){
+    console.warn('AI endpoint call failed', e);
+    return null;
+  }
+}
+
+$('#resumeFile').addEventListener('change', ()=>{ /* selection only, parse on button click */ });
+$('#btnParseResume').addEventListener('click', async ()=>{
+  const file = $('#resumeFile').files[0];
+  const statusEl = $('#resumeStatus');
+  if (!file){ toast('請先選擇 PDF 或 Word 檔案'); return; }
+  statusEl.textContent = '解析中...'; statusEl.className = 'status';
+  try{
+    let text = '';
+    if (/\.pdf$/i.test(file.name)) text = await extractTextFromPDF(file);
+    else if (/\.docx$/i.test(file.name)) text = await extractTextFromDocx(file);
+    else throw new Error('不支援的檔案格式（僅支援 .pdf / .docx）');
+    $('#resumeText').value = text.trim();
+    statusEl.textContent = '解析成功，共擷取 ' + text.length + ' 字元'; statusEl.className = 'status ok';
+    runHeuristicParse();
+  }catch(e){
+    console.error(e);
+    statusEl.textContent = '解析失敗：' + e.message + '（請改用下方文字欄位手動貼上）'; statusEl.className = 'status err';
+  }
+});
+function runHeuristicParse(){
+  const text = $('#resumeText').value;
+  if (!text.trim()) return;
+  resumeParsed = parseResumeHeuristic(text, activeJob().skills);
+  resumeParsed.name = $('#candName').value.trim();
+  renderResumeStructured();
+  computeSkillMatch();
+}
+$('#resumeText').addEventListener('blur', runHeuristicParse);
+
+$('#btnAiParse').addEventListener('click', async ()=>{
+  const text = $('#resumeText').value.trim();
+  if (!text){ toast('請先輸入或解析履歷文字'); return; }
+  if (!settings.aiEndpoint){ toast('尚未設定 AI 端點，將使用規則式解析'); runHeuristicParse(); return; }
+  toast('AI 解析中...');
+  const job = activeJob();
+  const result = await callAiEndpoint('parse_resume', { resumeText: text.slice(0, 12000), jobTitle: job.title, jobSkills: job.skills });
+  if (result){
+    resumeParsed = {
+      name: result.name || $('#candName').value.trim(),
+      email: result.email || '', phone: result.phone || '',
+      years: result.yearsExperience != null ? (result.yearsExperience + ' 年') : '',
+      education: Array.isArray(result.education) ? result.education : [],
+      experience: Array.isArray(result.experience) ? result.experience : [],
+      skills: Array.isArray(result.skills) ? result.skills : []
+    };
+    renderResumeStructured(); computeSkillMatch();
+    toast('AI 解析完成');
+  } else {
+    toast('AI 解析失敗，改用規則式解析');
+    runHeuristicParse();
+  }
+});
+
+function renderResumeStructured(){
+  $('#rName_email').value = resumeParsed.email || '';
+  $('#rName_phone').value = resumeParsed.phone || '';
+  $('#rName_years').value = resumeParsed.years || '';
+  $('#rEducation').innerHTML = resumeParsed.education.map(e=>`<li>${escapeHtml(e)}</li>`).join('') || '<li class="hint">未偵測到</li>';
+  $('#rExperience').innerHTML = resumeParsed.experience.map(e=>`<li>${escapeHtml(e)}</li>`).join('') || '<li class="hint">未偵測到</li>';
+  $('#rSkills').innerHTML = resumeParsed.skills.map(s=>`<span class="chip">${escapeHtml(s)}</span>`).join('') || '<span class="hint">未偵測到</span>';
+}
+function computeSkillMatch(){
+  const job = activeJob();
+  const jdSkills = job.skills;
+  if (!jdSkills.length){
+    skillMatch = { pct:0, matched:[], missing:[] };
+  } else {
+    const resSkillsLow = resumeParsed.skills.map(s=>s.toLowerCase());
+    const resTextLow = ($('#resumeText').value || '').toLowerCase();
+    const matched = jdSkills.filter(s => resSkillsLow.includes(s.toLowerCase()) || resTextLow.includes(s.toLowerCase()));
+    const missing = jdSkills.filter(s => !matched.includes(s));
+    skillMatch = { pct: round(matched.length / jdSkills.length * 100), matched, missing };
+  }
+  $('#skillMatchNum').textContent = skillMatch.pct + '%';
+  $('#skillMatchBar').style.width = skillMatch.pct + '%';
+  $('#matchedSkills').innerHTML = skillMatch.matched.map(s=>`<span class="chip" style="border-color:#1f5c48;color:#7be0c0;">✓ ${escapeHtml(s)}</span>`).join('') || '<span class="hint">無</span>';
+  $('#missingSkills').innerHTML = skillMatch.missing.map(s=>`<span class="chip" style="border-color:#5c2a1f;color:#f0a37b;">✗ ${escapeHtml(s)}</span>`).join('') || '<span class="hint">無</span>';
+}
+
+/* ============================================================
+   TAB 3: INTERVIEW — camera / upload, face + voice + STT
+   ============================================================ */
+let mediaStream = null, mediaRecorder = null, recordedChunks = [], recordedBlobUrl = null;
+let audioCtx = null, analyser = null, audioSourceNode = null, audioSampleTimer = null;
+let faceSampleTimer = null, faceApiReady = false;
+let recognizer = null, recognizing = false;
+let interviewStartTime = null;
+
+function resetInterviewState(){
+  interview = {
+    transcriptFinal:'', transcriptStartTs:null, wordTimestamps:[],
+    faceSamples:[], pitchSamples:[], volumeSamples:[],
+    fillerCount:0, pauseTotalSec:0, lastFinalTs:null,
+    durationSec:0, mode:null, finished:false
+  };
+  metrics = null; currentReport = null;
+  $('#transcriptBox').textContent = '（尚未開始）';
+}
+
+async function ensureFaceApi(){
+  if (faceApiReady) return true;
+  try{
+    await loadScriptOnce('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js');
+    const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js/weights/';
+    await window.faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await window.faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+    faceApiReady = true;
+    return true;
+  }catch(e){
+    console.warn('face-api load failed, expression detection disabled', e);
+    $('#camStatus').textContent = '(表情辨識模型載入失敗，將略過此項分析)';
+    return false;
+  }
+}
+
+$('#btnStartCam').addEventListener('click', async ()=>{
+  try{
+    mediaStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
+    const v = $('#videoEl');
+    v.srcObject = mediaStream; v.muted = true;
+    interview.mode = 'camera';
+    $('#btnStartRec').disabled = false;
+    $('#camStatus').textContent = '鏡頭已開啟';
+    await ensureFaceApi();
+    setupAudioAnalysis(mediaStream);
+  }catch(e){
+    console.error(e);
+    $('#camStatus').textContent = '無法存取鏡頭/麥克風：' + e.message;
+  }
+});
+
+$('#uploadVideo').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if (!file) return;
+  resetInterviewState();
+  const v = $('#videoEl');
+  if (recordedBlobUrl) URL.revokeObjectURL(recordedBlobUrl);
+  recordedBlobUrl = URL.createObjectURL(file);
+  v.srcObject = null; v.src = recordedBlobUrl; v.muted = false; v.controls = true;
+  interview.mode = 'upload';
+  $('#camStatus').textContent = '已載入上傳影片，播放時將進行表情分析（無即時語音辨識，請使用手動逐字稿欄位）';
+  await ensureFaceApi();
+  startFaceSampling(v);
+  v.addEventListener('play', ()=>{ if (!audioCtx) setupAudioAnalysisFromElement(v); }, { once:true });
+});
+
+$('#btnStartRec').addEventListener('click', ()=>{
+  if (!mediaStream) return;
+  recordedChunks = [];
+  try{
+    mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
+  }catch(e){ mediaRecorder = new MediaRecorder(mediaStream); }
+  mediaRecorder.ondataavailable = ev => { if (ev.data.size) recordedChunks.push(ev.data); };
+  mediaRecorder.onstop = ()=>{
+    const blob = new Blob(recordedChunks, { type:'video/webm' });
+    if (recordedBlobUrl) URL.revokeObjectURL(recordedBlobUrl);
+    recordedBlobUrl = URL.createObjectURL(blob);
+    $('#btnDownloadRec').disabled = false;
+  };
+  mediaRecorder.start();
+  interviewStartTime = Date.now();
+  interview.transcriptStartTs = interviewStartTime;
+  $('#btnStartRec').disabled = true; $('#btnStopRec').disabled = false;
+  $('#liveBadge').classList.add('on');
+  startFaceSampling($('#videoEl'));
+  startSpeechRecognition();
+  toast('開始錄影與即時分析');
+});
+
+$('#btnStopRec').addEventListener('click', ()=>{
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  stopFaceSampling(); stopSpeechRecognition(); stopAudioAnalysis();
+  $('#liveBadge').classList.remove('on');
+  $('#btnStartRec').disabled = false; $('#btnStopRec').disabled = true;
+  interview.durationSec = interviewStartTime ? (Date.now() - interviewStartTime)/1000 : interview.durationSec;
+  toast('已停止錄影');
+});
+
+$('#btnDownloadRec').addEventListener('click', ()=>{
+  if (!recordedBlobUrl) return;
+  const a = document.createElement('a');
+  a.href = recordedBlobUrl; a.download = 'interview-' + ($('#candName').value || 'candidate') + '.webm';
+  a.click();
+});
+
+/* ---- face sampling (works for both live camera <video> and uploaded <video>) ---- */
+function startFaceSampling(videoEl){
+  if (faceSampleTimer) clearInterval(faceSampleTimer);
+  faceSampleTimer = setInterval(async ()=>{
+    if (!faceApiReady || videoEl.readyState < 2) return;
+    try{
+      const det = await window.faceapi.detectSingleFace(videoEl, new window.faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+      if (det){
+        interview.faceSamples.push({ t: Date.now(), detected:true, expr: det.expressions });
+      } else {
+        interview.faceSamples.push({ t: Date.now(), detected:false, expr:null });
+      }
+    }catch(e){ /* ignore single-frame failures */ }
+    updateLiveDashboard();
+  }, 1000);
+}
+function stopFaceSampling(){ if (faceSampleTimer){ clearInterval(faceSampleTimer); faceSampleTimer = null; } }
+
+/* ---- audio tone analysis (pitch + volume via autocorrelation) ---- */
+function setupAudioAnalysis(stream){
+  try{
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioSourceNode = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser(); analyser.fftSize = 2048;
+    audioSourceNode.connect(analyser);
+    runAudioSampleLoop();
+  }catch(e){ console.warn('audio analysis unavailable', e); }
+}
+function setupAudioAnalysisFromElement(videoEl){
+  try{
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioSourceNode = audioCtx.createMediaElementSource(videoEl);
+    analyser = audioCtx.createAnalyser(); analyser.fftSize = 2048;
+    audioSourceNode.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    runAudioSampleLoop();
+  }catch(e){ console.warn('audio analysis unavailable', e); }
+}
+function autoCorrelatePitch(buf, sampleRate){
+  const SIZE = buf.length;
+  let rms = 0;
+  for (let i=0;i<SIZE;i++) rms += buf[i]*buf[i];
+  rms = Math.sqrt(rms/SIZE);
+  if (rms < 0.01) return { pitch:-1, rms };
+  let r1=0, r2=SIZE-1; const thres=0.2;
+  for (let i=0;i<SIZE/2;i++){ if (Math.abs(buf[i])<thres){ r1=i; break; } }
+  for (let i=1;i<SIZE/2;i++){ if (Math.abs(buf[SIZE-i])<thres){ r2=SIZE-i; break; } }
+  const trimmed = buf.slice(r1, r2);
+  const n = trimmed.length;
+  if (n < 8) return { pitch:-1, rms };
+  const c = new Float32Array(n);
+  for (let i=0;i<n;i++){ let sum=0; for (let j=0;j<n-i;j++) sum += trimmed[j]*trimmed[j+i]; c[i]=sum; }
+  let d=0; while (d < n-1 && c[d] > c[d+1]) d++;
+  let maxval=-1, maxpos=-1;
+  for (let i=d;i<n;i++){ if (c[i] > maxval){ maxval=c[i]; maxpos=i; } }
+  let T0 = maxpos;
+  if (T0 <= 0) return { pitch:-1, rms };
+  const x1 = c[T0-1] ?? c[T0], x2 = c[T0], x3 = c[T0+1] ?? c[T0];
+  const a = (x1 + x3 - 2*x2) / 2, b = (x3 - x1) / 2;
+  if (a) T0 = T0 - b / (2*a);
+  const pitch = sampleRate / T0;
+  return { pitch: (pitch > 60 && pitch < 500) ? pitch : -1, rms };
+}
+function runAudioSampleLoop(){
+  if (audioSampleTimer) clearInterval(audioSampleTimer);
+  const buf = new Float32Array(analyser.fftSize);
+  audioSampleTimer = setInterval(()=>{
+    if (!analyser) return;
+    analyser.getFloatTimeDomainData(buf);
+    const { pitch, rms } = autoCorrelatePitch(buf, audioCtx.sampleRate);
+    interview.volumeSamples.push({ t: Date.now(), rms });
+    if (pitch > 0) interview.pitchSamples.push({ t: Date.now(), pitch });
+  }, 250);
+}
+function stopAudioAnalysis(){
+  if (audioSampleTimer){ clearInterval(audioSampleTimer); audioSampleTimer = null; }
+}
+
+/* ---- speech-to-text ---- */
+function startSpeechRecognition(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const box = $('#transcriptBox');
+  if (!SR){
+    box.textContent = '（此瀏覽器不支援即時語音辨識，請使用手動逐字稿欄位）';
+    return;
+  }
+  recognizer = new SR();
+  recognizer.lang = $('#sttLang').value;
+  recognizer.continuous = true;
+  recognizer.interimResults = true;
+  box.textContent = '';
+  recognizer.onresult = (ev)=>{
+    let interim = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++){
+      const res = ev.results[i];
+      if (res.isFinal){
+        const text = res[0].transcript.trim();
+        const now = Date.now();
+        if (interview.lastFinalTs && (now - interview.lastFinalTs) > 1500){
+          interview.pauseTotalSec += (now - interview.lastFinalTs - 1500) / 1000;
+        }
+        interview.lastFinalTs = now;
+        interview.transcriptFinal += text + ' ';
+        interview.fillerCount += countFillers(text);
+        interview.wordTimestamps.push({ t: now, words: countWords(text) });
+      } else {
+        interim += res[0].transcript;
+      }
+    }
+    box.innerHTML = escapeHtml(interview.transcriptFinal) + '<span class="interim">' + escapeHtml(interim) + '</span>';
+    box.scrollTop = box.scrollHeight;
+  };
+  recognizer.onerror = (e)=>{ console.warn('STT error', e.error); };
+  recognizer.onend = ()=>{ if (recognizing) { try{ recognizer.start(); }catch(e){} } };
+  try{ recognizer.start(); recognizing = true; }catch(e){ console.warn(e); }
+}
+function stopSpeechRecognition(){
+  recognizing = false;
+  if (recognizer){ try{ recognizer.stop(); }catch(e){} recognizer = null; }
+}
+function countFillers(text){
+  const low = text.toLowerCase();
+  return FILLER_WORDS.reduce((n,f)=> n + (low.split(f.toLowerCase()).length - 1), 0);
+}
+function countWords(text){
+  const zh = (text.match(/[一-龥]/g) || []).length;
+  const en = (text.trim().match(/[a-zA-Z0-9]+/g) || []).length;
+  return zh + en;
+}
+
+/* ---- question bank ---- */
+let customQuestions = [];
+function renderQuestionBank(){
+  const box = $('#questionBank');
+  let html = '';
+  QUESTION_BANK.forEach(group=>{
+    html += `<div class="catname">${group.cat}</div>`;
+    group.qs.forEach((q,i)=>{
+      const id = group.cat + '_' + i;
+      html += `<div class="qitem"><input type="checkbox" id="q_${id}"><span>${escapeHtml(q)}</span></div>`;
+    });
+  });
+  if (customQuestions.length){
+    html += `<div class="catname">自訂問題</div>`;
+    customQuestions.forEach((q,i)=>{
+      html += `<div class="qitem"><input type="checkbox" id="qc_${i}"><span>${escapeHtml(q)}</span></div>`;
+    });
+  }
+  box.innerHTML = html;
+  $all('.qitem input[type=checkbox]', box).forEach(cb=>{
+    cb.addEventListener('change', ()=>{ cb.closest('.qitem').classList.toggle('done', cb.checked); });
+  });
+}
+$('#customQInput').addEventListener('keydown', e=>{
+  if (e.key === 'Enter' && e.target.value.trim()){
+    customQuestions.push(e.target.value.trim());
+    e.target.value = '';
+    renderQuestionBank();
+  }
+});
+renderQuestionBank();
+
+/* ---- finish interview: compute final metrics ---- */
+$('#btnFinishInterview').addEventListener('click', ()=>{
+  if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+  stopFaceSampling(); stopSpeechRecognition(); stopAudioAnalysis();
+  $('#liveBadge').classList.remove('on');
+
+  const manual = $('#manualTranscript').value.trim();
+  const transcript = (interview.transcriptFinal.trim() || manual);
+  if (!interview.durationSec || interview.durationSec < 1){
+    interview.durationSec = interviewStartTime ? (Date.now() - interviewStartTime) / 1000 :
+      ($('#videoEl').duration && isFinite($('#videoEl').duration) ? $('#videoEl').duration : 60);
+  }
+  metrics = computeMetrics(transcript, interview);
+  interview.finished = true;
+  toast('已計算面試指標，請至「即時回饋」與「評分報告」頁籤查看');
+  renderLiveDashboardFinal();
+  $all('nav.tabs button').forEach(b=>b.classList.remove('active'));
+  $('nav.tabs button[data-tab="feedback"]').classList.add('active');
+  $all('section.tab').forEach(s=>s.classList.remove('active'));
+  $('section.tab[data-tab="feedback"]').classList.add('active');
+});
+
+function computeMetrics(transcript, iv){
+  const durMin = Math.max(iv.durationSec / 60, 0.1);
+  const wordCount = iv.wordTimestamps.length ? iv.wordTimestamps.reduce((a,w)=>a+w.words,0) : countWords(transcript);
+  const wpm = wordCount / durMin;
+  const fillerCount = iv.fillerCount || countFillers(transcript);
+  const fillerRate = wordCount ? (fillerCount / wordCount * 100) : 0;
+  const pauseRatio = iv.durationSec ? clamp(iv.pauseTotalSec / iv.durationSec, 0, 1) : 0;
+
+  const pitches = iv.pitchSamples.map(p=>p.pitch);
+  const pitchMean = pitches.length ? pitches.reduce((a,b)=>a+b,0)/pitches.length : 0;
+  const pitchStd = stdev(pitches);
+
+  const vols = iv.volumeSamples.map(v=>v.rms);
+  const volMean = vols.length ? vols.reduce((a,b)=>a+b,0)/vols.length : 0;
+  const volStd = stdev(vols);
+  const volCoefVar = volMean ? (volStd / volMean) : 0;
+
+  const faceDetectedCount = iv.faceSamples.filter(f=>f.detected).length;
+  const engagementRatio = iv.faceSamples.length ? faceDetectedCount / iv.faceSamples.length : 0;
+
+  const emoSums = { neutral:0, happy:0, sad:0, angry:0, fearful:0, disgusted:0, surprised:0 };
+  let emoCount = 0, switches = 0, lastDominant = null;
+  iv.faceSamples.forEach(f=>{
+    if (!f.detected || !f.expr) return;
+    emoCount++;
+    let dom = null, domVal = -1;
+    for (const k in emoSums){ const v = f.expr[k] || 0; emoSums[k]+=v; if (v>domVal){domVal=v; dom=k;} }
+    if (lastDominant && dom !== lastDominant) switches++;
+    lastDominant = dom;
+  });
+  const emoAvg = {}; for (const k in emoSums) emoAvg[k] = emoCount ? emoSums[k]/emoCount : 0;
+  const switchesPerMin = switches / durMin;
+
+  const paceScore = clamp(100 - Math.abs(wpm - 140) * (wordCount ? 1 : 0), 0, 100);
+  const pitchVarietyScore = clamp((pitchStd / 40) * 100, 0, 100);
+  const volumeStabilityScore = clamp(100 - volCoefVar * 100, 0, 100);
+  const fillerScore = clamp(100 - fillerRate * 8, 0, 100);
+  const pauseScore = clamp(100 - pauseRatio * 150, 0, 100);
+  const communicationScore = wordCount ? round(
+    0.3*paceScore + 0.25*pitchVarietyScore + 0.2*volumeStabilityScore + 0.15*fillerScore + 0.1*pauseScore
+  ) : 0;
+
+  const positivityRaw = (emoAvg.happy*1.0 + emoAvg.surprised*0.3 + emoAvg.neutral*0.4) -
+                         (emoAvg.sad + emoAvg.angry + emoAvg.disgusted + emoAvg.fearful) * 0.5;
+  const positivityScore = clamp(round(positivityRaw * 100), 0, 100);
+  const engagementScore = round(engagementRatio * 100);
+  const expressionStabilityScore = clamp(round(100 - switchesPerMin * 10), 0, 100);
+  const behavioralScore = emoCount ? round(0.4*positivityScore + 0.35*engagementScore + 0.25*expressionStabilityScore) : round(engagementScore*0.5);
+
+  return {
+    transcript, durationSec: iv.durationSec, wordCount, wpm: round(wpm),
+    fillerCount, fillerRate: +fillerRate.toFixed(1), pauseRatio: +(pauseRatio*100).toFixed(1),
+    pitchMean: round(pitchMean), pitchStd: round(pitchStd),
+    volCoefVar: +volCoefVar.toFixed(2),
+    engagementRatio: +(engagementRatio*100).toFixed(1),
+    emoAvg, switchesPerMin: +switchesPerMin.toFixed(1),
+    scores: { paceScore: round(paceScore), pitchVarietyScore: round(pitchVarietyScore), volumeStabilityScore: round(volumeStabilityScore),
+      fillerScore: round(fillerScore), pauseScore: round(pauseScore), communicationScore,
+      positivityScore, engagementScore, expressionStabilityScore, behavioralScore }
+  };
+}
+function stdev(arr){
+  if (!arr.length) return 0;
+  const mean = arr.reduce((a,b)=>a+b,0)/arr.length;
+  const v = arr.reduce((a,b)=>a+(b-mean)*(b-mean),0)/arr.length;
+  return Math.sqrt(v);
+}
+
+/* ============================================================
+   TAB 4: LIVE FEEDBACK DASHBOARD
+   ============================================================ */
+function updateLiveDashboard(){
+  const iv = interview;
+  const faceDetectedCount = iv.faceSamples.filter(f=>f.detected).length;
+  const engagement = iv.faceSamples.length ? round(faceDetectedCount/iv.faceSamples.length*100) : 0;
+  const wordCount = iv.wordTimestamps.reduce((a,w)=>a+w.words,0);
+  const elapsedMin = interviewStartTime ? Math.max((Date.now()-interviewStartTime)/60000, 0.05) : 0.05;
+  const wpm = round(wordCount / elapsedMin);
+  renderLiveMetricCards([
+    { lbl:'目前語速 (WPM)', val: wpm || '--' },
+    { lbl:'專注度 (偵測到臉部比例)', val: engagement + '%' },
+    { lbl:'填充詞次數', val: iv.fillerCount },
+    { lbl:'已錄製時長', val: elapsedMin.toFixed(1) + ' 分' }
+  ]);
+  drawEmotionChart(iv.faceSamples);
+  drawToneChart(iv.volumeSamples, iv.pitchSamples);
+}
+function renderLiveMetricCards(items){
+  $('#liveMetricCards').innerHTML = items.map(it=>`
+    <div class="scorecard"><div class="lbl">${it.lbl}</div><div class="num" style="font-size:1.4rem;">${it.val}</div></div>
+  `).join('');
+}
+function renderLiveDashboardFinal(){
+  if (!metrics) return;
+  const s = metrics.scores;
+  renderLiveMetricCards([
+    { lbl:'語速 (WPM)', val: metrics.wpm },
+    { lbl:'填充詞率', val: metrics.fillerRate + '%' },
+    { lbl:'停頓佔比', val: metrics.pauseRatio + '%' },
+    { lbl:'專注度', val: metrics.engagementRatio + '%' },
+    { lbl:'溝通表現分數', val: s.communicationScore },
+    { lbl:'正向情緒分數', val: s.positivityScore },
+    { lbl:'行為指標分數', val: s.behavioralScore },
+    { lbl:'表情切換頻率/分', val: metrics.switchesPerMin }
+  ]);
+  drawEmotionChart(interview.faceSamples);
+  drawToneChart(interview.volumeSamples, interview.pitchSamples);
+}
+function drawEmotionChart(faceSamples){
+  const c = $('#emotionChart'); const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  const emoSums = { neutral:0, happy:0, sad:0, angry:0, fearful:0, disgusted:0, surprised:0 };
+  let n = 0;
+  faceSamples.forEach(f=>{ if (f.detected && f.expr){ n++; for (const k in emoSums) emoSums[k]+=f.expr[k]||0; } });
+  const labels = Object.keys(emoSums);
+  const colors = { neutral:'#6a7580', happy:'#22d3a5', sad:'#4f7cff', angry:'#f5545b', fearful:'#f5a524', disgusted:'#a05af5', surprised:'#5af5e6' };
+  const total = n || 1;
+  let x = 10;
+  const barW = (c.width - 20) / labels.length - 6;
+  labels.forEach(k=>{
+    const v = emoSums[k] / total;
+    const h = v * (c.height - 40);
+    ctx.fillStyle = colors[k];
+    ctx.fillRect(x, c.height - 24 - h, barW, h);
+    ctx.fillStyle = '#9aa7b0'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(k, x + barW/2, c.height - 8);
+    ctx.fillText((v*100).toFixed(0)+'%', x + barW/2, c.height - 26 - h);
+    x += barW + 6;
+  });
+  if (!n){ ctx.fillStyle = '#68757e'; ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.fillText('尚無表情資料', c.width/2, c.height/2); }
+}
+function drawToneChart(volSamples, pitchSamples){
+  const c = $('#toneChart'); const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  if (!volSamples.length){ ctx.fillStyle = '#68757e'; ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.fillText('尚無音訊資料', c.width/2, c.height/2); return; }
+  const maxV = Math.max(...volSamples.map(v=>v.rms), 0.01);
+  ctx.strokeStyle = '#4f7cff'; ctx.beginPath();
+  volSamples.forEach((v,i)=>{
+    const x = i/(volSamples.length-1||1) * c.width;
+    const y = c.height - (v.rms/maxV) * (c.height-20) - 10;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  if (pitchSamples.length){
+    const maxP = Math.max(...pitchSamples.map(p=>p.pitch), 1);
+    ctx.strokeStyle = '#22d3a5'; ctx.beginPath();
+    pitchSamples.forEach((p,i)=>{
+      const x = i/(pitchSamples.length-1||1) * c.width;
+      const y = c.height - (p.pitch/maxP) * (c.height-20) - 10;
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+  }
+  ctx.fillStyle = '#9aa7b0'; ctx.font='10px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('藍：音量　綠：音高', 6, 14);
+}
+
+/* ============================================================
+   TAB 5: SCORING REPORT
+   ============================================================ */
+function renderReportTab(){
+  if (!metrics){ $('#reportScoreCards').innerHTML = '<p class="hint">請先完成「面試錄製」頁籤的面試流程。</p>'; return; }
+  computeSkillMatch();
+  const s = metrics.scores;
+  const cards = [
+    { lbl:'專業技能匹配度', val: skillMatch.pct },
+    { lbl:'溝通表現', val: s.communicationScore },
+    { lbl:'行為指標', val: s.behavioralScore },
+    { lbl:'面試官評分', val: +($('#interviewerScore').value||70) }
+  ];
+  $('#reportScoreCards').innerHTML = cards.map(c=>`
+    <div class="scorecard"><div class="lbl">${c.lbl}</div><div class="num">${c.val}</div>
+      <div class="scorebar"><i style="width:${c.val}%"></i></div></div>
+  `).join('');
+  computeOverall();
+}
+function computeOverall(){
+  if (!metrics) return null;
+  const job = activeJob();
+  const nw = normalizedWeights(job);
+  const s = metrics.scores;
+  const interviewerScore = clamp(+($('#interviewerScore').value || 0), 0, 100);
+  const overall = round(
+    (skillMatch.pct * nw.technical + s.communicationScore * nw.communication +
+     s.behavioralScore * nw.behavioral + interviewerScore * nw.interviewer) / 100
+  );
+  $('#overallScore').textContent = overall;
+  $('#overallBar').style.width = overall + '%';
+  return { overall, interviewerScore };
+}
+$('#btnRecalcReport').addEventListener('click', renderReportTab);
+$('#interviewerScore').addEventListener('input', computeOverall);
+
+function buildLocalSummary(){
+  const s = metrics.scores;
+  const job = activeJob();
+  const strengths = [], concerns = [];
+  if (skillMatch.pct >= 70) strengths.push('履歷技能與職缺需求高度吻合（匹配度 ' + skillMatch.pct + '%）');
+  else concerns.push('履歷技能與職缺需求匹配度偏低（' + skillMatch.pct + '%），缺少：' + (skillMatch.missing.slice(0,5).join('、') || '無資料'));
+  if (s.communicationScore >= 70) strengths.push('溝通表現量化分數良好（語速 ' + metrics.wpm + ' WPM，填充詞率 ' + metrics.fillerRate + '%）');
+  else concerns.push('溝通表現有待加強（語速或停頓比例偏離理想範圍，填充詞率 ' + metrics.fillerRate + '%）');
+  if (s.behavioralScore >= 70) strengths.push('面談中情緒表現正向、專注度高（專注度 ' + metrics.engagementRatio + '%）');
+  else concerns.push('面談中情緒或專注度指標偏低，建議留意其臨場穩定度');
+  const overallData = computeOverall();
+  let recommendation = '保留';
+  if (overallData){
+    if (overallData.overall >= 80) recommendation = '強烈推薦';
+    else if (overallData.overall >= 65) recommendation = '推薦';
+    else if (overallData.overall < 45) recommendation = '不建議';
+  }
+  const summary = `候選人於「${job.title}」職缺面試中，技能匹配度 ${skillMatch.pct}%、溝通表現分數 ${s.communicationScore}、` +
+    `行為指標分數 ${s.behavioralScore}。整體加權總分為 ${overallData?overallData.overall:'--'} 分，建議：${recommendation}。`;
+  return { strengths, concerns, recommendation, summary };
+}
+$('#btnGenSummary').addEventListener('click', async ()=>{
+  if (!metrics){ toast('請先完成面試錄製'); return; }
+  const statusEl = $('#summaryStatus');
+  statusEl.textContent = '產生中...'; statusEl.className='status';
+  let result = null;
+  if (settings.aiEndpoint){
+    const job = activeJob();
+    const overallData = computeOverall();
+    result = await callAiEndpoint('generate_summary', {
+      candidateName: $('#candName').value || '候選人', jobTitle: job.title, jobSkills: job.skills,
+      resumeSkills: resumeParsed.skills, skillMatchPercent: skillMatch.pct,
+      communicationScore: metrics.scores.communicationScore, behavioralScore: metrics.scores.behavioralScore,
+      technicalScore: skillMatch.pct, interviewerScore: overallData ? overallData.interviewerScore : null,
+      metrics: { wpm: metrics.wpm, fillerRate: metrics.fillerRate, pauseRatio: metrics.pauseRatio,
+        positivityScore: metrics.scores.positivityScore, engagementScore: metrics.scores.engagementScore },
+      transcriptExcerpt: (metrics.transcript || '').slice(0, 3000)
+    });
+  }
+  if (!result) result = buildLocalSummary();
+  statusEl.textContent = settings.aiEndpoint && result ? 'AI 摘要已產生' : '已使用規則式摘要（未設定 AI 端點或呼叫失敗）';
+  statusEl.className = 'status ok';
+  renderSummary(result);
+});
+function renderSummary(r){
+  $('#summaryOutput').innerHTML = `
+    <p><b>建議結論：</b> <span class="badge-tag">${escapeHtml(r.recommendation||'--')}</span></p>
+    <p style="margin-top:.5rem;">${escapeHtml(r.summary||'')}</p>
+    <div class="grid2" style="margin-top:.8rem;">
+      <div><h3>優勢</h3><ul>${(r.strengths||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('') || '<li class="hint">無</li>'}</ul></div>
+      <div><h3>疑慮</h3><ul>${(r.concerns||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('') || '<li class="hint">無</li>'}</ul></div>
+    </div>`;
+  currentReport = currentReport || {};
+  currentReport.aiSummary = r;
+}
+
+$('#btnSaveCandidate').addEventListener('click', ()=>{
+  if (!metrics){ toast('請先完成面試錄製並計算指標'); return; }
+  const job = activeJob();
+  const overallData = computeOverall();
+  const record = {
+    id: uid(), name: $('#candName').value || '未命名候選人', jobId: job.id, jobTitle: job.title,
+    date: new Date().toISOString(),
+    skillMatch: skillMatch.pct, matchedSkills: skillMatch.matched, missingSkills: skillMatch.missing,
+    communication: metrics.scores.communicationScore, behavioral: metrics.scores.behavioralScore,
+    interviewer: overallData ? overallData.interviewerScore : +($('#interviewerScore').value||0),
+    overall: overallData ? overallData.overall : 0,
+    metrics, resumeParsed, aiSummary: currentReport ? currentReport.aiSummary : null
+  };
+  candidates.push(record);
+  writeJson(LS.candidates, candidates);
+  toast('已儲存候選人報告：' + record.name);
+});
+$('#btnPrintReport').addEventListener('click', ()=>{
+  $all('section.tab').forEach(s=>s.classList.remove('print-active'));
+  $('section.tab[data-tab="report"]').classList.add('print-active');
+  window.print();
+});
+$('#btnExportJson').addEventListener('click', ()=>{
+  if (!metrics){ toast('請先完成面試錄製'); return; }
+  const overallData = computeOverall();
+  const data = {
+    name: $('#candName').value, job: activeJob().title, skillMatch, metrics,
+    interviewer: overallData ? overallData.interviewerScore : null,
+    overall: overallData ? overallData.overall : null,
+    summary: currentReport ? currentReport.aiSummary : null
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'report-' + (data.name||'candidate') + '.json'; a.click();
+});
+
+/* ============================================================
+   TAB 6: COMPARE
+   ============================================================ */
+function renderCompareTab(){
+  const jf = $('#compareJobFilter');
+  jf.innerHTML = '<option value="">全部職缺</option>' + jobs.map(j=>`<option value="${j.id}">${escapeHtml(j.title)}</option>`).join('');
+  renderCompareTable();
+}
+let compareSort = { key:'overall', dir:-1 };
+function renderCompareTable(){
+  const filterJob = $('#compareJobFilter').value;
+  let rows = candidates.filter(c => !filterJob || c.jobId === filterJob);
+  rows.sort((a,b)=>{
+    const ka = compareSort.key === 'skillMatch' ? a.skillMatch : a[compareSort.key];
+    const kb = compareSort.key === 'skillMatch' ? b.skillMatch : b[compareSort.key];
+    if (ka < kb) return -1*compareSort.dir; if (ka > kb) return 1*compareSort.dir; return 0;
+  });
+  $('#compareTbody').innerHTML = rows.map(c=>`
+    <tr>
+      <td><input type="checkbox" class="cmpchk" data-id="${c.id}"> ${escapeHtml(c.name)}</td>
+      <td>${escapeHtml(c.jobTitle)}</td>
+      <td>${c.skillMatch}</td><td>${c.communication}</td><td>${c.behavioral}</td>
+      <td>${c.interviewer}</td><td><b>${c.overall}</b></td>
+      <td>${new Date(c.date).toLocaleDateString()}</td>
+      <td><button class="btn danger" data-del="${c.id}" style="padding:.25rem .5rem;font-size:.75rem;">刪除</button></td>
+    </tr>`).join('') || `<tr><td colspan="9" class="hint">尚無候選人資料</td></tr>`;
+  $all('[data-del]').forEach(b=>b.addEventListener('click', ()=>{
+    candidates = candidates.filter(c=>c.id !== b.dataset.del);
+    writeJson(LS.candidates, candidates); renderCompareTable();
+  }));
+  $all('.cmpchk').forEach(cb=>cb.addEventListener('change', drawRadarChart));
+  drawRadarChart();
+}
+$all('#compareTable th[data-k]').forEach(th=>th.addEventListener('click', ()=>{
+  const k = th.dataset.k;
+  compareSort = compareSort.key === k ? { key:k, dir: -compareSort.dir } : { key:k, dir:-1 };
+  renderCompareTable();
+}));
+$('#compareJobFilter').addEventListener('change', renderCompareTable);
+$('#btnClearCandidates').addEventListener('click', ()=>{
+  if (!confirm('確定清空所有候選人資料？此動作無法復原。')) return;
+  candidates = []; writeJson(LS.candidates, candidates); renderCompareTable();
+});
+
+function drawRadarChart(){
+  const c = $('#radarChart'); const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  const selectedIds = $all('.cmpchk:checked').map(cb=>cb.dataset.id).slice(0,5);
+  const axes = ['skillMatch','communication','behavioral','interviewer'];
+  const axisLabels = ['技術匹配','溝通表現','行為指標','面試官評分'];
+  const cx = c.width/2, cy = c.height/2, R = Math.min(cx,cy) - 40;
+  const N = axes.length;
+  ctx.strokeStyle = '#232b33'; ctx.fillStyle = '#9aa7b0'; ctx.font = '11px sans-serif'; ctx.textAlign='center';
+  for (let ring=1; ring<=4; ring++){
+    ctx.beginPath();
+    for (let i=0;i<=N;i++){
+      const ang = -Math.PI/2 + i*2*Math.PI/N;
+      const r = R*ring/4;
+      const x = cx + r*Math.cos(ang), y = cy + r*Math.sin(ang);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  axisLabels.forEach((lbl,i)=>{
+    const ang = -Math.PI/2 + i*2*Math.PI/N;
+    const x = cx + (R+18)*Math.cos(ang), y = cy + (R+18)*Math.sin(ang);
+    ctx.fillText(lbl, x, y);
+  });
+  const job = activeJob();
+  const colorSet = ['#22d3a5','#4f7cff','#f5a524','#f5545b','#a05af5'];
+  function plot(values, color, dashed){
+    ctx.beginPath(); ctx.strokeStyle = color; ctx.fillStyle = color + '33';
+    if (dashed) ctx.setLineDash([4,3]); else ctx.setLineDash([]);
+    values.forEach((v,i)=>{
+      const ang = -Math.PI/2 + i*2*Math.PI/N;
+      const r = R * clamp(v,0,100)/100;
+      const x = cx + r*Math.cos(ang), y = cy + r*Math.sin(ang);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.closePath(); ctx.stroke(); if (!dashed) ctx.fill();
+    ctx.setLineDash([]);
+  }
+  plot([job.benchmark.technical, job.benchmark.communication, job.benchmark.behavioral, job.benchmark.interviewer], '#68757e', true);
+  selectedIds.forEach((id, idx)=>{
+    const cand = candidates.find(c=>c.id===id);
+    if (!cand) return;
+    plot([cand.skillMatch, cand.communication, cand.behavioral, cand.interviewer], colorSet[idx%colorSet.length], false);
+  });
+  if (!selectedIds.length){
+    ctx.fillStyle = '#68757e'; ctx.textAlign='center';
+    ctx.fillText('勾選左側表格中的候選人以顯示雷達圖（虛線灰色為職缺基準值）', cx, c.height-10);
+  }
+}
+
+/* ============================================================
+   TAB 7: SETTINGS
+   ============================================================ */
+$('#aiEndpoint').value = settings.aiEndpoint || '';
+$('#btnSaveSettings').addEventListener('click', ()=>{
+  settings.aiEndpoint = $('#aiEndpoint').value.trim();
+  writeJson(LS.settings, settings);
+  $('#settingsStatus').textContent = '已儲存'; $('#settingsStatus').className = 'status ok';
+  setTimeout(()=>{ $('#settingsStatus').textContent=''; }, 2000);
+});
+$('#btnResetAll').addEventListener('click', ()=>{
+  if (!confirm('確定清除所有本機資料（職缺、候選人、設定）？此動作無法復原。')) return;
+  localStorage.removeItem(LS.jobs); localStorage.removeItem(LS.activeJob);
+  localStorage.removeItem(LS.candidates); localStorage.removeItem(LS.settings);
+  location.reload();
+});
+
+/* ---------------- Init ---------------- */
+renderJobSelect();
+renderJobForm();
+computeSkillMatch();
+</script>
+</body>
+</html>
