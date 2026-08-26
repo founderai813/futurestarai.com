@@ -1,0 +1,11 @@
+name = "hr-interview-proxy"
+main = "hr-interview-proxy.js"
+compatibility_date = "2025-01-01"
+
+# Optional: override default model
+# [vars]
+# MODEL = "claude-sonnet-4-6"
+
+# Secret for the AI proxy — set ONE of these:
+#   wrangler secret put GEMINI_API_KEY
+#   wrangler secret put ANTHROPIC_API_KEY

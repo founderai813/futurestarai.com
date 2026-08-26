@@ -17,6 +17,9 @@ cardinal virtues), AI mentor chat, and encrypted cloud sync.
 
 ## Other projects
 
+- `hr-interview.html` — HR 智慧面試助手：履歷解析（PDF/Word）、鏡頭/上傳影片面試、表情與語氣即時分析、
+  行為與技能加權評分、候選人比較儀表板。全客戶端運作，AI 履歷結構化與摘要為選用功能
+  （見 [`worker-hr-interview/`](./worker-hr-interview/)）。
 - `joinup/` — JoinUp landing
 - `partyup/` — PartyUp tool
 - `draw/`, `rps/` — small games
