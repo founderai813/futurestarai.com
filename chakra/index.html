@@ -102,6 +102,7 @@
     <div class="breath" id="breath"></div>
     <button class="play" id="playBtn">▶ 開始</button>
     <div class="clock" id="clock"></div>
+    <audio id="player" playsinline preload="auto"></audio>
   </section>
 
   <div class="chakras" id="chakras"></div>
@@ -120,11 +121,12 @@
           <option value="8">每個脈輪 8 分鐘</option>
         </select>
       </div>
-      <p class="hint">由海底輪依序走到頂輪，頻率會平滑切換，之後再從頭循環。</p>
+      <p class="hint">由海底輪依序走到頂輪，時間到自動換下一個脈輪，之後再從頭循環。</p>
     </section>
 
     <section class="panel">
       <h2>🎚️ 聲音混合</h2>
+      <div class="row"><label>音色</label><div class="seg" id="timbreSeg"></div></div>
       <div class="row"><label>頻率音</label><input type="range" id="tone" min="0" max="100" value="55"></div>
       <div class="row">
         <label>背景音</label>
@@ -141,7 +143,7 @@
         <select id="bellEvery">
           <option value="10">每 10 秒</option>
           <option value="20" selected>每 20 秒</option>
-          <option value="40">每 40 秒</option>
+          <option value="30">每 30 秒</option>
           <option value="60">每 60 秒</option>
         </select>
         <input type="range" id="bell" min="0" max="100" value="40">
@@ -157,7 +159,7 @@
           <option value="90">90 分鐘</option>
         </select>
       </div>
-      <p class="hint">時間到會用 10 秒慢慢淡出，適合邊聽邊入睡。</p>
+      <p class="hint">時間到會慢慢淡出，適合邊聽邊入睡。📱 切到其他 App 或鎖定螢幕也會繼續播放；iPhone 請用手機側邊的音量鍵調整大小聲。</p>
     </section>
   </div>
 
@@ -208,219 +210,306 @@
     { name: '頂輪',   en: 'Crown',        hz: 963, color: '#b44dff', theme: '覺知・平靜・合一' },
   ];
   const BEATS = [
-    { key: 'none',  label: '純頻率',          hz: 0 },
-    { key: 'alpha', label: '放鬆 α 10Hz',     hz: 10 },
-    { key: 'theta', label: '冥想 θ 6Hz',      hz: 6 },
-    { key: 'delta', label: '助眠 δ 2Hz',      hz: 2 },
+    { key: 'none',  label: '純頻率',      hz: 0 },
+    { key: 'alpha', label: '放鬆 α 10Hz', hz: 10 },
+    { key: 'theta', label: '冥想 θ 6Hz',  hz: 6 },
+    { key: 'delta', label: '助眠 δ 2Hz',  hz: 2 },
+  ];
+  const TIMBRES = [
+    { key: 'warm', label: '溫暖（推薦）' },
+    { key: 'pure', label: '純音' },
   ];
 
   // ---------- 設定（存在 localStorage，下次打開保留） ----------
   const $ = id => document.getElementById(id);
-  const DEFAULTS = { chakra: 3, beat: 'theta', tour: false, tourMin: 3, tone: 55, noiseType: 'waves', noise: 45, bell: 40, bellEvery: 20, master: 70, timer: 30 };
+  const DEFAULTS = { chakra: 3, beat: 'theta', timbre: 'warm', tour: false, tourMin: 3, tone: 50, noiseType: 'waves', noise: 45, bell: 40, bellEvery: 20, master: 80, timer: 30 };
   let S = { ...DEFAULTS };
   try { S = { ...DEFAULTS, ...JSON.parse(localStorage.getItem('chakra-gen') || '{}') }; } catch (e) {}
+  if (![10, 20, 30, 60].includes(+S.bellEvery)) S.bellEvery = 20;
   const save = () => { try { localStorage.setItem('chakra-gen', JSON.stringify(S)); } catch (e) {} };
 
   const beatHz = () => (BEATS.find(b => b.key === S.beat) || BEATS[0]).hz;
   const sq = v => (v / 100) * (v / 100);
-  const LV = {
-    tone: v => sq(v) * 0.32,
-    noise: v => sq(v) * 0.9,
-    bell: v => sq(v) * 1.0,
-    master: v => sq(v),
-  };
+  const LV = { tone: v => sq(v) * 0.32, noise: v => sq(v) * 0.9, bell: v => sq(v) };
 
-  // ---------- 音訊引擎（即時播放與匯出共用） ----------
-  const noiseCache = new WeakMap();
+  // ---------- 音訊引擎（離線算出聲音） ----------
+  // 所有週期（頻率、起伏、海浪、頌缽、雜訊）都剛好整除 60 秒，所以 60 秒的音檔可以無縫循環。
+  const LOOP = 60, XF = 3, SR = 44100;
+
   function noiseBuffer(ctx, kind) {
-    let c = noiseCache.get(ctx);
-    if (!c) { c = {}; noiseCache.set(ctx, c); }
-    if (c[kind]) return c[kind];
-    const sr = ctx.sampleRate, len = sr * 12, fade = Math.floor(sr * 0.5);
-    const buf = ctx.createBuffer(2, len, sr);
+    const len = SR * LOOP, extra = Math.floor(SR * 0.5);
+    const buf = ctx.createBuffer(2, len, SR);
     for (let ch = 0; ch < 2; ch++) {
-      const d = buf.getChannelData(ch);
+      const raw = new Float32Array(len + extra);
       if (kind === 'pink') {
         let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-        for (let i = 0; i < len; i++) {
+        for (let i = 0; i < raw.length; i++) {
           const w = Math.random() * 2 - 1;
           b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759;
           b2 = 0.96900 * b2 + w * 0.1538520; b3 = 0.86650 * b3 + w * 0.3104856;
           b4 = 0.55000 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.0168980;
-          d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11;
+          raw[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11;
           b6 = w * 0.115926;
         }
       } else {
         let last = 0;
-        for (let i = 0; i < len; i++) {
-          last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
-          d[i] = last * 3.5;
-        }
+        for (let i = 0; i < raw.length; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; raw[i] = last * 3.5; }
       }
-      // 把尾巴交叉淡入到開頭，讓循環接縫聽不出來
-      for (let i = 0; i < fade; i++) {
-        const t = i / fade;
-        d[i] = d[i] * t + d[len - fade + i] * (1 - t);
+      const d = buf.getChannelData(ch);
+      d.set(raw.subarray(0, len));
+      for (let i = 0; i < extra; i++) {  // 等功率交叉淡化，循環接縫聽不出來
+        const t = i / extra;
+        d[i] = raw[i] * Math.sin(t * Math.PI / 2) + raw[len + i] * Math.cos(t * Math.PI / 2);
       }
     }
-    c[kind] = { buffer: buf, loopEnd: (len - fade) / sr };
-    return c[kind];
+    return buf;
+  }
+
+  function impulse(ctx, seconds = 2.8) {
+    const len = Math.floor(SR * seconds), buf = ctx.createBuffer(2, len, SR);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    }
+    return buf;
   }
 
   function createEngine(ctx, s) {
-    const all = [];  // 需要 stop 的音源
+    const sources = [];
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -12; comp.ratio.value = 4;
     comp.connect(ctx.destination);
     const master = ctx.createGain(); master.gain.value = 0; master.connect(comp);
 
-    // 頻率音：左右耳各一顆正弦波，差值 = 雙耳節拍
-    const toneBus = ctx.createGain(); toneBus.gain.value = LV.tone(s.tone); toneBus.connect(master);
-    const merger = ctx.createChannelMerger(2); merger.connect(toneBus);
-    const oscL = ctx.createOscillator(), oscR = ctx.createOscillator();
-    oscL.type = oscR.type = 'sine';
-    oscL.frequency.value = s.hz - s.beat / 2;
-    oscR.frequency.value = s.hz + s.beat / 2;
-    oscL.connect(merger, 0, 0); oscR.connect(merger, 0, 1);
-    all.push(oscL, oscR);
+    // 殘響：讓聲音像在安靜的大廳裡，不會乾乾刺刺的
+    const verb = ctx.createConvolver(); verb.buffer = impulse(ctx);
+    const verbIn = ctx.createGain(); verbIn.gain.value = 0.5;
+    verbIn.connect(verb); verb.connect(master);
+
+    // 頻率音：溫暖模式 = 主頻率（小聲）+ 低八度、低兩八度（主體）+ 微微走音的合唱層，再濾掉刺耳的高頻
+    const toneBus = ctx.createGain(); toneBus.gain.value = LV.tone(s.tone);
+    const warm = s.timbre !== 'pure';
+    const shape = ctx.createBiquadFilter(); shape.type = 'lowpass'; shape.frequency.value = warm ? 1400 : 12000; shape.Q.value = 0.5;
+    const merger = ctx.createChannelMerger(2);
+    merger.connect(shape); shape.connect(toneBus);
+    toneBus.connect(master); toneBus.connect(verbIn);
+    // 緩慢起伏（20 秒一次），聽起來像在呼吸
+    const swell = ctx.createOscillator(); swell.frequency.value = 0.05;
+    const swellDepth = ctx.createGain(); swellDepth.gain.value = LV.tone(s.tone) * 0.18;
+    swell.connect(swellDepth); swellDepth.connect(toneBus.gain); sources.push(swell);
+
+    const LAYERS = warm
+      ? [[1, 0.22, 0], [0.5, 0.6, 0], [0.5, 0.3, 0.25], [0.25, 0.45, 0]]
+      : [[1, 1, 0]];
+    const oscs = [];
+    for (const [ratio, amp, det] of LAYERS) {
+      if (s.hz * ratio < 55) continue;
+      const pair = [0, 1].map(ch => {
+        const o = ctx.createOscillator(); o.type = 'sine';
+        const g = ctx.createGain(); g.gain.value = amp;
+        o.connect(g); g.connect(merger, 0, ch);
+        sources.push(o);
+        return o;
+      });
+      oscs.push({ ratio, det, L: pair[0], R: pair[1] });
+    }
+    const setFreqAt = (hz, beat, t, tc) => {
+      for (const o of oscs) {
+        const f = hz * o.ratio + o.det;
+        if (tc) { o.L.frequency.setTargetAtTime(f - beat / 2, t, tc); o.R.frequency.setTargetAtTime(f + beat / 2, t, tc); }
+        else { o.L.frequency.value = f - beat / 2; o.R.frequency.value = f + beat / 2; }
+      }
+    };
+    setFreqAt(s.hz, s.beat, 0, 0);
 
     // 背景音
     const noiseBus = ctx.createGain(); noiseBus.gain.value = LV.noise(s.noise); noiseBus.connect(master);
-    let noise = null;
-    function buildNoise(type, when = 0) {
-      if (noise) { noise.srcs.forEach(n => { try { n.stop(); } catch (e) {} }); noise.out.disconnect(); noise = null; }
-      if (type === 'none') return;
-      const nb = noiseBuffer(ctx, type === 'pink' ? 'pink' : 'brown');
+    if (s.noiseType !== 'none' && s.noise > 0) {
       const src = ctx.createBufferSource();
-      src.buffer = nb.buffer; src.loop = true; src.loopEnd = nb.loopEnd;
+      src.buffer = noiseBuffer(ctx, s.noiseType === 'pink' ? 'pink' : 'brown'); src.loop = true;
       const filt = ctx.createBiquadFilter(); filt.type = 'lowpass';
-      filt.frequency.value = type === 'pink' ? 6000 : type === 'brown' ? 1500 : 800;
+      filt.frequency.value = s.noiseType === 'pink' ? 5000 : s.noiseType === 'brown' ? 1500 : 800;
       const out = ctx.createGain(); out.gain.value = 1;
       src.connect(filt); filt.connect(out); out.connect(noiseBus);
-      const srcs = [src];
-      if (type === 'waves') {  // 慢速起伏，模擬浪潮
+      sources.push(src);
+      if (s.noiseType === 'waves') {  // 10 秒一波
         out.gain.value = 0.55;
-        const lfo = ctx.createOscillator(); lfo.frequency.value = 0.09;
+        const lfo = ctx.createOscillator(); lfo.frequency.value = 0.1;
         const depth = ctx.createGain(); depth.gain.value = 0.45;
-        lfo.connect(depth); depth.connect(out.gain);
-        lfo.start(when); srcs.push(lfo);
+        lfo.connect(depth); depth.connect(out.gain); sources.push(lfo);
       }
-      src.start(when);
-      noise = { srcs, out };
     }
 
-    // 頌缽：幾個不和諧泛音 + 緩慢衰減
-    const bellBus = ctx.createGain(); bellBus.gain.value = LV.bell(s.bell); bellBus.connect(master);
-    const PARTIALS = [[1, 1, 11], [1.003, .6, 11], [2.0, .3, 7], [2.76, .4, 5.5], [4.07, .18, 3.5], [5.4, .14, 2.4]];
+    // 頌缽：不和諧泛音 + 緩慢衰減，送進殘響
+    const bellBus = ctx.createGain(); bellBus.gain.value = LV.bell(s.bell);
+    bellBus.connect(master);
+    const bellVerb = ctx.createGain(); bellVerb.gain.value = 0.8; bellBus.connect(bellVerb); bellVerb.connect(verbIn);
+    const PARTIALS = [[1, 1, 12], [1.004, .6, 12], [2.0, .25, 7], [2.76, .35, 5.5], [4.07, .14, 3.5], [5.4, .1, 2.4]];
     function strike(t, hz) {
       let f = hz; while (f > 260) f /= 2;
       for (const [ratio, amp, dec] of PARTIALS) {
         const o = ctx.createOscillator(); o.frequency.value = f * ratio;
         const g = ctx.createGain();
         g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(amp * 0.16, t + 0.015);
+        g.gain.linearRampToValueAtTime(amp * 0.14, t + 0.04);
         g.gain.exponentialRampToValueAtTime(0.0001, t + dec);
         o.connect(g); g.connect(bellBus);
         o.start(t); o.stop(t + dec + 0.1);
       }
     }
 
-    const smooth = (param, v) => {
-      const now = ctx.currentTime;
-      if (param.cancelAndHoldAtTime) param.cancelAndHoldAtTime(now); else param.cancelScheduledValues(now);
-      param.setTargetAtTime(v, now, 0.08);
-    };
-
     return {
-      start(t, fadeIn = 3) {
-        oscL.start(t); oscR.start(t);
-        buildNoise(s.noiseType, t);
-        master.gain.setValueAtTime(0, t);
-        master.gain.linearRampToValueAtTime(LV.master(s.master), t + fadeIn);
+      start(t, fadeIn) {
+        sources.forEach(n => n.start(t));
+        if (fadeIn > 0) { master.gain.setValueAtTime(0, t); master.gain.linearRampToValueAtTime(1, t + fadeIn); }
+        else master.gain.setValueAtTime(1, t);
       },
-      setFreq(hz, beat, t = ctx.currentTime, glide = 1.5) {
-        oscL.frequency.setTargetAtTime(hz - beat / 2, t, glide / 4);
-        oscR.frequency.setTargetAtTime(hz + beat / 2, t, glide / 4);
-      },
-      setTone: v => smooth(toneBus.gain, LV.tone(v)),
-      setNoise: v => smooth(noiseBus.gain, LV.noise(v)),
-      setNoiseType: type => buildNoise(type),
-      setBell: v => smooth(bellBus.gain, LV.bell(v)),
-      setMaster: v => smooth(master.gain, LV.master(v)),
+      setFreqAt,
       strike,
-      fadeOut(t, dur, from) {
-        const g = master.gain;
-        if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(t); else g.cancelScheduledValues(t);
-        g.setValueAtTime(from ?? g.value, t);
-        g.linearRampToValueAtTime(0, t + dur);
-      },
-      stopAt(t) {
-        all.forEach(n => { try { n.stop(t); } catch (e) {} });
-        if (noise) noise.srcs.forEach(n => { try { n.stop(t); } catch (e) {} });
-      },
-      dispose() { comp.disconnect(); },
+      fadeOut(t, dur) { master.gain.setValueAtTime(1, t); master.gain.linearRampToValueAtTime(0, t + dur); },
+      stopAt(t) { sources.forEach(n => { try { n.stop(t); } catch (e) {} }); },
     };
   }
 
-  // ---------- 即時播放 ----------
-  let ctx = null, eng = null, playing = false, startedAt = 0, tourBase = 0, nextBell = 0, ticker = null;
+  // ---------- WAV ----------
+  function wavBlob(chans, sr, peakTarget) {
+    const ch = chans.length, len = chans[0].length, bytes = len * ch * 2;
+    const ab = new ArrayBuffer(44 + bytes), v = new DataView(ab);
+    const w = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + bytes, true); w(8, 'WAVE');
+    w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, ch, true);
+    v.setUint32(24, sr, true); v.setUint32(28, sr * ch * 2, true); v.setUint16(32, ch * 2, true); v.setUint16(34, 16, true);
+    w(36, 'data'); v.setUint32(40, bytes, true);
+    let peak = 1e-9;
+    if (peakTarget) for (const d of chans) for (let i = 0; i < len; i++) { const a = Math.abs(d[i]); if (a > peak) peak = a; }
+    const gain = peakTarget ? Math.min(8, peakTarget / peak) : 1;
+    const out = new Int16Array(ab, 44);
+    for (let i = 0, j = 0; i < len; i++) for (let c = 0; c < ch; c++) {
+      const a = Math.max(-1, Math.min(1, chans[c][i] * gain));
+      out[j++] = a < 0 ? a * 0x8000 : a * 0x7fff;
+    }
+    return new Blob([ab], { type: 'audio/wav' });
+  }
+  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
 
-  const snapshot = () => ({ ...S, hz: CHAKRAS[S.chakra].hz, beat: beatHz() });
+  // 60 秒無縫循環音檔：多算 3 秒，把尾巴疊回開頭
+  async function renderLoop(s) {
+    const off = new OAC(2, SR * (LOOP + XF), SR);
+    const e = createEngine(off, s);
+    e.start(0, 0);
+    if (s.bell > 0) for (let t = 1; t < LOOP + XF; t += +s.bellEvery) e.strike(t, s.hz);
+    const b = await off.startRendering();
+    const n = SR * LOOP, x = SR * XF, chans = [];
+    for (let c = 0; c < 2; c++) {
+      const d = b.getChannelData(c), o = d.slice(0, n);
+      for (let i = 0; i < x; i++) { const t = i / x; o[i] = d[i] * t + d[n + i] * (1 - t); }
+      chans.push(o);
+    }
+    return wavBlob(chans, SR, 0.7);
+  }
 
-  async function play() {
-    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
-    await ctx.resume();
-    eng = createEngine(ctx, snapshot());
-    const now = ctx.currentTime;
-    eng.start(now, 3);
-    startedAt = now; nextBell = now + 2;
-    tourBase = now - S.chakra * S.tourMin * 60;
+  // ---------- 播放（用 <audio> 播，切換 App、鎖螢幕都能繼續） ----------
+  const audio = $('player');
+  audio.loop = true;
+  const SILENT = URL.createObjectURL(wavBlob([new Float32Array(SR / 10), new Float32Array(SR / 10)], SR, 0));
+  const cache = new Map();
+  let playing = false, startWall = 0, tourOffset = 0, seq = 0, reloadTimer = null, fading = null;
+
+  const snapshot = (i = S.chakra) => ({ ...S, hz: CHAKRAS[i].hz, beat: beatHz() });
+  const keyOf = s => JSON.stringify([s.hz, s.beat, s.timbre, s.tone, s.noiseType, s.noise, s.bell, +s.bellEvery]);
+  function loopUrl(s) {
+    const k = keyOf(s);
+    if (!cache.has(k)) {
+      cache.set(k, renderLoop(s).then(b => URL.createObjectURL(b)));
+      if (cache.size > 16) {
+        const [oldK, oldP] = cache.entries().next().value;
+        cache.delete(oldK); oldP.then(u => { if (audio.src !== u) URL.revokeObjectURL(u); });
+      }
+    }
+    return cache.get(k);
+  }
+
+  const setStatus = t => { $('clock').dataset.status = t; };
+  async function load() {
+    const my = ++seq;
+    setStatus('準備音訊中…');
+    try {
+      const url = await loopUrl(snapshot());
+      if (my !== seq || !playing) return;
+      if (audio.src !== url) audio.src = url;
+      audio.volume = sq(S.master);
+      await audio.play();
+      setStatus('');
+    } catch (err) {
+      console.error(err);
+      if (my === seq) setStatus('⚠️ 播放失敗，請再按一次開始');
+    }
+    if (S.tour) prerenderTour();
+  }
+  const reload = () => { if (!playing) return; clearTimeout(reloadTimer); reloadTimer = setTimeout(load, 250); };
+  async function prerenderTour() { for (let i = 0; i < 7; i++) { if (!playing || !S.tour) return; await loopUrl(snapshot(i)); } }
+
+  const elapsed = () => (Date.now() - startWall) / 1000;
+  const resetTour = () => { tourOffset = S.chakra * S.tourMin * 60 - elapsed(); };
+
+  function play() {
     playing = true;
-    ticker = setInterval(tick, 250);
+    audio.src = SILENT; audio.play().catch(() => {});  // 先在點擊當下解鎖手機播放權限
+    startWall = Date.now(); resetTour();
     $('orb').classList.add('breathing');
     $('playBtn').textContent = '■ 停止';
-    tick();
+    setMedia();
+    load();
   }
 
-  function stop(fade = 2) {
-    if (!playing) return;
-    playing = false;
-    clearInterval(ticker);
-    const e = eng, t = ctx.currentTime;
-    e.fadeOut(t, fade);
-    e.stopAt(t + fade + 0.1);
-    setTimeout(() => e.dispose(), (fade + 0.6) * 1000);
+  function stop() {
+    playing = false; seq++;
+    clearInterval(fading); fading = null;
+    audio.pause();
     $('orb').classList.remove('breathing');
     $('breath').textContent = '';
     $('clock').textContent = '';
     $('playBtn').textContent = '▶ 開始';
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+  }
+
+  function fadeAndStop() {  // iPhone 不能用程式調音量，會直接停止
+    if (fading) return;
+    let v = audio.volume;
+    fading = setInterval(() => {
+      v -= sq(S.master) / 40;
+      if (v <= 0.01) { stop(); return; }
+      try { audio.volume = v; } catch (e) {}
+    }, 250);
   }
 
   const mmss = sec => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
-
-  function tick() {
+  function check() {
     if (!playing) return;
-    const now = ctx.currentTime, elapsed = now - startedAt;
-
-    if (S.bell > 0) {
-      while (nextBell < now + 0.5) { eng.strike(nextBell, CHAKRAS[S.chakra].hz); nextBell += +S.bellEvery; }
-    } else nextBell = now + 1;
-
+    const t = elapsed();
     if (S.tour) {
-      const idx = Math.floor((now - tourBase) / (S.tourMin * 60)) % 7;
-      if (idx !== S.chakra) selectChakra(idx, true);
+      const idx = Math.floor((t + tourOffset) / (S.tourMin * 60)) % 7;
+      if (idx !== S.chakra) { S.chakra = idx; save(); paintChakra(); setMedia(); load(); }
     }
-
-    // 呼吸引導：吸 4 秒、吐 6 秒（與 CSS 動畫同步）
-    $('breath').textContent = (elapsed % 10) < 4 ? '吸　氣' : '吐　氣';
-
-    let txt = `已播放 ${mmss(elapsed)}`;
-    if (S.timer > 0) {
-      const left = S.timer * 60 - elapsed;
-      if (left <= 0) { stop(10); return; }
-      txt += `・${mmss(left)} 後淡出`;
-    }
+    if (S.timer > 0 && t >= S.timer * 60) fadeAndStop();
+    $('breath').textContent = (t % 10) < 4 ? '吸　氣' : '吐　氣';
+    let txt = $('clock').dataset.status || `已播放 ${mmss(t)}`;
+    if (!$('clock').dataset.status && S.timer > 0) txt += `・${mmss(Math.max(0, S.timer * 60 - t))} 後淡出`;
     $('clock').textContent = txt;
+  }
+  setInterval(check, 250);
+  audio.addEventListener('timeupdate', check);  // 在背景時計時器會變慢，用播放進度補上
+
+  function setMedia() {
+    if (!('mediaSession' in navigator)) return;
+    const c = CHAKRAS[S.chakra];
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: `${c.name} ${c.hz}Hz`, artist: '脈輪頻率產生器', album: 'FutureStarAI' });
+      navigator.mediaSession.playbackState = 'playing';
+      navigator.mediaSession.setActionHandler('play', () => { if (!playing) play(); });
+      navigator.mediaSession.setActionHandler('pause', () => stop());
+      navigator.mediaSession.setActionHandler('stop', () => stop());
+    } catch (e) {}
   }
 
   // ---------- UI ----------
@@ -428,24 +517,16 @@
     const c = CHAKRAS[S.chakra];
     document.documentElement.style.setProperty('--c', c.color);
     $('orbName').textContent = c.name;
-    $('orbHz').textContent = `${c.hz} Hz${beatHz() ? `・${(BEATS.find(b => b.key === S.beat)).label.split(' ')[0]}` : ''}`;
+    const b = BEATS.find(x => x.key === S.beat);
+    $('orbHz').textContent = `${c.hz} Hz${b && b.hz ? `・${b.label.split(' ')[0]}` : ''}`;
     document.querySelectorAll('.ck').forEach((el, i) => el.classList.toggle('on', i === S.chakra));
-  }
-
-  function selectChakra(i, fromTour = false) {
-    S.chakra = i; save();
-    if (playing) {
-      eng.setFreq(CHAKRAS[i].hz, beatHz(), ctx.currentTime, fromTour ? 4 : 1.5);
-      if (!fromTour) tourBase = ctx.currentTime - i * S.tourMin * 60;
-    }
-    paintChakra();
   }
 
   CHAKRAS.forEach((c, i) => {
     const b = document.createElement('button');
     b.className = 'ck';
     b.innerHTML = `<div class="dot" style="background:${c.color};box-shadow:0 0 12px ${c.color}"></div>${c.name}<small>${c.hz} Hz</small>`;
-    b.onclick = () => selectChakra(i);
+    b.onclick = () => { S.chakra = i; save(); paintChakra(); if (playing) { resetTour(); setMedia(); reload(); } };
     $('chakras').appendChild(b);
     $('table').insertAdjacentHTML('beforeend',
       `<tr><td>${c.name}<br><span class="note">${c.en}</span></td><td>${c.hz} Hz</td>` +
@@ -453,86 +534,64 @@
       `<td>${c.theme}</td></tr>`);
   });
 
-  BEATS.forEach(bt => {
-    const b = document.createElement('button');
-    b.textContent = bt.label; b.dataset.key = bt.key;
-    b.onclick = () => {
-      S.beat = bt.key; save();
-      document.querySelectorAll('#beatSeg button').forEach(x => x.classList.toggle('on', x.dataset.key === S.beat));
-      if (playing) eng.setFreq(CHAKRAS[S.chakra].hz, beatHz());
-      paintChakra();
-    };
-    $('beatSeg').appendChild(b);
-  });
-  document.querySelectorAll('#beatSeg button').forEach(x => x.classList.toggle('on', x.dataset.key === S.beat));
+  function segment(containerId, items, key) {
+    const paint = () => document.querySelectorAll(`#${containerId} button`).forEach(x => x.classList.toggle('on', x.dataset.key === S[key]));
+    items.forEach(it => {
+      const b = document.createElement('button');
+      b.textContent = it.label; b.dataset.key = it.key;
+      b.onclick = () => { S[key] = it.key; save(); paint(); paintChakra(); reload(); };
+      $(containerId).appendChild(b);
+    });
+    paint();
+  }
+  segment('beatSeg', BEATS, 'beat');
+  segment('timbreSeg', TIMBRES, 'timbre');
 
-  const bind = (id, key, onLive, isCheck = false) => {
+  const bind = (id, key, after, isCheck = false) => {
     const el = $(id);
     if (isCheck) el.checked = !!S[key]; else el.value = S[key];
     el.addEventListener(el.type === 'range' ? 'input' : 'change', () => {
-      const v = isCheck ? el.checked : (el.type === 'range' || el.tagName === 'SELECT' && !isNaN(el.value)) ? +el.value : el.value;
-      S[key] = v; save();
-      if (playing && onLive) onLive(v);
+      S[key] = isCheck ? el.checked : (el.type === 'range' || !isNaN(el.value)) ? +el.value : el.value;
+      save();
+      if (playing && after) after();
     });
   };
-  bind('tone', 'tone', v => eng.setTone(v));
-  bind('noise', 'noise', v => eng.setNoise(v));
-  bind('noiseType', 'noiseType', v => eng.setNoiseType(v));
-  bind('bell', 'bell', v => eng.setBell(v));
-  bind('bellEvery', 'bellEvery');
-  bind('master', 'master', v => eng.setMaster(v));
+  bind('tone', 'tone', reload);
+  bind('noise', 'noise', reload);
+  bind('noiseType', 'noiseType', reload);
+  bind('bell', 'bell', reload);
+  bind('bellEvery', 'bellEvery', reload);
+  bind('master', 'master', () => { try { audio.volume = sq(S.master); } catch (e) {} });
   bind('timer', 'timer');
-  bind('tourMin', 'tourMin', () => { tourBase = ctx.currentTime - S.chakra * S.tourMin * 60; });
-  bind('tour', 'tour', () => { tourBase = ctx.currentTime - S.chakra * S.tourMin * 60; }, true);
+  bind('tourMin', 'tourMin', resetTour);
+  bind('tour', 'tour', () => { resetTour(); if (S.tour) prerenderTour(); }, true);
 
   $('playBtn').onclick = () => (playing ? stop() : play());
   paintChakra();
 
   // ---------- 匯出 WAV ----------
-  function encodeWav(buf) {
-    const ch = 2, len = buf.length, sr = buf.sampleRate, bytes = len * ch * 2;
-    const ab = new ArrayBuffer(44 + bytes), v = new DataView(ab);
-    const w = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
-    w(0, 'RIFF'); v.setUint32(4, 36 + bytes, true); w(8, 'WAVE');
-    w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, ch, true);
-    v.setUint32(24, sr, true); v.setUint32(28, sr * ch * 2, true); v.setUint16(32, ch * 2, true); v.setUint16(34, 16, true);
-    w(36, 'data'); v.setUint32(40, bytes, true);
-    const L = buf.getChannelData(0), R = buf.getChannelData(1), out = new Int16Array(ab, 44);
-    // 峰值正規化到 -1 dBFS，讓音檔放進剪輯軟體時音量足夠
-    let peak = 1e-9;
-    for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(L[i]), Math.abs(R[i]));
-    const gain = Math.min(6, 0.89 / peak);
-    for (let i = 0, j = 0; i < len; i++) {
-      let a = Math.max(-1, Math.min(1, L[i] * gain)); out[j++] = a < 0 ? a * 0x8000 : a * 0x7fff;
-      a = Math.max(-1, Math.min(1, R[i] * gain)); out[j++] = a < 0 ? a * 0x8000 : a * 0x7fff;
-    }
-    return new Blob([ab], { type: 'audio/wav' });
-  }
-
   $('exportBtn').onclick = async () => {
     const btn = $('exportBtn'), status = $('exportStatus');
-    const minutes = +$('exportLen').value, dur = minutes * 60, sr = 44100;
+    const minutes = +$('exportLen').value, dur = minutes * 60;
     btn.disabled = true; status.textContent = '產生中，請稍候…（長度越長越久）';
     try {
-      const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-      const off = new OAC(2, Math.ceil(sr * dur), sr);
-      const s = snapshot();
-      const seg = s.tour ? dur / 7 : dur;
-      const hzAt = t => s.tour ? CHAKRAS[Math.min(6, Math.floor(t / seg))].hz : s.hz;
-      if (s.tour) s.hz = CHAKRAS[0].hz;
+      const s = snapshot(S.tour ? 0 : S.chakra);
+      const seg = S.tour ? dur / 7 : dur;
+      const hzAt = t => S.tour ? CHAKRAS[Math.min(6, Math.floor(t / seg))].hz : s.hz;
+      const off = new OAC(2, SR * dur, SR);
       const e = createEngine(off, s);
       e.start(0, 3);
-      if (s.tour) for (let i = 1; i < 7; i++) e.setFreq(CHAKRAS[i].hz, s.beat, i * seg, 4);
+      if (S.tour) for (let i = 1; i < 7; i++) e.setFreqAt(CHAKRAS[i].hz, s.beat, i * seg, 1);
       if (s.bell > 0) for (let t = 2; t < dur - 6; t += +s.bellEvery) e.strike(t, hzAt(t));
-      e.fadeOut(dur - 4, 4, LV.master(s.master));
+      e.fadeOut(dur - 4, 4);
       e.stopAt(dur);
-      const rendered = await off.startRendering();
-      const blob = encodeWav(rendered);
+      const r = await off.startRendering();
+      const blob = wavBlob([r.getChannelData(0), r.getChannelData(1)], SR, 0.89);
       // 檔名用英文，避免部分手機 / 瀏覽器把中文檔名變成亂碼或 "download"
-      const name = s.tour ? 'chakra-tour-7' : `chakra-${CHAKRAS[S.chakra].en.toLowerCase().replace(/\s+/g, '-')}-${s.hz}Hz`;
+      const name = S.tour ? 'chakra-tour-7' : `chakra-${CHAKRAS[S.chakra].en.toLowerCase().replace(/\s+/g, '-')}-${s.hz}Hz`;
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `${name}${s.beat ? `-beat${s.beat}Hz` : ''}-${minutes}min.wav`;
+      a.download = `${name}${s.beat ? `-beat${s.beat}Hz` : ''}-${s.timbre}-${minutes}min.wav`;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 60000);
       status.textContent = `✅ 完成（${(blob.size / 1048576).toFixed(0)} MB）`;
