@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>脈輪頻率產生器｜七脈輪放鬆・冥想・助眠音 - FutureStarAI</title>
+<meta name="description" content="免費線上脈輪頻率產生器：七脈輪 Solfeggio 頻率、雙耳節拍、粉紅雜訊、海浪聲、頌缽聲與呼吸引導，可下載 WAV 音檔。免安裝、免登入。">
+<meta property="og:title" content="脈輪頻率產生器｜FutureStarAI">
+<meta property="og:description" content="七脈輪頻率 + 雙耳節拍 + 頌缽 + 呼吸引導，免費線上使用，可下載音檔。">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0a0a0a">
+<style>
+  :root {
+    --bg: #0a0a0a; --card: #131317; --line: #24242c; --text: #ececf3; --muted: #9a9aab;
+    --g1: #00d2ff; --g2: #7b2ff7; --c: #2ee66b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { text-align: center; margin-bottom: 8px; }
+  h1 {
+    font-size: clamp(26px, 6vw, 40px); margin: 8px 0 4px;
+    background: linear-gradient(90deg, var(--g1), var(--g2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sub { color: var(--muted); margin: 0; }
+
+  /* Orb */
+  .stage { display: flex; flex-direction: column; align-items: center; padding: 28px 0 12px; }
+  .orb {
+    width: min(62vw, 260px); aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--c) 85%, white) 0%, var(--c) 35%, color-mix(in srgb, var(--c) 25%, transparent) 70%, transparent 72%);
+    box-shadow: 0 0 80px color-mix(in srgb, var(--c) 45%, transparent);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: background .8s, box-shadow .8s; transform: scale(.82);
+  }
+  .orb.breathing { animation: breathe 10s ease-in-out infinite; }
+  @keyframes breathe { 0% { transform: scale(.82); } 40% { transform: scale(1); } 100% { transform: scale(.82); } }
+  .orb .nm { font-size: 22px; font-weight: 700; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
+  .orb .hz { font-size: 15px; opacity: .9; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
+  .breath { height: 28px; margin-top: 14px; color: var(--muted); letter-spacing: 4px; }
+  .play {
+    margin-top: 8px; border: 0; border-radius: 999px; padding: 14px 40px; font-size: 18px; font-weight: 700;
+    color: #fff; cursor: pointer; background: linear-gradient(90deg, var(--g1), var(--g2));
+    box-shadow: 0 6px 24px rgba(123,47,247,.35);
+  }
+  .play:active { transform: translateY(1px); }
+  .clock { color: var(--muted); font-size: 14px; margin-top: 8px; min-height: 22px; }
+
+  /* Chakra picker */
+  .chakras { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 20px 0; }
+  @media (max-width: 640px) { .chakras { grid-template-columns: repeat(4, 1fr); } }
+  .ck {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 4px;
+    color: var(--text); cursor: pointer; text-align: center; font-size: 13px;
+  }
+  .ck .dot { width: 18px; height: 18px; border-radius: 50%; margin: 0 auto 6px; }
+  .ck small { display: block; color: var(--muted); font-size: 11px; }
+  .ck.on { border-color: var(--c); box-shadow: 0 0 0 1px var(--c) inset; }
+
+  /* Panels */
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 14px; }
+  .panel h2 { font-size: 16px; margin: 0 0 12px; }
+  .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0; }
+  .row label { min-width: 88px; color: var(--muted); font-size: 14px; }
+  .row input[type=range] { flex: 1; min-width: 140px; accent-color: #7b2ff7; }
+  select, .btn {
+    background: #1c1c22; color: var(--text); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 12px; font-size: 14px;
+  }
+  .btn { cursor: pointer; }
+  .btn.primary { background: linear-gradient(90deg, var(--g1), var(--g2)); border: 0; font-weight: 700; }
+  .btn:disabled { opacity: .5; cursor: wait; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .seg button { background: #1c1c22; color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 14px; }
+  .seg button.on { background: linear-gradient(90deg, var(--g1), var(--g2)); border-color: transparent; }
+  .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; }
+  .note { color: var(--muted); font-size: 13px; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 28px; }
+  footer a { color: var(--g1); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>脈輪頻率產生器</h1>
+    <p class="sub">七脈輪頻率・雙耳節拍・頌缽・呼吸引導 ── 給放鬆、冥想與睡前時光</p>
+  </header>
+
+  <section class="stage">
+    <div class="orb" id="orb"><div class="nm" id="orbName">心輪</div><div class="hz" id="orbHz">639 Hz</div></div>
+    <div class="breath" id="breath"></div>
+    <button class="play" id="playBtn">▶ 開始</button>
+    <div class="clock" id="clock"></div>
+  </section>
+
+  <div class="chakras" id="chakras"></div>
+
+  <div class="grid2">
+    <section class="panel">
+      <h2>🧠 腦波模式（雙耳節拍）</h2>
+      <div class="seg" id="beatSeg"></div>
+      <p class="hint">🎧 雙耳節拍需要<b>戴耳機</b>才有效果：左右耳頻率略有差異，大腦會感受到差值的「節拍」。</p>
+      <div class="row" style="margin-top:14px">
+        <label><input type="checkbox" id="tour"> 全脈輪巡禮</label>
+        <select id="tourMin">
+          <option value="1">每個脈輪 1 分鐘</option>
+          <option value="3" selected>每個脈輪 3 分鐘</option>
+          <option value="5">每個脈輪 5 分鐘</option>
+          <option value="8">每個脈輪 8 分鐘</option>
+        </select>
+      </div>
+      <p class="hint">由海底輪依序走到頂輪，頻率會平滑切換，之後再從頭循環。</p>
+    </section>
+
+    <section class="panel">
+      <h2>🎚️ 聲音混合</h2>
+      <div class="row"><label>頻率音</label><input type="range" id="tone" min="0" max="100" value="55"></div>
+      <div class="row">
+        <label>背景音</label>
+        <select id="noiseType">
+          <option value="none">無</option>
+          <option value="pink">粉紅雜訊（柔和）</option>
+          <option value="brown">棕色雜訊（低沉）</option>
+          <option value="waves" selected>海浪</option>
+        </select>
+        <input type="range" id="noise" min="0" max="100" value="45">
+      </div>
+      <div class="row">
+        <label>頌缽</label>
+        <select id="bellEvery">
+          <option value="10">每 10 秒</option>
+          <option value="20" selected>每 20 秒</option>
+          <option value="40">每 40 秒</option>
+          <option value="60">每 60 秒</option>
+        </select>
+        <input type="range" id="bell" min="0" max="100" value="40">
+      </div>
+      <div class="row"><label>總音量</label><input type="range" id="master" min="0" max="100" value="70"></div>
+      <div class="row">
+        <label>定時關閉</label>
+        <select id="timer">
+          <option value="0">不限時</option>
+          <option value="15">15 分鐘</option>
+          <option value="30" selected>30 分鐘</option>
+          <option value="60">60 分鐘</option>
+          <option value="90">90 分鐘</option>
+        </select>
+      </div>
+      <p class="hint">時間到會用 10 秒慢慢淡出，適合邊聽邊入睡。</p>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>💾 下載音檔（WAV）</h2>
+    <div class="row">
+      <select id="exportLen">
+        <option value="1">1 分鐘（約 10 MB）</option>
+        <option value="3" selected>3 分鐘（約 32 MB）</option>
+        <option value="5">5 分鐘（約 53 MB）</option>
+        <option value="10">10 分鐘（約 106 MB，建議用電腦）</option>
+      </select>
+      <button class="btn primary" id="exportBtn">產生並下載</button>
+      <span class="note" id="exportStatus"></span>
+    </div>
+    <p class="hint">使用目前所有設定產生音檔，頭尾各有 3～4 秒淡入淡出。開啟「全脈輪巡禮」時，七個脈輪會平均分配在整段長度裡。音檔由你自己的瀏覽器產生，可自由用在自己的影片中。</p>
+  </section>
+
+  <section class="panel">
+    <h2>📖 七脈輪對照</h2>
+    <table>
+      <thead><tr><th>脈輪</th><th>頻率</th><th>代表色</th><th>傳統象徵</th></tr></thead>
+      <tbody id="table"></tbody>
+    </table>
+    <p class="note" style="margin-top:12px">
+      ⚠️ 頻率與脈輪的對應出自傳統與新時代（Solfeggio）說法，<b>沒有經過科學驗證</b>。本工具只用來輔助放鬆與冥想，<b>不能代替醫療</b>。
+      請用舒適的小音量；開車或操作機械時請不要聽雙耳節拍。
+      手機若開了靜音模式，可能聽不到聲音；螢幕鎖定後，部分手機會暫停播放。
+    </p>
+  </section>
+
+  <footer>
+    Made by <a href="https://futurestarai.com">FutureStarAI 未來之星 AI</a>
+    <!-- YouTube 頻道開好後，把下面這行取消註解並換成頻道網址 -->
+    <!-- ・<a href="https://www.youtube.com/@YOUR_CHANNEL">訂閱 YouTube 頻道聽完整版</a> -->
+  </footer>
+</div>
+
+<script>
+(() => {
+  const CHAKRAS = [
+    { name: '海底輪', en: 'Root',         hz: 396, color: '#ff3b3b', theme: '安定・踏實・安全感' },
+    { name: '臍輪',   en: 'Sacral',       hz: 417, color: '#ff8a1f', theme: '創造力・情感流動' },
+    { name: '太陽輪', en: 'Solar Plexus', hz: 528, color: '#ffd319', theme: '自信・意志・行動' },
+    { name: '心輪',   en: 'Heart',        hz: 639, color: '#2ee66b', theme: '慈愛・連結・寬恕' },
+    { name: '喉輪',   en: 'Throat',       hz: 741, color: '#1fb6ff', theme: '表達・溝通・真實' },
+    { name: '眉心輪', en: 'Third Eye',    hz: 852, color: '#5b5bff', theme: '直覺・洞察' },
+    { name: '頂輪',   en: 'Crown',        hz: 963, color: '#b44dff', theme: '覺知・平靜・合一' },
+  ];
+  const BEATS = [
+    { key: 'none',  label: '純頻率',          hz: 0 },
+    { key: 'alpha', label: '放鬆 α 10Hz',     hz: 10 },
+    { key: 'theta', label: '冥想 θ 6Hz',      hz: 6 },
+    { key: 'delta', label: '助眠 δ 2Hz',      hz: 2 },
+  ];
+
+  // ---------- 設定（存在 localStorage，下次打開保留） ----------
+  const $ = id => document.getElementById(id);
+  const DEFAULTS = { chakra: 3, beat: 'theta', tour: false, tourMin: 3, tone: 55, noiseType: 'waves', noise: 45, bell: 40, bellEvery: 20, master: 70, timer: 30 };
+  let S = { ...DEFAULTS };
+  try { S = { ...DEFAULTS, ...JSON.parse(localStorage.getItem('chakra-gen') || '{}') }; } catch (e) {}
+  const save = () => { try { localStorage.setItem('chakra-gen', JSON.stringify(S)); } catch (e) {} };
+
+  const beatHz = () => (BEATS.find(b => b.key === S.beat) || BEATS[0]).hz;
+  const sq = v => (v / 100) * (v / 100);
+  const LV = {
+    tone: v => sq(v) * 0.32,
+    noise: v => sq(v) * 0.9,
+    bell: v => sq(v) * 1.0,
+    master: v => sq(v),
+  };
+
+  // ---------- 音訊引擎（即時播放與匯出共用） ----------
+  const noiseCache = new WeakMap();
+  function noiseBuffer(ctx, kind) {
+    let c = noiseCache.get(ctx);
+    if (!c) { c = {}; noiseCache.set(ctx, c); }
+    if (c[kind]) return c[kind];
+    const sr = ctx.sampleRate, len = sr * 12, fade = Math.floor(sr * 0.5);
+    const buf = ctx.createBuffer(2, len, sr);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      if (kind === 'pink') {
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        for (let i = 0; i < len; i++) {
+          const w = Math.random() * 2 - 1;
+          b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759;
+          b2 = 0.96900 * b2 + w * 0.1538520; b3 = 0.86650 * b3 + w * 0.3104856;
+          b4 = 0.55000 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.0168980;
+          d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11;
+          b6 = w * 0.115926;
+        }
+      } else {
+        let last = 0;
+        for (let i = 0; i < len; i++) {
+          last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+          d[i] = last * 3.5;
+        }
+      }
+      // 把尾巴交叉淡入到開頭，讓循環接縫聽不出來
+      for (let i = 0; i < fade; i++) {
+        const t = i / fade;
+        d[i] = d[i] * t + d[len - fade + i] * (1 - t);
+      }
+    }
+    c[kind] = { buffer: buf, loopEnd: (len - fade) / sr };
+    return c[kind];
+  }
+
+  function createEngine(ctx, s) {
+    const all = [];  // 需要 stop 的音源
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -12; comp.ratio.value = 4;
+    comp.connect(ctx.destination);
+    const master = ctx.createGain(); master.gain.value = 0; master.connect(comp);
+
+    // 頻率音：左右耳各一顆正弦波，差值 = 雙耳節拍
+    const toneBus = ctx.createGain(); toneBus.gain.value = LV.tone(s.tone); toneBus.connect(master);
+    const merger = ctx.createChannelMerger(2); merger.connect(toneBus);
+    const oscL = ctx.createOscillator(), oscR = ctx.createOscillator();
+    oscL.type = oscR.type = 'sine';
+    oscL.frequency.value = s.hz - s.beat / 2;
+    oscR.frequency.value = s.hz + s.beat / 2;
+    oscL.connect(merger, 0, 0); oscR.connect(merger, 0, 1);
+    all.push(oscL, oscR);
+
+    // 背景音
+    const noiseBus = ctx.createGain(); noiseBus.gain.value = LV.noise(s.noise); noiseBus.connect(master);
+    let noise = null;
+    function buildNoise(type, when = 0) {
+      if (noise) { noise.srcs.forEach(n => { try { n.stop(); } catch (e) {} }); noise.out.disconnect(); noise = null; }
+      if (type === 'none') return;
+      const nb = noiseBuffer(ctx, type === 'pink' ? 'pink' : 'brown');
+      const src = ctx.createBufferSource();
+      src.buffer = nb.buffer; src.loop = true; src.loopEnd = nb.loopEnd;
+      const filt = ctx.createBiquadFilter(); filt.type = 'lowpass';
+      filt.frequency.value = type === 'pink' ? 6000 : type === 'brown' ? 1500 : 800;
+      const out = ctx.createGain(); out.gain.value = 1;
+      src.connect(filt); filt.connect(out); out.connect(noiseBus);
+      const srcs = [src];
+      if (type === 'waves') {  // 慢速起伏，模擬浪潮
+        out.gain.value = 0.55;
+        const lfo = ctx.createOscillator(); lfo.frequency.value = 0.09;
+        const depth = ctx.createGain(); depth.gain.value = 0.45;
+        lfo.connect(depth); depth.connect(out.gain);
+        lfo.start(when); srcs.push(lfo);
+      }
+      src.start(when);
+      noise = { srcs, out };
+    }
+
+    // 頌缽：幾個不和諧泛音 + 緩慢衰減
+    const bellBus = ctx.createGain(); bellBus.gain.value = LV.bell(s.bell); bellBus.connect(master);
+    const PARTIALS = [[1, 1, 11], [1.003, .6, 11], [2.0, .3, 7], [2.76, .4, 5.5], [4.07, .18, 3.5], [5.4, .14, 2.4]];
+    function strike(t, hz) {
+      let f = hz; while (f > 260) f /= 2;
+      for (const [ratio, amp, dec] of PARTIALS) {
+        const o = ctx.createOscillator(); o.frequency.value = f * ratio;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(amp * 0.16, t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dec);
+        o.connect(g); g.connect(bellBus);
+        o.start(t); o.stop(t + dec + 0.1);
+      }
+    }
+
+    const smooth = (param, v) => {
+      const now = ctx.currentTime;
+      if (param.cancelAndHoldAtTime) param.cancelAndHoldAtTime(now); else param.cancelScheduledValues(now);
+      param.setTargetAtTime(v, now, 0.08);
+    };
+
+    return {
+      start(t, fadeIn = 3) {
+        oscL.start(t); oscR.start(t);
+        buildNoise(s.noiseType, t);
+        master.gain.setValueAtTime(0, t);
+        master.gain.linearRampToValueAtTime(LV.master(s.master), t + fadeIn);
+      },
+      setFreq(hz, beat, t = ctx.currentTime, glide = 1.5) {
+        oscL.frequency.setTargetAtTime(hz - beat / 2, t, glide / 4);
+        oscR.frequency.setTargetAtTime(hz + beat / 2, t, glide / 4);
+      },
+      setTone: v => smooth(toneBus.gain, LV.tone(v)),
+      setNoise: v => smooth(noiseBus.gain, LV.noise(v)),
+      setNoiseType: type => buildNoise(type),
+      setBell: v => smooth(bellBus.gain, LV.bell(v)),
+      setMaster: v => smooth(master.gain, LV.master(v)),
+      strike,
+      fadeOut(t, dur, from) {
+        const g = master.gain;
+        if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(t); else g.cancelScheduledValues(t);
+        g.setValueAtTime(from ?? g.value, t);
+        g.linearRampToValueAtTime(0, t + dur);
+      },
+      stopAt(t) {
+        all.forEach(n => { try { n.stop(t); } catch (e) {} });
+        if (noise) noise.srcs.forEach(n => { try { n.stop(t); } catch (e) {} });
+      },
+      dispose() { comp.disconnect(); },
+    };
+  }
+
+  // ---------- 即時播放 ----------
+  let ctx = null, eng = null, playing = false, startedAt = 0, tourBase = 0, nextBell = 0, ticker = null;
+
+  const snapshot = () => ({ ...S, hz: CHAKRAS[S.chakra].hz, beat: beatHz() });
+
+  async function play() {
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    await ctx.resume();
+    eng = createEngine(ctx, snapshot());
+    const now = ctx.currentTime;
+    eng.start(now, 3);
+    startedAt = now; nextBell = now + 2;
+    tourBase = now - S.chakra * S.tourMin * 60;
+    playing = true;
+    ticker = setInterval(tick, 250);
+    $('orb').classList.add('breathing');
+    $('playBtn').textContent = '■ 停止';
+    tick();
+  }
+
+  function stop(fade = 2) {
+    if (!playing) return;
+    playing = false;
+    clearInterval(ticker);
+    const e = eng, t = ctx.currentTime;
+    e.fadeOut(t, fade);
+    e.stopAt(t + fade + 0.1);
+    setTimeout(() => e.dispose(), (fade + 0.6) * 1000);
+    $('orb').classList.remove('breathing');
+    $('breath').textContent = '';
+    $('clock').textContent = '';
+    $('playBtn').textContent = '▶ 開始';
+  }
+
+  const mmss = sec => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
+
+  function tick() {
+    if (!playing) return;
+    const now = ctx.currentTime, elapsed = now - startedAt;
+
+    if (S.bell > 0) {
+      while (nextBell < now + 0.5) { eng.strike(nextBell, CHAKRAS[S.chakra].hz); nextBell += +S.bellEvery; }
+    } else nextBell = now + 1;
+
+    if (S.tour) {
+      const idx = Math.floor((now - tourBase) / (S.tourMin * 60)) % 7;
+      if (idx !== S.chakra) selectChakra(idx, true);
+    }
+
+    // 呼吸引導：吸 4 秒、吐 6 秒（與 CSS 動畫同步）
+    $('breath').textContent = (elapsed % 10) < 4 ? '吸　氣' : '吐　氣';
+
+    let txt = `已播放 ${mmss(elapsed)}`;
+    if (S.timer > 0) {
+      const left = S.timer * 60 - elapsed;
+      if (left <= 0) { stop(10); return; }
+      txt += `・${mmss(left)} 後淡出`;
+    }
+    $('clock').textContent = txt;
+  }
+
+  // ---------- UI ----------
+  function paintChakra() {
+    const c = CHAKRAS[S.chakra];
+    document.documentElement.style.setProperty('--c', c.color);
+    $('orbName').textContent = c.name;
+    $('orbHz').textContent = `${c.hz} Hz${beatHz() ? `・${(BEATS.find(b => b.key === S.beat)).label.split(' ')[0]}` : ''}`;
+    document.querySelectorAll('.ck').forEach((el, i) => el.classList.toggle('on', i === S.chakra));
+  }
+
+  function selectChakra(i, fromTour = false) {
+    S.chakra = i; save();
+    if (playing) {
+      eng.setFreq(CHAKRAS[i].hz, beatHz(), ctx.currentTime, fromTour ? 4 : 1.5);
+      if (!fromTour) tourBase = ctx.currentTime - i * S.tourMin * 60;
+    }
+    paintChakra();
+  }
+
+  CHAKRAS.forEach((c, i) => {
+    const b = document.createElement('button');
+    b.className = 'ck';
+    b.innerHTML = `<div class="dot" style="background:${c.color};box-shadow:0 0 12px ${c.color}"></div>${c.name}<small>${c.hz} Hz</small>`;
+    b.onclick = () => selectChakra(i);
+    $('chakras').appendChild(b);
+    $('table').insertAdjacentHTML('beforeend',
+      `<tr><td>${c.name}<br><span class="note">${c.en}</span></td><td>${c.hz} Hz</td>` +
+      `<td><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${c.color};vertical-align:middle"></span></td>` +
+      `<td>${c.theme}</td></tr>`);
+  });
+
+  BEATS.forEach(bt => {
+    const b = document.createElement('button');
+    b.textContent = bt.label; b.dataset.key = bt.key;
+    b.onclick = () => {
+      S.beat = bt.key; save();
+      document.querySelectorAll('#beatSeg button').forEach(x => x.classList.toggle('on', x.dataset.key === S.beat));
+      if (playing) eng.setFreq(CHAKRAS[S.chakra].hz, beatHz());
+      paintChakra();
+    };
+    $('beatSeg').appendChild(b);
+  });
+  document.querySelectorAll('#beatSeg button').forEach(x => x.classList.toggle('on', x.dataset.key === S.beat));
+
+  const bind = (id, key, onLive, isCheck = false) => {
+    const el = $(id);
+    if (isCheck) el.checked = !!S[key]; else el.value = S[key];
+    el.addEventListener(el.type === 'range' ? 'input' : 'change', () => {
+      const v = isCheck ? el.checked : (el.type === 'range' || el.tagName === 'SELECT' && !isNaN(el.value)) ? +el.value : el.value;
+      S[key] = v; save();
+      if (playing && onLive) onLive(v);
+    });
+  };
+  bind('tone', 'tone', v => eng.setTone(v));
+  bind('noise', 'noise', v => eng.setNoise(v));
+  bind('noiseType', 'noiseType', v => eng.setNoiseType(v));
+  bind('bell', 'bell', v => eng.setBell(v));
+  bind('bellEvery', 'bellEvery');
+  bind('master', 'master', v => eng.setMaster(v));
+  bind('timer', 'timer');
+  bind('tourMin', 'tourMin', () => { tourBase = ctx.currentTime - S.chakra * S.tourMin * 60; });
+  bind('tour', 'tour', () => { tourBase = ctx.currentTime - S.chakra * S.tourMin * 60; }, true);
+
+  $('playBtn').onclick = () => (playing ? stop() : play());
+  paintChakra();
+
+  // ---------- 匯出 WAV ----------
+  function encodeWav(buf) {
+    const ch = 2, len = buf.length, sr = buf.sampleRate, bytes = len * ch * 2;
+    const ab = new ArrayBuffer(44 + bytes), v = new DataView(ab);
+    const w = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + bytes, true); w(8, 'WAVE');
+    w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, ch, true);
+    v.setUint32(24, sr, true); v.setUint32(28, sr * ch * 2, true); v.setUint16(32, ch * 2, true); v.setUint16(34, 16, true);
+    w(36, 'data'); v.setUint32(40, bytes, true);
+    const L = buf.getChannelData(0), R = buf.getChannelData(1), out = new Int16Array(ab, 44);
+    // 峰值正規化到 -1 dBFS，讓音檔放進剪輯軟體時音量足夠
+    let peak = 1e-9;
+    for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(L[i]), Math.abs(R[i]));
+    const gain = Math.min(6, 0.89 / peak);
+    for (let i = 0, j = 0; i < len; i++) {
+      let a = Math.max(-1, Math.min(1, L[i] * gain)); out[j++] = a < 0 ? a * 0x8000 : a * 0x7fff;
+      a = Math.max(-1, Math.min(1, R[i] * gain)); out[j++] = a < 0 ? a * 0x8000 : a * 0x7fff;
+    }
+    return new Blob([ab], { type: 'audio/wav' });
+  }
+
+  $('exportBtn').onclick = async () => {
+    const btn = $('exportBtn'), status = $('exportStatus');
+    const minutes = +$('exportLen').value, dur = minutes * 60, sr = 44100;
+    btn.disabled = true; status.textContent = '產生中，請稍候…（長度越長越久）';
+    try {
+      const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      const off = new OAC(2, Math.ceil(sr * dur), sr);
+      const s = snapshot();
+      const seg = s.tour ? dur / 7 : dur;
+      const hzAt = t => s.tour ? CHAKRAS[Math.min(6, Math.floor(t / seg))].hz : s.hz;
+      if (s.tour) s.hz = CHAKRAS[0].hz;
+      const e = createEngine(off, s);
+      e.start(0, 3);
+      if (s.tour) for (let i = 1; i < 7; i++) e.setFreq(CHAKRAS[i].hz, s.beat, i * seg, 4);
+      if (s.bell > 0) for (let t = 2; t < dur - 6; t += +s.bellEvery) e.strike(t, hzAt(t));
+      e.fadeOut(dur - 4, 4, LV.master(s.master));
+      e.stopAt(dur);
+      const rendered = await off.startRendering();
+      const blob = encodeWav(rendered);
+      // 檔名用英文，避免部分手機 / 瀏覽器把中文檔名變成亂碼或 "download"
+      const name = s.tour ? 'chakra-tour-7' : `chakra-${CHAKRAS[S.chakra].en.toLowerCase().replace(/\s+/g, '-')}-${s.hz}Hz`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${name}${s.beat ? `-beat${s.beat}Hz` : ''}-${minutes}min.wav`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      status.textContent = `✅ 完成（${(blob.size / 1048576).toFixed(0)} MB）`;
+    } catch (err) {
+      console.error(err);
+      status.textContent = '❌ 產生失敗，可能是裝置記憶體不足，請改選較短長度或用電腦。';
+    } finally {
+      btn.disabled = false;
+    }
+  };
+})();
+</script>
+</body>
+</html>
