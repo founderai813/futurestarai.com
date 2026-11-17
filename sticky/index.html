@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>桌面便利貼｜未來之星 AI</title>
+<style id="mainStyle">
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0a0a0a; color: #eee; font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 14px;
+    background: linear-gradient(90deg, #00d2ff, #7b2ff7); }
+  header h1 { font-size: 18px; margin: 0 12px 0 0; color: #fff; }
+  button { cursor: pointer; border: 0; border-radius: 8px; padding: 6px 12px; font-size: 14px;
+    background: rgba(255,255,255,.9); color: #222; }
+  button:hover { background: #fff; }
+  #board { position: relative; min-height: calc(100vh - 56px); padding: 12px;
+    display: flex; flex-wrap: wrap; gap: 12px; align-content: flex-start; background: #0a0a0a; }
+  .note { width: 220px; min-height: 180px; border-radius: 6px; padding: 8px; color: #222;
+    box-shadow: 0 4px 14px rgba(0,0,0,.5); display: flex; flex-direction: column; gap: 6px; }
+  .note.ring { animation: shake .5s infinite; outline: 3px solid #ff3b3b; }
+  @keyframes shake { 0%,100% { transform: rotate(0) } 25% { transform: rotate(-3deg) } 75% { transform: rotate(3deg) } }
+  .bar { display: flex; gap: 4px; align-items: center; }
+  .dot { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0,0,0,.3); cursor: pointer; padding: 0; }
+  .bar .del { margin-left: auto; background: transparent; padding: 0 4px; font-size: 16px; }
+  textarea { flex: 1; min-height: 110px; resize: vertical; border: 0; background: transparent;
+    font: inherit; font-size: 15px; line-height: 1.5; outline: none; color: #222; }
+  .remind { font-size: 12px; display: flex; align-items: center; gap: 4px; }
+  .remind input { font-size: 12px; border: 1px solid rgba(0,0,0,.2); border-radius: 4px; background: rgba(255,255,255,.5); }
+  .done-line { font-size: 12px; opacity: .7; }
+  #tip { font-size: 12px; color: #fff; opacity: .9; }
+  input[type=file] { display: none; }
+</style>
+</head>
+<body>
+<header id="head">
+  <h1>📝 桌面便利貼</h1>
+  <button id="add">＋ 新增一張</button>
+  <button id="pip" title="開一個永遠在最上層的小視窗">📌 浮動置頂</button>
+  <button id="notify">🔔 開啟提醒通知</button>
+  <button id="export">💾 備份</button>
+  <button id="importBtn">📂 還原</button>
+  <input type="file" id="importFile" accept=".json">
+  <span id="tip">資料只存在這台電腦的瀏覽器裡，不會上傳。</span>
+</header>
+<div id="board"></div>
+
+<script>
+const KEY = 'fsai-sticky-notes-v1';
+const COLORS = ['#fff59d', '#ffccbc', '#c8e6c9', '#b3e5fc', '#e1bee7'];
+let notes = load();
+let doc = document;          // 目前顯示便利貼的視窗（主頁或置頂小視窗）
+const board = document.getElementById('board');
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; }
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(notes)); }
+function today() { return new Date().toLocaleDateString('sv'); }   // YYYY-MM-DD
+
+function render() {
+  board.innerHTML = '';
+  if (!notes.length) {
+    board.innerHTML = '<p style="color:#888">還沒有便利貼，按「＋ 新增一張」開始。</p>';
+    return;
+  }
+  notes.forEach((n, i) => {
+    const el = doc.createElement('div');
+    el.className = 'note' + (n.ringing ? ' ring' : '');
+    el.style.background = n.color;
+
+    const bar = doc.createElement('div');
+    bar.className = 'bar';
+    COLORS.forEach(c => {
+      const d = doc.createElement('button');
+      d.className = 'dot'; d.style.background = c; d.title = '換顏色';
+      d.onclick = () => { n.color = c; save(); render(); };
+      bar.appendChild(d);
+    });
+    const del = doc.createElement('button');
+    del.className = 'del'; del.textContent = '✕'; del.title = '刪除';
+    del.onclick = () => { if (confirm('刪除這張便利貼？')) { notes.splice(i, 1); save(); render(); } };
+    bar.appendChild(del);
+
+    const ta = doc.createElement('textarea');
+    ta.value = n.text; ta.placeholder = '要提醒自己的事…';
+    ta.oninput = () => { n.text = ta.value; save(); };
+
+    const rm = doc.createElement('label');
+    rm.className = 'remind';
+    rm.innerHTML = '⏰ 每天 ';
+    const t = doc.createElement('input');
+    t.type = 'time'; t.value = n.time || '';
+    t.onchange = () => { n.time = t.value; n.firedOn = ''; save(); };
+    rm.appendChild(t);
+    const clr = doc.createElement('button');
+    clr.className = 'del'; clr.textContent = '清除'; clr.style.fontSize = '12px';
+    clr.onclick = (e) => { e.preventDefault(); n.time = ''; n.ringing = false; save(); render(); };
+    rm.appendChild(clr);
+
+    el.append(bar, ta, rm);
+    if (n.ringing) {
+      const ok = doc.createElement('button');
+      ok.textContent = '✅ 知道了';
+      ok.onclick = () => { n.ringing = false; save(); render(); };
+      el.appendChild(ok);
+    }
+    board.appendChild(el);
+  });
+}
+
+document.getElementById('add').onclick = () => {
+  notes.push({ text: '', color: COLORS[notes.length % COLORS.length], time: '', firedOn: '' });
+  save(); render();
+  const all = board.querySelectorAll('textarea'); all[all.length - 1]?.focus();
+};
+
+// ---- 定時提醒：網頁開著時，每 20 秒檢查一次 ----
+function beep() {
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    [0, .35, .7].forEach(s => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(ac.destination);
+      g.gain.setValueAtTime(.2, ac.currentTime + s);
+      g.gain.exponentialRampToValueAtTime(.001, ac.currentTime + s + .3);
+      o.start(ac.currentTime + s); o.stop(ac.currentTime + s + .3);
+    });
+  } catch (e) {}
+}
+let flashTimer = null;
+function flashTitle(on) {
+  clearInterval(flashTimer);
+  if (!on) { document.title = '桌面便利貼｜未來之星 AI'; return; }
+  let f = false;
+  flashTimer = setInterval(() => { f = !f; document.title = f ? '⏰⏰ 提醒時間到！' : '📝 桌面便利貼'; }, 800);
+}
+function check() {
+  const now = new Date();
+  const hm = now.toTimeString().slice(0, 5);
+  let changed = false;
+  notes.forEach(n => {
+    if (n.time && n.time <= hm && n.firedOn !== today()) {
+      n.firedOn = today(); n.ringing = true; changed = true;
+      beep();
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('⏰ 便利貼提醒', { body: n.text.slice(0, 100) || '（空白便利貼）' });
+      }
+    }
+  });
+  if (changed) { save(); render(); }
+  flashTitle(notes.some(n => n.ringing));
+}
+setInterval(check, 20000);
+
+document.getElementById('notify').onclick = async () => {
+  if (!('Notification' in window)) return alert('這個瀏覽器不支援通知，會改用聲音＋標題閃爍提醒。');
+  const p = await Notification.requestPermission();
+  alert(p === 'granted' ? '已開啟！時間到會跳出 Windows 通知。' : '通知被擋住了（可能是公司設定），沒關係，時間到仍會響聲＋便利貼抖動。');
+};
+
+// ---- 浮動置頂小視窗（Chrome / Edge 116 以上） ----
+document.getElementById('pip').onclick = async () => {
+  if (!('documentPictureInPicture' in window)) {
+    return alert('這個瀏覽器不支援浮動置頂。請改用最新版 Chrome 或 Edge，或把這個分頁拉成小視窗放在螢幕角落。');
+  }
+  const w = await documentPictureInPicture.requestWindow({ width: 260, height: 420 });
+  const st = w.document.createElement('style');
+  st.textContent = document.getElementById('mainStyle').textContent +
+    ' #board{min-height:100vh;padding:8px;gap:8px} .note{width:100%}';
+  w.document.head.appendChild(st);
+  doc = w.document;
+  w.document.body.appendChild(board);
+  render();
+  w.addEventListener('pagehide', () => {
+    doc = document; document.body.appendChild(board); render();
+  });
+};
+
+// ---- 備份 / 還原（公司電腦若會清除瀏覽器資料，記得偶爾備份） ----
+document.getElementById('export').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(notes, null, 2)], { type: 'application/json' }));
+  a.download = '便利貼備份-' + today() + '.json';
+  a.click();
+};
+document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    if (!Array.isArray(data)) throw 0;
+    if (confirm('用備份檔取代目前的便利貼？')) { notes = data; save(); render(); }
+  } catch (err) { alert('這不是正確的備份檔。'); }
+  e.target.value = '';
+};
+
+render();
+check();
+</script>
+</body>
+</html>
