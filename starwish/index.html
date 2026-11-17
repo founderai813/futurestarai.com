@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>星願 StarWish・未來的你唸給你聽</title>
+<style>
+  :root{--bg:#0a0a0a;--card:#141418;--line:#26262e;--text:#ececf1;--muted:#9a9aa8;--a:#00d2ff;--b:#7b2ff7;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;line-height:1.7}
+  .wrap{max-width:640px;margin:0 auto;padding:24px 16px 64px}
+  h1{font-size:28px;margin:8px 0 0;background:linear-gradient(90deg,var(--a),var(--b));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--muted);margin:4px 0 20px;font-size:14px}
+  .tabs{display:flex;gap:8px;margin-bottom:16px}
+  .tab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:15px;cursor:pointer}
+  .tab.on{color:#fff;border-color:transparent;background:linear-gradient(90deg,rgba(0,210,255,.25),rgba(123,47,247,.35))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+  label{display:block;font-size:14px;color:var(--muted);margin:12px 0 6px}
+  input,textarea,select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0f0f13;color:var(--text);font-size:16px;font-family:inherit}
+  textarea{min-height:90px;resize:vertical}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#0f0f13;color:var(--muted);cursor:pointer;font-size:14px}
+  .chip.on{border-color:var(--a);color:#fff}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 18px;border-radius:12px;border:0;font-size:16px;cursor:pointer;color:#fff;background:linear-gradient(90deg,var(--a),var(--b))}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+  .btn:disabled{opacity:.5;cursor:wait}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .script{white-space:pre-wrap;font-size:17px;line-height:1.95;padding:16px;border-radius:12px;background:#0f0f13;border:1px solid var(--line);min-height:80px}
+  .orb{width:96px;height:96px;margin:6px auto 14px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#7fe9ff,var(--a) 35%,var(--b) 80%);box-shadow:0 0 40px rgba(123,47,247,.5)}
+  .orb.play{animation:breathe 4s ease-in-out infinite}
+  @keyframes breathe{0%,100%{transform:scale(.9);box-shadow:0 0 25px rgba(0,210,255,.35)}50%{transform:scale(1.08);box-shadow:0 0 60px rgba(123,47,247,.7)}}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+  .stat b{display:block;font-size:26px;background:linear-gradient(90deg,var(--a),var(--b));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat span{font-size:13px;color:var(--muted)}
+  .days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
+  .day{aspect-ratio:1;border-radius:8px;background:#1b1b22;font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+  .day.done{background:linear-gradient(135deg,var(--a),var(--b));color:#fff}
+  .wish{border-top:1px solid var(--line);padding:12px 0}
+  .wish:first-child{border-top:0}
+  .wish h3{margin:0 0 4px;font-size:16px}
+  .muted{color:var(--muted);font-size:13px}
+  .note{font-size:12px;color:var(--muted);margin-top:18px;line-height:1.6}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#22222a;border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:.3s;pointer-events:none}
+  .toast.show{opacity:1}
+  .hidden{display:none}
+  .steps li{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>✨ 星願 StarWish</h1>
+  <p class="sub">把願望寫下來，讓「已經實現願望的未來的你」每天唸給你聽，再陪你踏出今天的一小步。</p>
+
+  <div class="tabs">
+    <button class="tab on" data-tab="make">① 許願</button>
+    <button class="tab" data-tab="listen">② 今天聽</button>
+    <button class="tab" data-tab="me">③ 我的星願</button>
+  </div>
+
+  <!-- 許願 -->
+  <section id="make">
+    <div class="card">
+      <label>你的名字（未來的你會這樣叫你）</label>
+      <input id="name" placeholder="例如：小紫" maxlength="12">
+      <label>願望類型</label>
+      <div class="chips" id="cats"></div>
+      <label>你的願望（越具體越好）</label>
+      <textarea id="wish" maxlength="200" placeholder="例如：明年此時月薪 8 萬、做自己喜歡的工作，每天下班還有力氣運動"></textarea>
+      <label>這是多久之後的你？</label>
+      <select id="when">
+        <option value="3個月">3 個月後</option>
+        <option value="半年" >半年後</option>
+        <option value="1年" selected>1 年後</option>
+        <option value="3年">3 年後</option>
+      </select>
+      <label>語氣</label>
+      <div class="chips" id="tones"></div>
+      <div class="row">
+        <button class="btn" id="gen">🔮 請未來的我寫一段話</button>
+      </div>
+      <p class="muted" id="genHint"></p>
+    </div>
+
+    <div class="card hidden" id="resultCard">
+      <div class="script" id="script"></div>
+      <div class="row">
+        <button class="btn" id="save">💾 存成我的星願</button>
+        <button class="btn ghost" id="previewPlay">🔊 先聽聽看</button>
+        <button class="btn ghost" id="regen">↻ 換一段</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 今天聽 -->
+  <section id="listen" class="hidden">
+    <div class="card" style="text-align:center">
+      <div class="orb" id="orb"></div>
+      <div id="todayTitle" class="muted">還沒有星願，先去「① 許願」寫一個吧</div>
+      <div class="row" style="justify-content:center">
+        <button class="btn" id="play">▶︎ 播放今天的星願</button>
+        <button class="btn ghost" id="stop">■ 停止</button>
+      </div>
+      <div class="row" style="justify-content:center">
+        <label style="margin:0">語速</label>
+        <select id="rate" style="width:auto">
+          <option value="0.85">慢一點（適合睡前）</option>
+          <option value="1" selected>正常</option>
+          <option value="1.15">快一點</option>
+        </select>
+      </div>
+    </div>
+    <div class="card">
+      <div class="script" id="todayScript"></div>
+    </div>
+    <div class="card">
+      <b>今天朝願望走的一小步</b>
+      <p class="muted" style="margin:4px 0 8px">光聽不做不會變。寫下一件今天做得到、5 分鐘內能完成的事。</p>
+      <input id="step" maxlength="60" placeholder="例如：更新履歷第一段 / 傳訊息給一位老朋友">
+      <div class="row"><button class="btn" id="checkin">✅ 我今天聽完了，也做了這一步</button></div>
+    </div>
+  </section>
+
+  <!-- 我的星願 -->
+  <section id="me" class="hidden">
+    <div class="card">
+      <div class="stats">
+        <div class="stat"><b id="sStreak">0</b><span>連續天數</span></div>
+        <div class="stat"><b id="sTotal">0</b><span>累計打卡</span></div>
+        <div class="stat"><b id="sWishes">0</b><span>星願數</span></div>
+      </div>
+      <div class="days" id="days"></div>
+      <p class="muted" style="margin-top:8px">最近 14 天</p>
+    </div>
+    <div class="card"><b>我的星願</b><div id="wishList"></div></div>
+    <div class="card"><b>我走過的小步</b><ul class="steps" id="stepList"></ul></div>
+  </section>
+
+  <p class="note">星願是幫你每天提醒自己、維持動力的工具，不是保證願望一定實現的魔法。真正讓事情發生的是你每天的行動 💜
+  資料只存在這台裝置的瀏覽器裡，不會上傳。換手機或清除瀏覽器資料會不見喔。若正在面對憂鬱、債務或健康問題，請找專業人士協助（台灣安心專線 1925）。</p>
+<p class="note" style="text-align:center"><a href="https://futurestarai.com/" style="color:var(--a)">← 回 FutureStarAI 未來之星</a></p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const CATS = ["事業工作","金錢財富","愛情關係","健康身體","自我成長","家庭人際"];
+const TONES = ["溫柔療癒","堅定有力","像好朋友聊天"];
+let cat = CATS[0], tone = TONES[0], draft = null;
+
+/* ---------- 儲存（裝置本機） ---------- */
+const KEY = "starwish.v1";
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {wishes:[],checkins:{},active:null}; }catch(e){ return {wishes:[],checkins:{},active:null}; } }
+let state = load();
+function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+const today = () => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+
+function toast(t){ const el=$("#toast"); el.textContent=t; el.classList.add("show"); setTimeout(()=>el.classList.remove("show"),2200); }
+
+/* ---------- 分頁 ---------- */
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>show(b.dataset.tab));
+function show(id){
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===id));
+  ["make","listen","me"].forEach(s=>$("#"+s).classList.toggle("hidden",s!==id));
+  if(id==="listen") renderToday();
+  if(id==="me") renderMe();
+}
+
+function chips(el, list, get, set){
+  el.innerHTML="";
+  list.forEach(v=>{ const c=document.createElement("button"); c.className="chip"+(v===get()?" on":""); c.textContent=v;
+    c.onclick=()=>{ set(v); chips(el,list,get,set); }; el.appendChild(c); });
+}
+chips($("#cats"),CATS,()=>cat,v=>cat=v);
+chips($("#tones"),TONES,()=>tone,v=>tone=v);
+$("#name").value = state.name || "";
+
+/* ---------- 本機範本（沒有 AI 時也能用，$0） ---------- */
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const SCENES = {
+  "事業工作":["早上走進辦公室的時候，我是帶著期待的","我現在做的事，是我真心喜歡、也做得很好的事","同事會來問我的意見，因為他們知道我可靠"],
+  "金錢財富":["打開帳戶的時候，我心裡是踏實的","我不再為了月底發愁，花錢的時候也很從容","錢來的方式，是我用自己的能力換來的"],
+  "愛情關係":["身邊的人看我的眼神，很溫柔","我被好好地愛著，也懂得好好愛自己","兩個人一起吃晚餐、聊今天發生的小事，就很幸福"],
+  "健康身體":["早上醒來，身體是輕盈的","我喜歡現在的自己，也喜歡鏡子裡的樣子","運動已經是我的習慣，不再是負擔"],
+  "自我成長":["我變得比以前更勇敢","以前讓我害怕的事，現在我可以笑著面對","我相信自己的判斷，也願意為自己發聲"],
+  "家庭人際":["家裡的氣氛很溫暖","我和重要的人之間，有很多真心的對話","我身邊都是讓我舒服、讓我成長的人"]
+};
+const OPEN = {"溫柔療癒":["嗨，{n}，我是{w}後的你。","{n}，深呼吸一下，我是{w}之後的你。"],
+              "堅定有力":["{n}，聽好，我是{w}後的你。","{n}，我是{w}後的你，我來告訴你結果。"],
+              "像好朋友聊天":["欸 {n}！是我啦，{w}後的你～","{n}，猜猜我是誰？{w}後的你啦！"]};
+const CLOSE = {"溫柔療癒":"你不用一次做完所有事，今天只要往前一小步，我就在終點等你。","堅定有力":"別再等準備好了，今天就做一件小事，剩下的交給時間。","像好朋友聊天":"好啦，我先去忙我那個超讚的生活了，你今天也加油，小小一步就好！"};
+function localScript(n,wish,w){
+  const sc = SCENES[cat];
+  return [
+    pick(OPEN[tone]).replace("{n}",n).replace("{w}",w),
+    `我想告訴你：「${wish}」——這件事，現在已經是我的日常了。`,
+    `${pick(sc)}。${pick(sc.filter(x=>x!==sc[0]))}。`,
+    `我還記得你現在的樣子，有點不確定、有時候想放棄。但我想謝謝你，謝謝你那時候沒有停下來，每天都做了一點點。`,
+    `那些你覺得「好像沒什麼用」的小事，後來全部都串在一起了。`,
+    CLOSE[tone]
+  ].join("\n\n");
+}
+
+/* ---------- AI 撰寫（Claude，免費；不能用時自動改用範本） ---------- */
+let samplePromise = (window.claude && claude.use) ? claude.use("sample").catch(()=>null) : Promise.resolve(null);
+let ttsPromise    = (window.claude && claude.use) ? claude.use("tts").catch(()=>null)    : Promise.resolve(null);
+let aiOff = false;
+
+async function aiScript(n,wish,w){
+  const sample = await samplePromise;
+  if(!sample || aiOff) return null;
+  const prompt = `你是「${w}後、已經實現願望的未來的${n}」。請用第一人稱、繁體中文（台灣用語），對現在的${n}說一段 220～320 字、適合朗讀的話。
+願望類型：${cat}
+願望內容：${wish}
+語氣：${tone}
+要求：
+1. 開頭稱呼「${n}」並表明你是${w}後的她／他自己（用「你」稱呼對方即可，不用寫性別）。
+2. 用「已經發生」的口吻，描述 2～3 個具體、有畫面感的生活細節（看到、聽到、感覺到的）。
+3. 承認現在的${n}會不安或想放棄，給予理解與感謝。
+4. 最後給一個「今天 5 分鐘內就能做的小行動」，自然地融入句子。
+5. 不要保證一定賺多少錢或治好疾病，不要宗教或命理斷言，不要用 emoji、標題或條列，只輸出要朗讀的內文。`;
+  try{
+    $("#script").textContent = "未來的你正在寫信⋯";
+    const r = await sample(prompt,{onText:({text})=>{ if(text && text!=="Thinking...") $("#script").textContent=text; }});
+    return (r.text||"").trim() || null;
+  }catch(e){
+    if(e && (e.code==="not_granted")) aiOff = true;
+    if(e && e.code==="rate_limited") toast("AI 有點忙，先用範本版本");
+    return null;
+  }
+}
+
+async function generate(){
+  const n = ($("#name").value.trim() || "親愛的");
+  const wish = $("#wish").value.trim();
+  if(!wish){ toast("先寫下你的願望喔"); $("#wish").focus(); return; }
+  state.name = $("#name").value.trim(); persist();
+  const w = $("#when").value;
+  $("#gen").disabled = $("#regen").disabled = true;
+  $("#resultCard").classList.remove("hidden");
+  let text = await aiScript(n,wish,w), by = "ai";
+  if(!text){ text = localScript(n,wish,w); by = "template"; }
+  $("#script").textContent = text;
+  $("#genHint").textContent = by==="ai" ? "由 Claude 為你寫的專屬內容" : "已為你組合好專屬的一段話，喜歡可以存起來，或按「換一段」";
+  draft = {id:Date.now().toString(36), name:n, cat, tone, wish, when:w, text, created:today()};
+  $("#gen").disabled = $("#regen").disabled = false;
+}
+$("#gen").onclick = generate;
+$("#regen").onclick = generate;
+$("#save").onclick = ()=>{
+  if(!draft) return;
+  state.wishes.unshift(draft); state.active = draft.id; persist(); draft=null;
+  toast("已存好！每天到「② 今天聽」聽一次"); show("listen");
+};
+
+/* ---------- 朗讀：Claude 語音 → 瀏覽器內建語音（皆免費） ---------- */
+let speaking = false;
+function setOrb(on){ speaking=on; $("#orb").classList.toggle("play",on); }
+async function speak(text){
+  stopSpeak();
+  const rate = parseFloat($("#rate").value)||1;
+  const t = await ttsPromise;
+  if(t){
+    try{
+      setOrb(true);
+      const lines = text.split(/\n+/).filter(Boolean).map(x=>({text:x, voice:"airy", language:"zh-TW", rate}));
+      await t.speak(lines);
+      setOrb(false); return;
+    }catch(e){ setOrb(false); if(e && e.code==="viewer_stopped") return; }
+  }
+  if("speechSynthesis" in window){
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang="zh-TW"; u.rate=rate; u.pitch=1;
+    const v = speechSynthesis.getVoices().find(v=>/zh[-_](TW|Hant)/i.test(v.lang)) || speechSynthesis.getVoices().find(v=>/^zh/i.test(v.lang));
+    if(v) u.voice=v;
+    u.onend=()=>setOrb(false); u.onerror=()=>setOrb(false);
+    setOrb(true); speechSynthesis.speak(u);
+  } else toast("這個瀏覽器不支援朗讀，請直接看文字唸給自己聽 💜");
+}
+async function stopSpeak(){
+  try{ const t = await ttsPromise; t && t.stop(); }catch(e){}
+  try{ speechSynthesis.cancel(); }catch(e){}
+  setOrb(false);
+}
+$("#previewPlay").onclick = ()=>speak($("#script").textContent);
+$("#stop").onclick = stopSpeak;
+$("#play").onclick = ()=>{ const w=activeWish(); if(!w){ toast("先去許一個願吧"); show("make"); return; } speak(w.text); };
+
+/* ---------- 今天 / 打卡 ---------- */
+function activeWish(){ return state.wishes.find(w=>w.id===state.active) || state.wishes[0] || null; }
+function renderToday(){
+  const w = activeWish();
+  $("#todayTitle").textContent = w ? `「${w.wish}」・${w.when}後的你` : "還沒有星願，先去「① 許願」寫一個吧";
+  $("#todayScript").textContent = w ? w.text : "";
+  const c = state.checkins[today()];
+  $("#checkin").textContent = c ? "✅ 今天已打卡（可以更新小步）" : "✅ 我今天聽完了，也做了這一步";
+  $("#step").value = c ? (c.step||"") : "";
+}
+$("#checkin").onclick = ()=>{
+  if(!activeWish()){ toast("先去許一個願吧"); return; }
+  state.checkins[today()] = {step:$("#step").value.trim(), wish:state.active};
+  persist(); renderToday();
+  toast(`打卡成功！連續 ${streak()} 天 🌟`);
+};
+function streak(){
+  let n=0; const d=new Date();
+  if(!state.checkins[today()]) d.setDate(d.getDate()-1);
+  while(true){ const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    if(state.checkins[k]){ n++; d.setDate(d.getDate()-1);} else break; }
+  return n;
+}
+
+/* ---------- 我的星願 ---------- */
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function renderMe(){
+  $("#sStreak").textContent = streak();
+  $("#sTotal").textContent = Object.keys(state.checkins).length;
+  $("#sWishes").textContent = state.wishes.length;
+  const days=$("#days"); days.innerHTML="";
+  for(let i=13;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i);
+    const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    const el=document.createElement("div"); el.className="day"+(state.checkins[k]?" done":""); el.textContent=d.getDate(); days.appendChild(el); }
+  const list=$("#wishList"); list.innerHTML = state.wishes.length? "" : '<p class="muted">還沒有星願</p>';
+  state.wishes.forEach(w=>{
+    const el=document.createElement("div"); el.className="wish";
+    el.innerHTML=`<h3>${w.id===state.active?"⭐ ":""}${esc(w.wish)}</h3><div class="muted">${esc(w.cat)}・${esc(w.when)}後・${esc(w.created)}</div>
+      <div class="row"><button class="btn ghost" data-a="use">設為今天聽</button><button class="btn ghost" data-a="del">刪除</button></div>`;
+    el.querySelector('[data-a="use"]').onclick=()=>{ state.active=w.id; persist(); toast("已設定"); show("listen"); };
+    const del=el.querySelector('[data-a="del"]');
+    del.onclick=()=>{ if(del.dataset.sure){ state.wishes=state.wishes.filter(x=>x.id!==w.id); if(state.active===w.id) state.active=null; persist(); renderMe(); }
+      else { del.dataset.sure=1; del.textContent="再按一次確認刪除"; } };
+    list.appendChild(el);
+  });
+  const sl=$("#stepList"); sl.innerHTML="";
+  Object.entries(state.checkins).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,30).forEach(([d,c])=>{
+    if(!c.step) return; const li=document.createElement("li"); li.innerHTML=`<span class="muted">${d}</span>　${esc(c.step)}`; sl.appendChild(li); });
+  if(!sl.children.length) sl.innerHTML='<li class="muted">打卡時寫下小步，就會出現在這裡</li>';
+}
+
+if(state.wishes.length) show("listen");
+</script>
+</body>
+</html>
